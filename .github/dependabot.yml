@@ -1,42 +1,73 @@
-# Dependabot configuration — to be fully configured in Fase 1
-# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
-
 version: 2
+
 updates:
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 5
+    groups:
+      python-patches:
+        patterns: ["*"]
+        update-types: ["patch"]
+      python-minor:
+        patterns: ["*"]
+        update-types: ["minor"]
+    open-pull-requests-limit: 10
+    reviewers:
+      - "ibernale"
     labels:
       - "chore"
       - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
 
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 5
+    groups:
+      npm-patches:
+        patterns: ["*"]
+        update-types: ["patch"]
+      npm-minor:
+        patterns: ["*"]
+        update-types: ["minor"]
+    open-pull-requests-limit: 10
+    reviewers:
+      - "ibernale"
     labels:
       - "chore"
       - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
 
   - package-ecosystem: "docker"
     directory: "/infra"
     schedule:
       interval: "weekly"
       day: "monday"
+    reviewers:
+      - "ibernale"
     labels:
       - "chore"
       - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
+    groups:
+      actions:
+        patterns: ["*"]
+    reviewers:
+      - "ibernale"
     labels:
       - "ci"
       - "dependencies"
+    commit-message:
+      prefix: "ci(deps)"

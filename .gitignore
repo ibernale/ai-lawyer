@@ -13,7 +13,9 @@ var/
 sdist/
 develop-eggs/
 .installed.cfg
-lib/
+# lib/ and lib64/ are Python venv dirs — exclude only at venv root depth
+.venv/lib/
+.venv/lib64/
 lib64/
 .eggs/
 *.pyo

@@ -2,7 +2,7 @@ default_language_version:
   python: python3.12
 
 repos:
-  # ─── General hygiene ────────────────────────────────────────────────────────
+  # ─── General hygiene ───────────────────────────────────────────────────────
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
@@ -18,8 +18,17 @@ repos:
         args: [--maxkb=1024]
       - id: mixed-line-ending
         args: [--fix=lf]
+      - id: no-commit-to-branch
+        args: [--branch, main]
 
-  # ─── Python: ruff (lint + format) ───────────────────────────────────────────
+  # ─── Python: pyupgrade ─────────────────────────────────────────────────────
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.17.0
+    hooks:
+      - id: pyupgrade
+        args: [--py312-plus]
+
+  # ─── Python: ruff (lint + format) ──────────────────────────────────────────
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.5.7
     hooks:
@@ -27,17 +36,20 @@ repos:
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
 
-  # ─── Python: mypy (strict) ──────────────────────────────────────────────────
+  # ─── Python: mypy (strict) ─────────────────────────────────────────────────
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.11.1
     hooks:
       - id: mypy
         args: [--strict, --ignore-missing-imports]
+        files: ^(apps/api/src|packages/[^/]+/src)/
         additional_dependencies:
           - pydantic>=2.0
+          - pydantic-settings>=2.3.0
           - types-requests
+          - anthropic>=0.34.0
 
-  # ─── Secrets scanning ───────────────────────────────────────────────────────
+  # ─── Secrets scanning ──────────────────────────────────────────────────────
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
     hooks:
@@ -50,7 +62,7 @@ repos:
     hooks:
       - id: gitleaks
 
-  # ─── JS/TS/MD/YAML: prettier ────────────────────────────────────────────────
+  # ─── JS/TS/MD/YAML: prettier ───────────────────────────────────────────────
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v4.0.0-alpha.8
     hooks:
@@ -58,7 +70,7 @@ repos:
         types_or: [javascript, jsx, ts, tsx, json, yaml, markdown]
         exclude: pnpm-lock\.yaml
 
-  # ─── Markdown lint ──────────────────────────────────────────────────────────
+  # ─── Markdown lint ─────────────────────────────────────────────────────────
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.41.0
     hooks:

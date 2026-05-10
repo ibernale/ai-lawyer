@@ -1,0 +1,30 @@
+name: Evals
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Eval mode: smoke | full"
+        required: false
+        default: smoke
+        type: choice
+        options: [smoke, full]
+  schedule:
+    # Nightly full eval run
+    - cron: "0 2 * * *"
+
+permissions: {}
+
+jobs:
+  # TODO Fase 4: ejecutar evals contra golden dataset; smoke en PR, full nightly.
+  # Este job es un placeholder. Implementar en Fase 4:
+  #   - make eval-quick para smoke set (≤5 casos por PR)
+  #   - make eval para full dataset (nightly)
+  #   - Comparar legal_quality_score contra baseline de main
+  #   - PR que regresa >5% → CI rojo
+  evals-placeholder:
+    name: "Evals (TODO Fase 4)"
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Evals scaffolding — to be implemented in Fase 4"
