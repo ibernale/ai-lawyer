@@ -26,5 +26,5 @@ jobs:
     name: "Evals (TODO Fase 4)"
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: echo "Evals scaffolding — to be implemented in Fase 4"
