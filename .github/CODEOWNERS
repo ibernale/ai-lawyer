@@ -1,0 +1,20 @@
+# CODEOWNERS
+# Each line is a file pattern followed by one or more owners.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything not explicitly listed
+* @ibernale
+
+# Legal specialist agents and prompts — require legal team review
+packages/agents/          @ibernale
+docs/prompts/             @ibernale
+
+# Citation verifier — requires dual review (eng + legal)
+packages/verifier/        @ibernale
+
+# Eval golden dataset — changes require expert review annotation
+evals/golden_dataset/     @ibernale
+
+# Infrastructure and CI
+infra/                    @ibernale
+.github/workflows/        @ibernale

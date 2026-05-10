@@ -1,0 +1,123 @@
+# ─── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+.eggs/
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.pytype/
+.pyre/
+
+# ─── uv ───────────────────────────────────────────────────────────────────────
+.venv/
+venv/
+.uv/
+uv.lock
+
+# ─── Node / pnpm ──────────────────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+.npm
+.next/
+out/
+.nuxt/
+.cache/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+pnpm-lock.yaml
+
+# ─── Docker ───────────────────────────────────────────────────────────────────
+.docker/
+
+# ─── Secrets & environment ────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.crt
+secrets/
+
+# ─── Data directories ─────────────────────────────────────────────────────────
+data/raw/
+data/canonical/
+data/processed/
+
+# ─── Qdrant local indexes ─────────────────────────────────────────────────────
+.qdrant/
+qdrant_storage/
+
+# ─── Evals reports (generated, not committed) ─────────────────────────────────
+evals/reports/
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+logs/
+*.log
+*.log.*
+
+# ─── IDEs ─────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# ─── macOS ────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ─── Testing artifacts ────────────────────────────────────────────────────────
+.playwright/
+playwright-report/
+test-results/
+
+# ─── Misc ─────────────────────────────────────────────────────────────────────
+*.bak
+*.tmp
+*.orig
+.benchmarks/
