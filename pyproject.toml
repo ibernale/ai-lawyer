@@ -1,0 +1,77 @@
+[tool.uv.workspace]
+members = [
+    "apps/api",
+    "packages/agents",
+    "packages/rag",
+    "packages/verifier",
+    "packages/ingest",
+    "packages/shared",
+]
+
+# ─── Shared ruff config (inherited by all packages) ───────────────────────────
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["apps", "packages"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "S",   # flake8-bandit (security)
+    "T20", # flake8-print (no print statements)
+    "RUF", # ruff-specific
+]
+ignore = [
+    "S101",   # assert allowed in tests
+    "S603",   # subprocess calls allowed with caution
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["shared", "agents", "rag", "verifier", "ingest"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S", "T20"]
+"evals/**/*.py" = ["T20"]
+
+# ─── Shared mypy config ───────────────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_reexport = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = ["qdrant_client.*", "sentence_transformers.*", "bs4.*"]
+ignore_missing_imports = true
+
+# ─── Shared pytest config ─────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths = ["apps", "packages", "evals"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+markers = [
+    "unit: fast unit tests, no external services",
+    "integration: requires running services (qdrant, etc.)",
+    "eval: evaluation suite cases",
+    "slow: tests taking >5s",
+]
