@@ -78,17 +78,19 @@ class HybridRetriever:
             with_payload=True,
         ).points
 
-        sparse_hits = self._client.query_points(
-            collection_name=self._collection,
-            query=SparseVector(
-                indices=list(emb.sparse.keys()),
-                values=list(emb.sparse.values()),
-            ),
-            using=_SPARSE_VECTOR,
-            limit=k_sparse,
-            query_filter=qdrant_filter,
-            with_payload=True,
-        ).points
+        sparse_hits: list[Any] = []
+        if emb.sparse:
+            sparse_hits = self._client.query_points(
+                collection_name=self._collection,
+                query=SparseVector(
+                    indices=list(emb.sparse.keys()),
+                    values=list(emb.sparse.values()),
+                ),
+                using=_SPARSE_VECTOR,
+                limit=k_sparse,
+                query_filter=qdrant_filter,
+                with_payload=True,
+            ).points
 
         merged = self._rrf(list(dense_hits), list(sparse_hits))
         top = merged[:k_rrf]

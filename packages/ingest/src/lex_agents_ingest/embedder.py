@@ -45,7 +45,12 @@ class BgeM3Embedder:
         return self._model
 
     def embed_batch(self, texts: list[str]) -> list[EmbeddingResult]:
-        """Embed a batch of texts, returning dense + sparse for each."""
+        """Embed a batch of texts, returning dense + sparse for each.
+
+        sentence-transformers ≥ 5.x dropped kwargs forwarding; BGE-M3 via
+        SentenceTransformer.encode() returns only dense vectors. Sparse
+        is left empty — retriever falls back to dense-only RRF.
+        """
         if not texts:
             return []
 
@@ -57,15 +62,21 @@ class BgeM3Embedder:
             outputs = model.encode(  # type: ignore[union-attr]
                 batch,
                 batch_size=len(batch),
-                return_dense=True,
-                return_sparse=True,
                 normalize_embeddings=True,
             )
 
-            dense_vecs: list[list[float]] = outputs["dense_vecs"].tolist()  # type: ignore[index]
-            lexical_weights: list[dict[int, float]] = outputs.get(  # type: ignore[index,assignment]
-                "lexical_weights", [{}] * len(batch)
-            )
+            # ST 5.x returns ndarray (dense only); older versions returned dict
+            import numpy as np  # noqa: PLC0415
+
+            if isinstance(outputs, dict):
+                dense_vecs: list[list[float]] = outputs["dense_vecs"].tolist()
+                lexical_weights: list[dict[int, float]] = outputs.get(
+                    "lexical_weights", [{}] * len(batch)
+                )
+            else:
+                arr = outputs if isinstance(outputs, np.ndarray) else np.array(outputs)
+                dense_vecs = arr.tolist()
+                lexical_weights = [{} for _ in batch]
 
             for dense, sparse in zip(dense_vecs, lexical_weights):
                 results.append(EmbeddingResult(dense=dense, sparse=sparse))
