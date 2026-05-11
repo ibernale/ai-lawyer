@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import structlog
 from anthropic import Anthropic
-from pydantic import BaseModel
-
 from lex_agents_shared.anthropic_client import MODEL_HAIKU
+from pydantic import BaseModel
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 

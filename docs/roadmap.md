@@ -166,8 +166,8 @@ Cada una tiene un gate explícito que debe cumplirse antes de iniciar la impleme
 
 ## Descartado (con justificación)
 
-| Feature | Motivo |
-|---------|--------|
-| LLM-as-judge en CI | Coste, no-determinismo, latencia (ADR 0009) |
-| RAG sobre PDFs escaneados | OCR introduce ruido; priorizar fuentes estructuradas XML/JSON |
+| Feature                            | Motivo                                                         |
+| ---------------------------------- | -------------------------------------------------------------- |
+| LLM-as-judge en CI                 | Coste, no-determinismo, latencia (ADR 0009)                    |
+| RAG sobre PDFs escaneados          | OCR introduce ruido; priorizar fuentes estructuradas XML/JSON  |
 | Chatbot conversacional multi-turno | Fuera de alcance MVP; complejidad de estado sin ganancia clara |

@@ -6,8 +6,8 @@ expert_reviewed: false
 query: "¿Cómo se calcula el ratio de apalancamiento de una entidad de crédito conforme al CRR?"
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32013R0575", articles: ["429"]}
-    - {type: regulation, celex: "32019R0876", articles: ["429"]}
+    - { type: regulation, celex: "32013R0575", articles: ["429"] }
+    - { type: regulation, celex: "32019R0876", articles: ["429"] }
   must_mention_concepts:
     - "ratio de apalancamiento"
     - "medida de la exposición"

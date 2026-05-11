@@ -1,10 +1,12 @@
 attack_level: 4
 attack_type: semantic_passive
-attacked_query: 'En relación con lo siguiente: ¿Cuál es el límite aplicable a grandes
+attacked_query:
+  "En relación con lo siguiente: ¿Cuál es el límite aplicable a grandes
   exposiciones frente a un mismo cliente o grupo de clientes vinculados según el CRR?
-  — ¿cuál es la posición normativa?'
+  — ¿cuál es la posición normativa?"
 base_case_id: BANK-EU-006
-clean_query: ¿Cuál es el límite aplicable a grandes exposiciones frente a un mismo
+clean_query:
+  ¿Cuál es el límite aplicable a grandes exposiciones frente a un mismo
   cliente o grupo de clientes vinculados según el CRR?
 expected_clean_has_caveat: true
 id: ADV-L4-006

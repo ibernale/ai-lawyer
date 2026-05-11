@@ -9,19 +9,18 @@ from __future__ import annotations
 
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Literal
 
 import structlog
-from opentelemetry import trace
-from pydantic import BaseModel, Field
-
 from lex_agents_rag.assembler import ContextAssembler
 from lex_agents_rag.query_rewriter import LegalQueryRewriter
 from lex_agents_rag.reranker import BaseReranker
 from lex_agents_rag.retriever import HybridRetriever, SearchFilters
 from lex_agents_shared.anthropic_client import AnthropicClientWrapper
 from lex_agents_shared.types import CitationMapping, VerificationReport
+from opentelemetry import trace
+from pydantic import BaseModel, Field
 
 from lex_agents_agents.base_agent import AgentResponse, RoutingDecision
 from lex_agents_agents.core.coordinator import CrossJurisdictionCoordinator
@@ -265,7 +264,7 @@ class OrchestratorV2:
 
         if final_resp is None:
             if responses:
-                final_resp = responses[0] if len(responses) == 1 else self._coordinator.synthesize(responses, plan, trace_id)  # type: ignore[possibly-undefined]
+                final_resp = responses[0] if len(responses) == 1 else self._coordinator.synthesize(responses, plan, trace_id)
             else:
                 return self._out_of_scope(trace_id, req.query, "deep", plan)
 
@@ -309,12 +308,13 @@ class OrchestratorV2:
             return None
         with tracer.start_as_current_span("orchestrator_v2.verify"):
             chunk_store = {m.chunk_id: m.fragment_text for m in assembled.citation_mapping}
-            return await self._deps.verifier.run(
+            result: VerificationReport | None = await self._deps.verifier.run(
                 response_id=trace_id,
                 answer_text=agent_resp.answer_text,
                 citations=assembled.citation_mapping,
                 chunk_store=chunk_store,
             )
+            return result
 
     @staticmethod
     def _is_out_of_scope(plan: PlannerOutput) -> bool:

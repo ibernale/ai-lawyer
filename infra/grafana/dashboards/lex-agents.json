@@ -67,7 +67,11 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "id": 1,
       "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "list", "placement": "bottom" },
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
         "tooltip": { "mode": "multi" }
       },
       "targets": [
@@ -100,7 +104,11 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
       "id": 2,
       "options": {
-        "legend": { "calcs": ["sum"], "displayMode": "list", "placement": "bottom" },
+        "legend": {
+          "calcs": ["sum"],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
         "tooltip": { "mode": "multi" }
       },
       "targets": [
@@ -185,7 +193,11 @@
       "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
       "id": 5,
       "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "list", "placement": "bottom" },
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
         "tooltip": { "mode": "multi" }
       },
       "targets": [
@@ -283,9 +295,7 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null }
-            ]
+            "steps": [{ "color": "green", "value": null }]
           },
           "unit": "currencyUSD"
         },
@@ -323,9 +333,7 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null }
-            ]
+            "steps": [{ "color": "green", "value": null }]
           },
           "unit": "percentunit"
         },
@@ -402,15 +410,16 @@
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null }
-            ]
+            "steps": [{ "color": "green", "value": null }]
           },
           "unit": "percentunit"
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "jailbreak acceptance rate" },
+            "matcher": {
+              "id": "byName",
+              "options": "jailbreak acceptance rate"
+            },
             "properties": [
               {
                 "id": "thresholds",

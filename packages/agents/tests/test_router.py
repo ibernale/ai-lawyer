@@ -4,9 +4,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
-
-from lex_agents_agents.base_agent import RoutingDecision
 from lex_agents_agents.router import QueryRouter
 
 

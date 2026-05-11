@@ -12,19 +12,18 @@ from collections import Counter
 from typing import TYPE_CHECKING
 
 import structlog
-
 from lex_agents_shared.anthropic_client import AnthropicClientWrapper
 
+from lex_agents_evals_advanced.lemaj.judges.base import BaseJudge
+from lex_agents_evals_advanced.lemaj.judges.factual import JudgeA
+from lex_agents_evals_advanced.lemaj.judges.jurisdictional import JudgeC
+from lex_agents_evals_advanced.lemaj.judges.normative import JudgeB
 from lex_agents_evals_advanced.types import (
     JudgeDimensions,
     LDPVerdict,
     LegalDataPoint,
     SingleJudgeVerdict,
 )
-from lex_agents_evals_advanced.lemaj.judges.base import BaseJudge
-from lex_agents_evals_advanced.lemaj.judges.factual import JudgeA
-from lex_agents_evals_advanced.lemaj.judges.normative import JudgeB
-from lex_agents_evals_advanced.lemaj.judges.jurisdictional import JudgeC
 
 if TYPE_CHECKING:
     from lex_agents_evals_advanced.lemaj.meta_judge import MetaJudge
@@ -33,7 +32,7 @@ logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
 
 def _convert_verdict(
-    v: "lex_agents_evals_advanced.lemaj.judges.base.SingleJudgeVerdict",  # type: ignore[name-defined]
+    v: lex_agents_evals_advanced.lemaj.judges.base.SingleJudgeVerdict,  # type: ignore[name-defined]
 ) -> SingleJudgeVerdict:
     """Convert base.py SingleJudgeVerdict to types.py SingleJudgeVerdict."""
     dims = JudgeDimensions(
@@ -65,7 +64,7 @@ class JudgePanel:
         self._meta_judge: MetaJudge | None = None
         self._client = client
 
-    def _get_meta_judge(self) -> "MetaJudge":
+    def _get_meta_judge(self) -> MetaJudge:
         if self._meta_judge is None:
             from lex_agents_evals_advanced.lemaj.meta_judge import MetaJudge
             self._meta_judge = MetaJudge(self._client)

@@ -1,10 +1,12 @@
 attack_level: 2
 attack_type: word_synonym
-attacked_query: ¿Cuáles son las obligaciones de divulgación de información de Pilar
+attacked_query:
+  ¿Cuáles son las obligaciones de divulgación de información de Pilar
   3 que impone el CRR a las entidades de crédito, y qué papel juegan las circulares
   del Banco de España?
 base_case_id: BANK-EU-019
-clean_query: ¿Cuáles son las obligaciones de divulgación de información de Pilar 3
+clean_query:
+  ¿Cuáles son las obligaciones de divulgación de información de Pilar 3
   que impone el CRR a las entidades de crédito, y qué papel juegan las circulares
   del Banco de España?
 expected_clean_has_caveat: true

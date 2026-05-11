@@ -1,10 +1,12 @@
 attack_level: 1
 attack_type: char_typo
-attacked_query: ¿Cómo se aplicna los rqeuisitos de capital europeos a las sucursales
+attacked_query:
+  ¿Cómo se aplicna los rqeuisitos de capital europeos a las sucursales
   de entidades de crédito de terceros países establecidas en la UE bajo el CRR? ¿Existe
   un régimen de tratamiento equivalente y qué lagunas normativas presenta?
 base_case_id: BANK-EU-025
-clean_query: ¿Cómo se aplican los requisitos de capital europeos a las sucursales
+clean_query:
+  ¿Cómo se aplican los requisitos de capital europeos a las sucursales
   de entidades de crédito de terceros países establecidas en la UE bajo el CRR? ¿Existe
   un régimen de tratamiento equivalente y qué lagunas normativas presenta?
 expected_clean_has_caveat: true

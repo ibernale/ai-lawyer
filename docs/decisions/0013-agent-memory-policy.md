@@ -31,6 +31,7 @@ Se adoptan **tres tipos de memoria con tres políticas distintas**.
 **Estado: ACTIVA**
 
 **Qué almacena:**
+
 - Plantillas de output preferidas por tipo de consulta (dictamen, nota informativa, memo ejecutivo, análisis de riesgo operacional)
 - Atajos de routing observados: qué jurisdicciones/ramas correlacionan con qué patrones de consulta
 - Patrones de citación preferidos por tipo de norma (reglamento UE vs. ley ES vs. circular BdE)
@@ -68,6 +69,7 @@ o la cautela de las respuestas.
 **Estado: ACTIVA**
 
 **Qué almacena:**
+
 - Catálogo de jurisdicciones operadas por Santander Group y supervisor competente en cada una
 - Marco de supervisores: qué entidad supervisa qué (BdE, CNMV, AEPD, ECB/SSM, FCA, BaFin…)
 - Nomenclatura interna del banco: nombres de productos, divisiones, líneas de negocio (no confidencial, nivel policy pública)
@@ -126,11 +128,11 @@ validación".
 
 **Revisión de frameworks existentes:**
 
-| Framework | Capacidad | Por qué no adoptamos (todavía) |
-|-----------|-----------|-------------------------------|
-| **Letta / MemGPT** | Gestión de memoria en ventana + persistencia episódica con recuperación semántica | La recuperación semántica cross-user es exactamente el riesgo descrito. La gestión en-ventana es útil pero no requiere un framework externo completo |
-| **Mem0** | Extrae hechos de conversaciones y los persiste para recuperación futura | La extracción automática de "hechos" de consultas jurídicas crea un grafo de conocimiento no auditado sobre clientes/operaciones. Inaceptable sin gobernanza |
-| **Zep** | Memory store con recuperación semántica, ideal para chatbots de larga duración | Diseñado para continuidad de conversación; lex-agents opera en consultas discretas. El valor de Zep es bajo y el riesgo de retención no intencionada es alto |
+| Framework          | Capacidad                                                                         | Por qué no adoptamos (todavía)                                                                                                                               |
+| ------------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Letta / MemGPT** | Gestión de memoria en ventana + persistencia episódica con recuperación semántica | La recuperación semántica cross-user es exactamente el riesgo descrito. La gestión en-ventana es útil pero no requiere un framework externo completo         |
+| **Mem0**           | Extrae hechos de conversaciones y los persiste para recuperación futura           | La extracción automática de "hechos" de consultas jurídicas crea un grafo de conocimiento no auditado sobre clientes/operaciones. Inaceptable sin gobernanza |
+| **Zep**            | Memory store con recuperación semántica, ideal para chatbots de larga duración    | Diseñado para continuidad de conversación; lex-agents opera en consultas discretas. El valor de Zep es bajo y el riesgo de retención no intencionada es alto |
 
 La mayor capacidad que ofrecen estos frameworks —recuperación semántica de interacciones
 pasadas— es precisamente lo que no queremos hasta tener gobernanza explícita.
@@ -157,13 +159,16 @@ La memoria episódica podrá reevaluarse cuando estén en su lugar **todos**:
 ## Consequences
 
 **Positivo:**
+
 - La memoria procedimental y semántica aportan consistencia y contexto sin riesgo
 - La desactivación de episódica elimina la mayor fuente de riesgo regulatorio de los sistemas de agentes con memoria
 - El control humano estricto sobre escritura de memoria crea un audit trail limpio
 
 **Negativo/Riesgos:**
+
 - El agente no "aprende" de interacciones pasadas; cada consulta parte del mismo estado base. Para mejorar calidad se requiere intervención humana explícita (actualizar YAMLs o `procedural_patterns`)
 - Los patrones de preferencia del usuario individual no se capturan; la personalización está limitada a la memoria semántica institucional
 
 **Neutral:**
+
 - La decisión de no adoptar Letta/MemGPT/Mem0/Zep ahora no cierra la puerta a adoptarlos en Fase 7 bajo las condiciones establecidas; simplifica la arquitectura en esta fase

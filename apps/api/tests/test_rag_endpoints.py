@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import date
 from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
-
+from lex_agents_api.auth import CurrentUser, require_auth
 from lex_agents_api.main import create_app
 from lex_agents_api.settings import Settings
 from lex_agents_rag.assembler import AssembledContext
@@ -48,6 +47,7 @@ def _make_assembled_context(n: int = 3) -> AssembledContext:
 @pytest.fixture
 def client() -> TestClient:
     app = create_app()
+    app.dependency_overrides[require_auth] = lambda: CurrentUser(username="demo", role="user")
     return TestClient(app)
 
 
@@ -63,6 +63,7 @@ def mock_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("lex_agents_api.settings._settings", settings)
 
 
+@pytest.mark.integration
 class TestSearchEndpoint:
     @patch("lex_agents_api.routers.rag._get_retriever")
     @patch("lex_agents_api.routers.rag._get_reranker")
@@ -95,6 +96,7 @@ class TestSearchEndpoint:
         assert len(data["results"]) == 3
 
 
+@pytest.mark.integration
 class TestAnswerEndpoint:
     @patch("lex_agents_api.routers.rag._get_retriever")
     @patch("lex_agents_api.routers.rag._get_reranker")

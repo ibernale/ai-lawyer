@@ -6,7 +6,11 @@ expert_reviewed: false
 query: "¿Cómo se aplica el estándar internacional TLAC interno (internal TLAC) del FSB a las filiales de grupos bancarios de importancia sistémica global domiciliadas en España, y cómo lo implementa el CRR2?"
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32019R0876", articles: ["92a", "92b", "72a", "72b", "72c", "72d"]}
+    - {
+        type: regulation,
+        celex: "32019R0876",
+        articles: ["92a", "92b", "72a", "72b", "72c", "72d"],
+      }
   must_mention_concepts:
     - "TLAC"
     - "capacidad total de absorción de pérdidas"

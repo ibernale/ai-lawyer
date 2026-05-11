@@ -5,11 +5,9 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from lex_agents_agents.base_agent import AgentResponse
 from lex_agents_agents.routing.branch_classifier import get_specialist_class
 from lex_agents_agents.shared.definition_of_done import BranchTask
-
 
 _ALL_BRANCHES = [
     "regulatorio_bancario_ue_es",

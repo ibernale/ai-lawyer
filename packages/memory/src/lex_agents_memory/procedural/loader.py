@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-import re
 import sqlite3
-import tempfile
 from pathlib import Path
 
 import structlog
 
-from lex_agents_memory.types import ProceduralPattern
 from lex_agents_memory.procedural import store
+from lex_agents_memory.types import ProceduralPattern
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 

@@ -16,14 +16,12 @@ from typing import Any
 import structlog
 from dagster import (
     AssetCheckResult,
-    AssetCheckSpec,
     AssetExecutionContext,
     DataVersion,
     Output,
     asset,
     asset_check,
 )
-
 from lex_agents_ingest.storage import IngestStorage
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
@@ -43,7 +41,6 @@ def _make_storage() -> IngestStorage:
 def _run_source_fetch(source_id: str, doc_ids: list[str] | None = None) -> dict[str, Any]:
     """Sync wrapper: build source, list docs, fetch, write raw. Returns report dict."""
     import httpx
-
     from lex_agents_ingest.sources.boe import BoeSource
     from lex_agents_ingest.sources.eurlex import EurlexSource
 

@@ -6,7 +6,7 @@ expert_reviewed: false
 query: "¿Qué instrumentos de capital componen el capital de nivel 1 (Tier 1) según el CRR?"
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32013R0575", articles: ["25", "51", "52"]}
+    - { type: regulation, celex: "32013R0575", articles: ["25", "51", "52"] }
   must_mention_concepts:
     - "capital ordinario de nivel 1"
     - "capital adicional de nivel 1"

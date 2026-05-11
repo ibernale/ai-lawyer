@@ -20,6 +20,7 @@ lex-agents is a multi-agent legal consultation platform for internal use by bank
 teams. It covers Spanish and EU banking regulation (CRR, CRD IV/V, Ley 10/2014, Circular BdE, etc.).
 
 **Non-negotiable principles:**
+
 1. Every normative claim carries a verifiable citation. No citation → agent declares explicitly.
 2. Citations are verified at claim level against indexed source chunks before returning a response.
 3. All output is AI-assisted drafts requiring qualified human review.
@@ -132,25 +133,25 @@ sequenceDiagram
 
 Each step emits a named span under `orchestrator.run`:
 
-| Span | Attributes |
-|---|---|
-| `orchestrator.route` | prompt.version, model, latency_ms, tokens.in/out |
-| `orchestrator.rag_retrieve` | chunks_retrieved, chunks_reranked, latency_ms |
-| `orchestrator.specialist` | specialist.name, prompt.version, model, cost_usd |
-| `orchestrator.verify` | — |
-| `orchestrator.synthesize` | — |
+| Span                        | Attributes                                       |
+| --------------------------- | ------------------------------------------------ |
+| `orchestrator.route`        | prompt.version, model, latency_ms, tokens.in/out |
+| `orchestrator.rag_retrieve` | chunks_retrieved, chunks_reranked, latency_ms    |
+| `orchestrator.specialist`   | specialist.name, prompt.version, model, cost_usd |
+| `orchestrator.verify`       | —                                                |
+| `orchestrator.synthesize`   | —                                                |
 
 ---
 
 ## Model selection
 
-| Component | Model | Rationale |
-|---|---|---|
-| Query router | claude-opus-4-7 | Structured tool_use, deterministic routing (temp=0.0) |
-| Specialist agent | claude-opus-4-7 | Complex multi-norm analysis requiring deep reasoning |
-| Query rewriter | claude-haiku-4-5-20251001 | Simple acronym expansion, latency-sensitive |
-| Contextualizer (ingest) | claude-haiku-4-5-20251001 | Bulk enrichment, cost-sensitive, ephemeral caching |
-| Citation verifier (LLM) | claude-haiku-4-5-20251001 | Mechanical verdict, only for UNCERTAIN, parallelized |
+| Component               | Model                     | Rationale                                             |
+| ----------------------- | ------------------------- | ----------------------------------------------------- |
+| Query router            | claude-opus-4-7           | Structured tool_use, deterministic routing (temp=0.0) |
+| Specialist agent        | claude-opus-4-7           | Complex multi-norm analysis requiring deep reasoning  |
+| Query rewriter          | claude-haiku-4-5-20251001 | Simple acronym expansion, latency-sensitive           |
+| Contextualizer (ingest) | claude-haiku-4-5-20251001 | Bulk enrichment, cost-sensitive, ephemeral caching    |
+| Citation verifier (LLM) | claude-haiku-4-5-20251001 | Mechanical verdict, only for UNCERTAIN, parallelized  |
 
 ---
 
@@ -160,6 +161,7 @@ BGE-M3 produces dense (1024-dim cosine) and sparse (SPLADE-style) vectors in one
 stores them as named vectors `"dense"` and `"sparse"`.
 
 **Reciprocal Rank Fusion:**
+
 ```
 score(d) = Σ 1 / (60 + rank_i(d))   for each list i ∈ {dense, sparse}
 ```
@@ -173,13 +175,13 @@ prompt caching on the parent document (reduces retrieval failure by ~67%, Anthro
 
 ## Verification status
 
-| Condition | Status | UI banner |
-|---|---|---|
-| Any `broken_refs` (REF:n not in mapping) | `red` | "Citas con errores detectados" |
-| Any FAILED claim | `red` | same |
-| Any `uncited_claims` (normative claim without REF:n) | `amber` | "Verificación parcial" |
-| Any UNCERTAIN after LLM fallback | `amber` | same |
-| All PASSED, no uncited | `green` | "Citas verificadas" |
+| Condition                                            | Status  | UI banner                      |
+| ---------------------------------------------------- | ------- | ------------------------------ |
+| Any `broken_refs` (REF:n not in mapping)             | `red`   | "Citas con errores detectados" |
+| Any FAILED claim                                     | `red`   | same                           |
+| Any `uncited_claims` (normative claim without REF:n) | `amber` | "Verificación parcial"         |
+| Any UNCERTAIN after LLM fallback                     | `amber` | same                           |
+| All PASSED, no uncited                               | `green` | "Citas verificadas"            |
 
 ---
 
@@ -241,11 +243,11 @@ graph TD
 
 ### Cost model (approximate, v0.2.0)
 
-| Path | Models | Typical cost |
-|------|--------|-------------|
-| shallow | Haiku (rewrite) + Opus (specialist) + Haiku (verify) | $0.05–0.15 |
-| standard (2 branches) | + Opus (planner) + Opus (synthesis) | $0.15–0.40 |
-| deep (2 branches, 1 revision) | + Opus (judge ×2) + Opus (specialist ×4) | $0.40–1.20 |
+| Path                          | Models                                               | Typical cost |
+| ----------------------------- | ---------------------------------------------------- | ------------ |
+| shallow                       | Haiku (rewrite) + Opus (specialist) + Haiku (verify) | $0.05–0.15   |
+| standard (2 branches)         | + Opus (planner) + Opus (synthesis)                  | $0.15–0.40   |
+| deep (2 branches, 1 revision) | + Opus (judge ×2) + Opus (specialist ×4)             | $0.40–1.20   |
 
 ### Security perimeter
 
@@ -265,12 +267,12 @@ graph TD
 
 ### PMJ model selection (Fase 6)
 
-| Component | Model | Rationale |
-|---|---|---|
-| LegalPlanner | claude-opus-4-7 | Complex decomposition requires deep reasoning |
-| Specialist agents (×6) | claude-opus-4-7 | Multi-norm jurisdiction analysis |
-| LegalJudge | claude-opus-4-7 | Evaluative scoring against DoD |
-| Synthesis (coordinator) | claude-opus-4-7 | EU > national hierarchy merge |
-| LeMAJ judges (×5) | claude-opus-4-7 | Panel deliberation requires consistency |
-| Query rewriter | claude-haiku-4-5-20251001 | Latency-sensitive, simple task |
-| Citation verifier | claude-haiku-4-5-20251001 | Parallel mechanical verdict |
+| Component               | Model                     | Rationale                                     |
+| ----------------------- | ------------------------- | --------------------------------------------- |
+| LegalPlanner            | claude-opus-4-7           | Complex decomposition requires deep reasoning |
+| Specialist agents (×6)  | claude-opus-4-7           | Multi-norm jurisdiction analysis              |
+| LegalJudge              | claude-opus-4-7           | Evaluative scoring against DoD                |
+| Synthesis (coordinator) | claude-opus-4-7           | EU > national hierarchy merge                 |
+| LeMAJ judges (×5)       | claude-opus-4-7           | Panel deliberation requires consistency       |
+| Query rewriter          | claude-haiku-4-5-20251001 | Latency-sensitive, simple task                |
+| Citation verifier       | claude-haiku-4-5-20251001 | Parallel mechanical verdict                   |

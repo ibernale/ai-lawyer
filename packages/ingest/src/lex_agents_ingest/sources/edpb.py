@@ -13,7 +13,6 @@ Rate limit: 1 req / 2 s.
 from __future__ import annotations
 
 import io
-import re
 from datetime import datetime
 
 import httpx
@@ -51,7 +50,7 @@ def _extract_pdf_text(pdf_bytes: bytes) -> str:
     except ImportError:
         logger.warning("edpb.pdfminer_not_available; storing raw bytes only")
         return ""
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning("edpb.pdf_extraction_failed", error=str(exc))
         return ""
 
@@ -88,7 +87,7 @@ class EdpbSource(Source):
             try:
                 resp = await self._client.get(url)
                 resp.raise_for_status()
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning("edpb.list_fetch_error", url=url, error=str(exc))
                 break
 
@@ -127,7 +126,7 @@ class EdpbSource(Source):
         try:
             resp = await self._client.get(page_url)
             resp.raise_for_status()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("edpb.page_fetch_error", url=page_url, error=str(exc))
             return None
 
@@ -154,7 +153,7 @@ class EdpbSource(Source):
         try:
             resp = await self._client.get(pdf_url)
             resp.raise_for_status()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("edpb.pdf_fetch_failed", doc_id=doc_id, url=pdf_url, error=str(exc))
             raise
 

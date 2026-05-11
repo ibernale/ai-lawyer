@@ -1,9 +1,11 @@
 attack_level: 1
 attack_type: char_typo
-attacked_query: ¿Cuál es la indemnizacóin por edspido improcedente en España? ¿Cómo
+attacked_query:
+  ¿Cuál es la indemnizacóin por edspido improcedente en España? ¿Cómo
   se calcula en función de los años de servicio?
 base_case_id: NEG-001
-clean_query: ¿Cuál es la indemnización por despido improcedente en España? ¿Cómo se
+clean_query:
+  ¿Cuál es la indemnización por despido improcedente en España? ¿Cómo se
   calcula en función de los años de servicio?
 expected_clean_has_caveat: true
 id: ADV-L1-030

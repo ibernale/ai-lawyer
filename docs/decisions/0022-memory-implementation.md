@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS procedural_patterns (
 **Matching logic**: Each pattern's `content` JSON contains an `applies_when` dict with `keywords` (list[str]) and/or `output_types` (list[str]). A pattern fires if at least one keyword appears in the query (case-insensitive) OR the requested `output_type` is in `output_types`. Patterns with empty `applies_when` always fire.
 
 **Seed patterns** (v1.0, 7 patterns):
+
 - `output_template:dictamen` — mandatory 5-section structure
 - `output_template:memo_comite` — executive 1-page format
 - `routing:crr_transitional_caveat` — fires on CRR III / transitorio / Basilea IV
@@ -48,6 +49,7 @@ CREATE TABLE IF NOT EXISTS procedural_patterns (
 **Location**: `docs/knowledge/` — four files with mandatory header (`_schema_version`, `_description`, `_last_updated`, `_edit_policy: "PR-only, reviewed by @ibernale"`).
 
 **Files**:
+
 - `jurisdictions.yaml` — 11 jurisdictions with supervisor, currency, regime
 - `internal-glossary.yaml` — 15 internal terms (abbreviations + descriptions)
 - `regulatory-frameworks.yaml` — 16 frameworks with CELEX/BOE references
@@ -67,13 +69,13 @@ CREATE TABLE IF NOT EXISTS procedural_patterns (
 
 ### Graceful degradation
 
-| Failure mode | Behaviour |
-|---|---|
-| `knowledge_dir` does not exist | `SemanticLoader` logs warning, returns `{}`, `SemanticInjector` returns `""` |
-| YAML validation errors | `SemanticLoader` logs warnings, continues loading valid files |
-| DB file does not exist | `ProceduralStore` logs warning, returns `[]` |
-| `seed_sql_path` not set | `ProceduralLoader` returns `[]` |
-| `MemoryInjector.build_context()` returns `""` | Planner skips injection, operates normally |
+| Failure mode                                  | Behaviour                                                                    |
+| --------------------------------------------- | ---------------------------------------------------------------------------- |
+| `knowledge_dir` does not exist                | `SemanticLoader` logs warning, returns `{}`, `SemanticInjector` returns `""` |
+| YAML validation errors                        | `SemanticLoader` logs warnings, continues loading valid files                |
+| DB file does not exist                        | `ProceduralStore` logs warning, returns `[]`                                 |
+| `seed_sql_path` not set                       | `ProceduralLoader` returns `[]`                                              |
+| `MemoryInjector.build_context()` returns `""` | Planner skips injection, operates normally                                   |
 
 ## Consequences
 

@@ -1,0 +1,6 @@
+# Claude agent/skill definitions — not subject to prettier formatting
+.claude/
+
+# Generated files
+uv.lock
+pnpm-lock.yaml

@@ -58,7 +58,7 @@ class EsmaSource(Source):
             try:
                 resp = await self._client.get(url)
                 resp.raise_for_status()
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning("esma.list_fetch_error", url=url, error=str(exc))
                 break
 
@@ -103,7 +103,7 @@ class EsmaSource(Source):
         try:
             resp = await self._client.get(url)
             resp.raise_for_status()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("esma.fetch_failed", doc_id=doc_id, error=str(exc))
             raise
 

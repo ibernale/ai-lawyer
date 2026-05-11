@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import type { CitationMapping, ConsultResponse, VerificationReport } from "@/lib/api";
+import type {
+  CitationMapping,
+  ConsultResponse,
+  VerificationReport,
+} from "@/lib/api";
 
 const API_BASE =
   typeof window === "undefined"
@@ -49,7 +53,9 @@ function CitationPanel({
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
             Norma
           </p>
-          <p className="font-mono text-xs text-foreground">{citation.source_id}</p>
+          <p className="font-mono text-xs text-foreground">
+            {citation.source_id}
+          </p>
         </div>
         <div>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
@@ -107,7 +113,8 @@ function VerificationBanner({ report }: { report: VerificationReport }) {
     },
   }[report.status];
 
-  const hasDetails = report.broken_refs.length > 0 || report.uncited_claims.length > 0;
+  const hasDetails =
+    report.broken_refs.length > 0 || report.uncited_claims.length > 0;
 
   return (
     <div className={`rounded-md border px-4 py-3 ${config.bg}`}>
@@ -131,7 +138,9 @@ function VerificationBanner({ report }: { report: VerificationReport }) {
               <p className="font-semibold">Referencias rotas:</p>
               <ul className="mt-1 list-disc list-inside">
                 {report.broken_refs.map((ref) => (
-                  <li key={ref}>[REF:{ref}] no resuelve a ningún fragmento indexado</li>
+                  <li key={ref}>
+                    [REF:{ref}] no resuelve a ningún fragmento indexado
+                  </li>
                 ))}
               </ul>
             </div>
@@ -213,11 +222,18 @@ function FeedbackModal({
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/consult/${traceId}/feedback`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ issue_type: issueType, description, answer_excerpt: answerExcerpt }),
-      });
+      const res = await fetch(
+        `${API_BASE}/api/v1/consult/${traceId}/feedback`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            issue_type: issueType,
+            description,
+            answer_excerpt: answerExcerpt,
+          }),
+        },
+      );
       if (!res.ok) throw new Error(`${res.status}`);
       setDone(true);
     } catch (e) {
@@ -232,28 +248,40 @@ function FeedbackModal({
       <div className="bg-background rounded-lg shadow-xl border border-border w-full max-w-md p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-sm">Reportar problema</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-lg">×</button>
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground text-lg"
+          >
+            ×
+          </button>
         </div>
         {done ? (
           <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-3">
-            Gracias. Feedback guardado (Trace: <span className="font-mono">{traceId.slice(0, 8)}</span>).
+            Gracias. Feedback guardado (Trace:{" "}
+            <span className="font-mono">{traceId.slice(0, 8)}</span>).
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1">Tipo de problema</label>
+              <label className="text-xs font-medium text-muted-foreground block mb-1">
+                Tipo de problema
+              </label>
               <select
                 value={issueType}
                 onChange={(e) => setIssueType(e.target.value)}
                 className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm"
               >
                 {ISSUE_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1">Descripción</label>
+              <label className="text-xs font-medium text-muted-foreground block mb-1">
+                Descripción
+              </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -265,7 +293,11 @@ function FeedbackModal({
             </div>
             {error && <p className="text-xs text-red-600">{error}</p>}
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm rounded border border-input hover:bg-muted">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3 py-1.5 text-sm rounded border border-input hover:bg-muted"
+              >
                 Cancelar
               </button>
               <button
@@ -298,7 +330,8 @@ function BranchDetectionBanner({
   if (!po || po.branches.length === 0) return null;
 
   const branchNames = po.branches.map((b) => b.name);
-  const isManual = userSelectedJurisdictions && userSelectedJurisdictions.length > 0;
+  const isManual =
+    userSelectedJurisdictions && userSelectedJurisdictions.length > 0;
 
   return (
     <div className="rounded-md border border-blue-100 bg-blue-50/40 px-3 py-2 text-xs text-blue-800 flex items-start gap-2">
@@ -309,7 +342,10 @@ function BranchDetectionBanner({
           : "Ramas detectadas automáticamente: "}
         <strong>{branchNames.join(", ")}</strong>
         {po.jurisdictions.length > 0 && (
-          <> · jurisdicciones: <strong>{po.jurisdictions.join(", ")}</strong></>
+          <>
+            {" "}
+            · jurisdicciones: <strong>{po.jurisdictions.join(", ")}</strong>
+          </>
         )}
       </span>
     </div>
@@ -335,7 +371,9 @@ function RazonamientoPanel({ response }: { response: ConsultResponse }) {
         className="w-full flex items-center justify-between px-4 py-3 text-xs font-medium text-blue-800 hover:bg-blue-50 transition-colors"
       >
         <span>🧠 Razonamiento del sistema</span>
-        <span className="text-muted-foreground">{open ? "▲ Ocultar" : "▼ Ver"}</span>
+        <span className="text-muted-foreground">
+          {open ? "▲ Ocultar" : "▼ Ver"}
+        </span>
       </button>
 
       {open && (
@@ -395,8 +433,8 @@ function RazonamientoPanel({ response }: { response: ConsultResponse }) {
                     jv.verdict === "publish"
                       ? "bg-green-100 text-green-800"
                       : jv.verdict === "reject"
-                      ? "bg-red-100 text-red-800"
-                      : "bg-amber-100 text-amber-800",
+                        ? "bg-red-100 text-red-800"
+                        : "bg-amber-100 text-amber-800",
                   ].join(" ")}
                 >
                   {jv.verdict}
@@ -405,14 +443,18 @@ function RazonamientoPanel({ response }: { response: ConsultResponse }) {
               <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-blue-800">
                 {Object.entries(jv.scores).map(([k, v]) => (
                   <>
-                    <span key={`k-${k}`} className="text-muted-foreground">{k}</span>
+                    <span key={`k-${k}`} className="text-muted-foreground">
+                      {k}
+                    </span>
                     <span key={`v-${k}`}>{(v * 100).toFixed(0)}%</span>
                   </>
                 ))}
               </div>
               {jv.gaps.length > 0 && (
                 <div>
-                  <p className="text-muted-foreground mb-1">Brechas identificadas:</p>
+                  <p className="text-muted-foreground mb-1">
+                    Brechas identificadas:
+                  </p>
                   <ul className="list-disc list-inside space-y-0.5 text-blue-800">
                     {jv.gaps.map((g, i) => (
                       <li key={i}>{g}</li>
@@ -427,14 +469,23 @@ function RazonamientoPanel({ response }: { response: ConsultResponse }) {
           {response.cost_breakdown_by_agent &&
             Object.keys(response.cost_breakdown_by_agent).length > 0 && (
               <div>
-                <p className="font-semibold text-blue-900 mb-1">Coste por agente</p>
+                <p className="font-semibold text-blue-900 mb-1">
+                  Coste por agente
+                </p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-blue-800">
-                  {Object.entries(response.cost_breakdown_by_agent).map(([k, v]) => (
-                    <>
-                      <span key={`k-${k}`} className="text-muted-foreground truncate">{k}</span>
-                      <span key={`v-${k}`}>${v.toFixed(4)}</span>
-                    </>
-                  ))}
+                  {Object.entries(response.cost_breakdown_by_agent).map(
+                    ([k, v]) => (
+                      <>
+                        <span
+                          key={`k-${k}`}
+                          className="text-muted-foreground truncate"
+                        >
+                          {k}
+                        </span>
+                        <span key={`v-${k}`}>${v.toFixed(4)}</span>
+                      </>
+                    ),
+                  )}
                 </div>
               </div>
             )}
@@ -485,7 +536,11 @@ function CrossJurisdictionView({
           </button>
           {openBranches[branch] && (
             <div className="border-t border-border px-4 py-3 text-sm leading-relaxed prose prose-sm max-w-none">
-              {renderAnswerWithChips(branchAnswers[branch] ?? "", citations, onChipClick)}
+              {renderAnswerWithChips(
+                branchAnswers[branch] ?? "",
+                citations,
+                onChipClick,
+              )}
             </div>
           )}
         </div>
@@ -505,7 +560,9 @@ export function ResponseView({
   response: ConsultResponse;
   selectedJurisdictions?: string[];
 }) {
-  const [activeCitation, setActiveCitation] = useState<CitationMapping | null>(null);
+  const [activeCitation, setActiveCitation] = useState<CitationMapping | null>(
+    null,
+  );
   const [showFeedback, setShowFeedback] = useState(false);
   const [metaExpanded, setMetaExpanded] = useState(false);
 
@@ -515,7 +572,10 @@ export function ResponseView({
     response.branch_answers && Object.keys(response.branch_answers).length > 1;
 
   function handleExport() {
-    window.open(`${API_BASE}/api/v1/consult/${response.trace_id}/export`, "_blank");
+    window.open(
+      `${API_BASE}/api/v1/consult/${response.trace_id}/export`,
+      "_blank",
+    );
   }
 
   return (
@@ -545,7 +605,11 @@ export function ResponseView({
 
       {/* Answer text with clickable [REF:n] chips */}
       <article className="prose prose-sm max-w-none rounded-lg border border-border bg-background p-5 leading-relaxed text-sm">
-        {renderAnswerWithChips(response.answer, response.citations, setActiveCitation)}
+        {renderAnswerWithChips(
+          response.answer,
+          response.citations,
+          setActiveCitation,
+        )}
       </article>
 
       {/* Uncited claims */}
@@ -600,9 +664,15 @@ export function ResponseView({
             <span className="text-muted-foreground">Prompt version</span>
             <span>{String(meta.prompt_version ?? "—")}</span>
             <span className="text-muted-foreground">Latencia</span>
-            <span>{meta.latency_ms != null ? `${String(meta.latency_ms)} ms` : "—"}</span>
+            <span>
+              {meta.latency_ms != null ? `${String(meta.latency_ms)} ms` : "—"}
+            </span>
             <span className="text-muted-foreground">Coste estimado</span>
-            <span>{meta.cost_estimate_usd != null ? `$${(meta.cost_estimate_usd as number).toFixed(4)}` : "—"}</span>
+            <span>
+              {meta.cost_estimate_usd != null
+                ? `$${(meta.cost_estimate_usd as number).toFixed(4)}`
+                : "—"}
+            </span>
             <span className="text-muted-foreground">Consulta reescrita</span>
             <span className="truncate">{response.query_rewritten || "—"}</span>
           </div>

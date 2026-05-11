@@ -7,6 +7,7 @@ https://www.aepd.es/es/resoluciones-y-actuaciones/resoluciones
 ```
 
 Página individual de resolución:
+
 ```
 https://www.aepd.es/es/documento/PS-XXXXX-YYYY
 ```
@@ -47,11 +48,11 @@ lex-agents/0.1 (+https://github.com/ibernale/ai-lawyer)
 
 El parser fallará o devolverá datos vacíos en los siguientes casos:
 
-| Señal | Causa probable |
-|-------|----------------|
-| `title` vacío en >20% de documentos | La AEPD ha cambiado la estructura del `<h1>` o añadido JavaScript rendering |
-| `publication_date` = `date.today()` en >50% | El elemento `<time>` ha sido eliminado o renombrado |
-| `sanction_amount_eur` ausente cuando se esperaría | El patrón regex (`multa de X euros`) ha cambiado en el texto |
-| `list_documents()` devuelve 0 IDs | La URL de la página de resultados ha cambiado o el patrón de links ha cambiado |
+| Señal                                             | Causa probable                                                                 |
+| ------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `title` vacío en >20% de documentos               | La AEPD ha cambiado la estructura del `<h1>` o añadido JavaScript rendering    |
+| `publication_date` = `date.today()` en >50%       | El elemento `<time>` ha sido eliminado o renombrado                            |
+| `sanction_amount_eur` ausente cuando se esperaría | El patrón regex (`multa de X euros`) ha cambiado en el texto                   |
+| `list_documents()` devuelve 0 IDs                 | La URL de la página de resultados ha cambiado o el patrón de links ha cambiado |
 
 **Acción recomendada ante fallos:** ejecutar `make eval-quick` con el conjunto de resoluciones de prueba y revisar métricas de campos vacíos.

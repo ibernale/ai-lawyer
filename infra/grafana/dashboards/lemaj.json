@@ -48,19 +48,28 @@
           {
             "matcher": { "id": "byName", "options": "supported" },
             "properties": [
-              { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }
+              {
+                "id": "color",
+                "value": { "fixedColor": "green", "mode": "fixed" }
+              }
             ]
           },
           {
             "matcher": { "id": "byName", "options": "unsupported" },
             "properties": [
-              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }
+              {
+                "id": "color",
+                "value": { "fixedColor": "red", "mode": "fixed" }
+              }
             ]
           },
           {
             "matcher": { "id": "byName", "options": "inconclusive" },
             "properties": [
-              { "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }
+              {
+                "id": "color",
+                "value": { "fixedColor": "orange", "mode": "fixed" }
+              }
             ]
           }
         ]

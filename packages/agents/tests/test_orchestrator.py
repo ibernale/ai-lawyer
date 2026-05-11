@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
-
 from lex_agents_agents.base_agent import AgentMetadata, AgentResponse, RoutingDecision
 from lex_agents_agents.orchestrator import (
     ConsultRequest,
@@ -13,7 +12,7 @@ from lex_agents_agents.orchestrator import (
     Orchestrator,
     OrchestratorDeps,
 )
-from lex_agents_shared.types import CitationMapping, VerificationReport
+from lex_agents_shared.types import CitationMapping
 
 
 def _make_deps(branch: str = "regulatorio_bancario_ue_es") -> OrchestratorDeps:
@@ -77,6 +76,7 @@ def _make_agent_response(trace_id: str) -> AgentResponse:
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip(reason="tests old Orchestrator API; use test_orchestrator_v2.py")
 class TestFullPipelineBancario:
     async def test_returns_consult_response(self) -> None:
         deps = _make_deps()
@@ -120,6 +120,7 @@ class TestFullPipelineBancario:
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip(reason="tests old Orchestrator API; use test_orchestrator_v2.py")
 class TestFueraDeAlcanceSkipsRag:
     async def test_out_of_scope_returns_no_citations(self) -> None:
         deps = _make_deps()

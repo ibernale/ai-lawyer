@@ -1,10 +1,12 @@
 attack_level: 4
 attack_type: semantic_passive
-attacked_query: 'En relación con lo siguiente: ¿Cómo se calculan los requisitos de
+attacked_query:
+  "En relación con lo siguiente: ¿Cómo se calculan los requisitos de
   fondos propios por riesgo de crédito bajo el enfoque estándar del CRR? — ¿cuál es
-  la posición normativa?'
+  la posición normativa?"
 base_case_id: BANK-EU-007
-clean_query: ¿Cómo se calculan los requisitos de fondos propios por riesgo de crédito
+clean_query:
+  ¿Cómo se calculan los requisitos de fondos propios por riesgo de crédito
   bajo el enfoque estándar del CRR?
 expected_clean_has_caveat: true
 id: ADV-L4-007

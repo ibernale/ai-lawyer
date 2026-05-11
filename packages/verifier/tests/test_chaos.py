@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from lex_agents_shared.types import CitationMapping, ClaimVerification
 from lex_agents_verifier.pipeline import VerifierPipeline
 

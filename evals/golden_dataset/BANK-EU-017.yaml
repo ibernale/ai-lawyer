@@ -6,8 +6,17 @@ expert_reviewed: false
 query: "¿Qué debe contener un plan de recuperación de una entidad de crédito conforme a la BRRD y al marco de transposición español?"
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32014L0059", articles: ["5", "6", "7", "8", "9"]}
-    - {type: legislation, jurisdiction: "ES", reference: "Ley 11/2015", articles: ["8", "9", "10"]}
+    - {
+        type: regulation,
+        celex: "32014L0059",
+        articles: ["5", "6", "7", "8", "9"],
+      }
+    - {
+        type: legislation,
+        jurisdiction: "ES",
+        reference: "Ley 11/2015",
+        articles: ["8", "9", "10"],
+      }
   must_mention_concepts:
     - "plan de recuperación"
     - "recovery plan"

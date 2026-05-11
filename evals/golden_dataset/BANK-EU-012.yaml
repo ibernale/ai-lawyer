@@ -6,8 +6,12 @@ expert_reviewed: false
 query: "¿Cuáles son los requisitos mínimos de fondos propios y pasivos admisibles (MREL) bajo la BRRD y cómo se aplican a las entidades españolas sometidas al MUR?"
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32014L0059", articles: ["45", "45a", "45b", "45c", "45d", "45e"]}
-    - {type: regulation, celex: "32014R0806", articles: ["12"]}
+    - {
+        type: regulation,
+        celex: "32014L0059",
+        articles: ["45", "45a", "45b", "45c", "45d", "45e"],
+      }
+    - { type: regulation, celex: "32014R0806", articles: ["12"] }
   must_mention_concepts:
     - "MREL"
     - "pasivos admisibles"

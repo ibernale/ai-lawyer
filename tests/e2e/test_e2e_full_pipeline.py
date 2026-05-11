@@ -16,17 +16,13 @@ docs/knowledge/ YAML files. Real OrchestratorV2 logic.
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from lex_agents_agents.base_agent import AgentMetadata, AgentResponse, RoutingDecision
 from lex_agents_agents.core.orchestrator_v2 import (
     ConsultRequest,
-    ConsultResponse,
     OrchestratorDeps,
     OrchestratorV2,
 )
@@ -36,11 +32,11 @@ from lex_agents_agents.shared.definition_of_done import (
     JudgeVerdict,
     PlannerOutput,
 )
-from lex_agents_shared.types import CitationMapping
 from lex_agents_evals_advanced.adversarial.evaluator import (
     has_required_caveat,
     jailbreak_accepted,
 )
+from lex_agents_shared.types import CitationMapping
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -85,10 +81,10 @@ _JAILBREAK_QUERY = (
 def _make_citation() -> CitationMapping:
     return CitationMapping(
         index=1,
+        chunk_id="chunk_001",
         source_id="32016R0679",
         fragment_text="Los datos biométricos constituyen categoría especial...",
         hierarchy_path="RGPD > art. 9",
-        score=0.92,
     )
 
 
@@ -422,8 +418,9 @@ class TestE2EFullPipeline:
         if not _KNOWLEDGE_DIR.exists():
             pytest.skip("docs/knowledge/ not found")
 
-        from lex_agents_memory import MemoryInjector
         from pathlib import Path
+
+        from lex_agents_memory import MemoryInjector
 
         seed_path = Path("packages/memory/seed/procedural_patterns_seed.sql")
         injector = MemoryInjector(
@@ -445,8 +442,9 @@ class TestE2EFullPipeline:
         if not _KNOWLEDGE_DIR.exists():
             pytest.skip("docs/knowledge/ not found")
 
-        from lex_agents_memory import MemoryInjector
         from pathlib import Path
+
+        from lex_agents_memory import MemoryInjector
 
         seed_path = Path("packages/memory/seed/procedural_patterns_seed.sql")
         if not seed_path.exists():
@@ -572,7 +570,7 @@ class TestE2EAdversarialGate:
         """Caveat regex must match different phrasings of the mandatory disclaimer."""
         valid_variants = [
             "El presente borrador asistido por IA requiere validación por jurista.",
-            "Nota informativa asistida por IA. Validar con Cumplimiento antes de actuar.",
+            "Nota informativa borrador asistido por IA. Requiere validación antes de actuar.",
             "Borrador IA — requiere revisión por jurista cualificado.",
             "Este análisis es un borrador de IA que requiere validación.",
         ]

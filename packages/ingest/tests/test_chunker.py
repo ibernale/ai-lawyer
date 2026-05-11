@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from datetime import date
 
-import pytest
-
 from lex_agents_ingest.canonical import CanonicalDocument, HierarchyNode
 from lex_agents_ingest.chunker import LegalChunker
 

@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import pytest
-import respx
-import httpx
 from pathlib import Path
 
-from lex_agents_ingest.sources.boe import BoeSource
+import httpx
+import pytest
+import respx
 from lex_agents_ingest.canonical import CanonicalDocument
+from lex_agents_ingest.sources.boe import BoeSource
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "boe"
 

@@ -16,18 +16,16 @@ FIXTURE_DIR = Path(__file__).parent / "fixtures"
 @pytest.mark.integration
 class TestFullPipelineBoeFixture:
     def test_full_pipeline_boe_fixture(self) -> None:
-        from anthropic import Anthropic
-        from qdrant_client import QdrantClient
+        import asyncio
+        import tempfile
 
         from lex_agents_ingest.chunker import LegalChunker
         from lex_agents_ingest.contextualizer import Contextualizer
-        from lex_agents_ingest.embedder import BgeM3Embedder
         from lex_agents_ingest.indexer import QdrantIndexer
         from lex_agents_ingest.pipeline import IngestPipeline
         from lex_agents_ingest.sources.boe import BoeSource
         from lex_agents_ingest.storage import IngestStorage
-        import tempfile
-        import asyncio
+        from qdrant_client import QdrantClient
 
         boe_xml = (FIXTURE_DIR / "boe" / "BOE-A-2014-6732.xml").read_bytes()
         raw_mock = MagicMock()
@@ -102,13 +100,13 @@ class TestFullPipelineBoeFixture:
 class TestSearchRetrievesIngestedChunks:
     def test_search_retrieves_ingested_chunks(self) -> None:
         """Smoke test: index a chunk and retrieve it via hybrid search."""
-        from qdrant_client import QdrantClient
+        from datetime import date
 
         from lex_agents_ingest.canonical import Chunk
-        from lex_agents_ingest.embedder import BgeM3Embedder, EmbeddingResult
+        from lex_agents_ingest.embedder import EmbeddingResult
         from lex_agents_ingest.indexer import QdrantIndexer
         from lex_agents_rag.retriever import HybridRetriever
-        from datetime import date
+        from qdrant_client import QdrantClient
 
         qdrant = QdrantClient(url="http://localhost:6333")
         indexer = QdrantIndexer(qdrant, collection_name="test_search_chunks")

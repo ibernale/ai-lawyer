@@ -2,21 +2,21 @@
 
 from __future__ import annotations
 
-import asyncio
 import json
-from datetime import datetime, timezone
+import re
+from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Any
 
-import re
-
+import anthropic as _anthropic
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from pydantic import BaseModel, Field, field_validator
-import anthropic as _anthropic
-from qdrant_client import QdrantClient
-
-from lex_agents_agents.orchestrator import ConsultRequest, ConsultResponse, Orchestrator, OrchestratorDeps
+from lex_agents_agents.orchestrator import (
+    ConsultRequest,
+    ConsultResponse,
+    Orchestrator,
+    OrchestratorDeps,
+)
 from lex_agents_ingest.embedder import BgeM3Embedder
 from lex_agents_rag.assembler import ContextAssembler
 from lex_agents_rag.query_rewriter import LegalQueryRewriter
@@ -24,6 +24,8 @@ from lex_agents_rag.reranker import RerankerConfig, make_reranker
 from lex_agents_rag.retriever import HybridRetriever
 from lex_agents_shared.anthropic_client import AnthropicClientWrapper
 from lex_agents_verifier.pipeline import VerifierPipeline
+from pydantic import BaseModel, Field, field_validator
+from qdrant_client import QdrantClient
 
 from lex_agents_api.auth import CurrentUser, require_auth
 from lex_agents_api.db import ConsultationRecord, ConsultationStore
@@ -177,7 +179,7 @@ async def _persist(
         cost = resp.metadata.get("cost_estimate_usd")
         record = ConsultationRecord(
             trace_id=trace_id,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
             query=query,
             response_json=resp.model_dump_json(),
             verification_json=verification_json,

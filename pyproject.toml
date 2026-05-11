@@ -45,14 +45,43 @@ select = [
 ignore = [
     "S101",   # assert allowed in tests
     "S603",   # subprocess calls allowed with caution
+    "B008",   # FastAPI Depends() in function defaults is intentional
+    "E501",   # line too long — enforced by formatter, not linter
+    "B905",   # zip() strict= not required for internal use
 ]
 
 [tool.ruff.lint.isort]
 known-first-party = ["shared", "agents", "rag", "verifier", "ingest"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["S", "T20"]
-"evals/**/*.py" = ["T20"]
+# test files — relax security and print rules
+"**/tests/**/*.py" = ["S", "T20", "E501", "F841", "RUF", "B018", "B007"]
+"tests/**/*.py" = ["S", "T20", "E501", "F841", "RUF", "B018"]
+# eval runners and scripts use print for CLI output
+"evals/**/*.py" = ["T20", "E501", "E741", "RUF012", "S607"]
+"scripts/**/*.py" = ["T20", "S"]
+# pipeline scripts and Dagster assets use print for progress and have expected unused vars
+"packages/pipeline/**/*.py" = ["T20", "S607", "S310", "F841", "RUF100"]
+# ingest sources use legacy patterns (XML parsing, temp files, try-except-pass)
+"packages/ingest/src/**/*.py" = ["S", "F841", "RUF022"]
+# CLI entry points use print
+"packages/evals_advanced/src/**/__main__.py" = ["T20"]
+# reflection pipeline: subprocess and print are intentional
+"packages/evals_advanced/src/lex_agents_evals_advanced/reflection/*.py" = ["S607", "S110", "S112", "T20", "RUF001"]
+# adversarial perturbations use Cyrillic lookalikes intentionally and random for test perturbations
+"packages/evals_advanced/src/lex_agents_evals_advanced/adversarial/perturbations.py" = ["S311", "RUF001", "RUF003"]
+# panel.py uses forward type reference with type: ignore
+"packages/evals_advanced/src/lex_agents_evals_advanced/lemaj/panel.py" = ["F821"]
+# lemaj uses print for scoring output
+"packages/evals_advanced/src/lex_agents_evals_advanced/lemaj/*.py" = ["T20", "RUF001"]
+# memory validator uses print for CLI validation output
+"packages/memory/src/lex_agents_memory/semantic/validator.py" = ["T20"]
+# notebooks
+"**/*.ipynb" = ["T20", "E712", "RUF003", "E501", "RUF"]
+# auth module — token_type value is not a password
+"apps/api/src/lex_agents_api/auth.py" = ["S105"]
+# prompt_proposer uses en dash in legal text strings
+"packages/evals_advanced/src/lex_agents_evals_advanced/reflection/prompt_proposer.py" = ["RUF001"]
 
 # ─── Shared mypy config ───────────────────────────────────────────────────────
 [tool.mypy]
@@ -73,8 +102,31 @@ warn_unused_ignores = true
 no_implicit_reexport = true
 strict_equality = true
 
+exclude = [
+    "packages/.*/tests/",
+    "tests/",
+    "evals/tests/",
+]
+
 [[tool.mypy.overrides]]
-module = ["qdrant_client.*", "sentence_transformers.*", "bs4.*"]
+module = [
+    "qdrant_client.*",
+    "sentence_transformers.*",
+    "bs4.*",
+    "jose.*",
+    "yaml",
+    "regex",
+    "dagster.*",
+    "opentelemetry.*",
+    "tenacity.*",
+    "prometheus_client.*",
+    "structlog.*",
+    "lex_agents_rag.*",
+    "lex_agents_ingest.*",
+    "lex_agents_memory.*",
+    "lex_agents_pipeline.*",
+    "lex_agents_evals_advanced.*",
+]
 ignore_missing_imports = true
 
 # ─── Shared pytest config ─────────────────────────────────────────────────────

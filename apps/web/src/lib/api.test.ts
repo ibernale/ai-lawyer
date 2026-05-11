@@ -6,7 +6,9 @@ import type { ConsultResponse } from "./api";
 // ---------------------------------------------------------------------------
 
 function hasBranchAnswers(response: ConsultResponse): boolean {
-  return !!(response.branch_answers && Object.keys(response.branch_answers).length > 1);
+  return !!(
+    response.branch_answers && Object.keys(response.branch_answers).length > 1
+  );
 }
 
 function branchNames(response: ConsultResponse): string[] {
@@ -14,14 +16,19 @@ function branchNames(response: ConsultResponse): string[] {
 }
 
 function totalCost(response: ConsultResponse): number {
-  return Object.values(response.cost_breakdown_by_agent ?? {}).reduce((a, b) => a + b, 0);
+  return Object.values(response.cost_breakdown_by_agent ?? {}).reduce(
+    (a, b) => a + b,
+    0,
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Minimal ConsultResponse factory
 // ---------------------------------------------------------------------------
 
-function makeResponse(overrides: Partial<ConsultResponse> = {}): ConsultResponse {
+function makeResponse(
+  overrides: Partial<ConsultResponse> = {},
+): ConsultResponse {
   return {
     trace_id: "test-trace",
     answer: "test answer",
@@ -45,7 +52,9 @@ describe("hasBranchAnswers", () => {
 
   it("returns false when branch_answers has only one entry", () => {
     expect(
-      hasBranchAnswers(makeResponse({ branch_answers: { regulatorio_bancario: "answer" } })),
+      hasBranchAnswers(
+        makeResponse({ branch_answers: { regulatorio_bancario: "answer" } }),
+      ),
     ).toBe(false);
   });
 
@@ -81,7 +90,10 @@ describe("branchNames", () => {
         sub_tasks: [],
       },
     });
-    expect(branchNames(response)).toEqual(["regulatorio_bancario", "datos_personales_rgpd"]);
+    expect(branchNames(response)).toEqual([
+      "regulatorio_bancario",
+      "datos_personales_rgpd",
+    ]);
   });
 });
 

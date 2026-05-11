@@ -2,18 +2,17 @@
 
 from __future__ import annotations
 
-import json
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
-
+from lex_agents_agents.orchestrator import ConsultResponse
+from lex_agents_api.auth import CurrentUser, require_auth
 from lex_agents_api.db import ConsultationRecord, ConsultationStore
 from lex_agents_api.main import create_app
 from lex_agents_api.routers.consult import get_orchestrator, get_store
 from lex_agents_api.settings import Settings, get_settings
-from lex_agents_agents.orchestrator import ConsultResponse
 
 
 @pytest.fixture()
@@ -83,6 +82,7 @@ def client(
     app.dependency_overrides[get_settings] = lambda: test_settings
     app.dependency_overrides[get_orchestrator] = lambda: mock_orchestrator
     app.dependency_overrides[get_store] = lambda: mock_store
+    app.dependency_overrides[require_auth] = lambda: CurrentUser(username="demo", role="user")
     return TestClient(app, raise_server_exceptions=True)
 
 
@@ -95,13 +95,13 @@ class TestConsult200ReturnsTraceId:
         assert resp.status_code == 200
 
     def test_response_has_trace_id(self, client: TestClient) -> None:
-        resp = client.post("/api/v1/consult", json={"query": "CET1 CRR"})
+        resp = client.post("/api/v1/consult", json={"query": "Requisitos CET1 según CRR"})
         data = resp.json()
         assert "trace_id" in data
         assert data["trace_id"]
 
     def test_response_has_answer(self, client: TestClient) -> None:
-        resp = client.post("/api/v1/consult", json={"query": "CET1 CRR"})
+        resp = client.post("/api/v1/consult", json={"query": "Requisitos CET1 según CRR"})
         data = resp.json()
         assert "answer" in data
         assert len(data["answer"]) > 0
@@ -109,7 +109,7 @@ class TestConsult200ReturnsTraceId:
 
 class TestConsult200VerificationStatusGreen:
     def test_verification_status_green(self, client: TestClient) -> None:
-        resp = client.post("/api/v1/consult", json={"query": "CET1 CRR"})
+        resp = client.post("/api/v1/consult", json={"query": "Requisitos CET1 según CRR"})
         data = resp.json()
         assert data["verification"]["status"] == "green"
         assert data["verification"]["broken_refs"] == []
@@ -130,7 +130,7 @@ class TestGetConsultByTraceId:
         consult_resp = _make_consult_response("stored-trace-123")
         record = ConsultationRecord(
             trace_id="stored-trace-123",
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
             query="CET1 query",
             response_json=consult_resp.model_dump_json(),
         )

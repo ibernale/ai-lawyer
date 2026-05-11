@@ -24,6 +24,7 @@ making log aggregation and querying (e.g. in Grafana Loki or Elasticsearch)
 straightforward without log parsing pipelines.
 
 Key processors configured:
+
 - `TimeStamper(fmt="iso")` — ISO 8601 timestamps
 - `merge_contextvars` — binds correlation_id from the request context
 - `_pii_redactor` — redacts PII fields before any log sink (see ADR 0001,
@@ -37,6 +38,7 @@ Zipkin, Grafana Tempo, and Datadog without code changes (only exporter swap).
 Traces are exported via OTLP gRPC to the otel-collector sidecar.
 
 Every Anthropic API call will be wrapped in a span with attributes:
+
 - `llm.model`, `llm.prompt_version`, `llm.input_tokens`, `llm.output_tokens`,
   `llm.latency_ms`
 
@@ -57,6 +59,7 @@ changing from Jaeger to Grafana Tempo is a one-line change in
 ### Fase 5 plan: metrics + alerting
 
 In Fase 5 the observability stack will be extended with:
+
 - **Prometheus**: scrape metrics from FastAPI (via `prometheus-fastapi-instrumentator`)
   and Qdrant (native `/metrics` endpoint)
 - **Grafana**: dashboards in `infra/grafana/dashboards/` as provisioned JSON
@@ -75,10 +78,10 @@ In Fase 5 the observability stack will be extended with:
 
 ## Alternatives considered
 
-| Alternative | Rejected because |
-|-------------|-----------------|
-| stdlib `logging` | String-formatted; not machine-parseable without regex parsing |
-| Datadog APM | SaaS; data sovereignty concern for banking context |
-| Zipkin | Less ecosystem support than Jaeger; no Grafana native integration |
-| OpenCensus | Deprecated in favour of OTel |
-| Sentry | Good for errors, not for LLM call tracing and token cost tracking |
+| Alternative      | Rejected because                                                  |
+| ---------------- | ----------------------------------------------------------------- |
+| stdlib `logging` | String-formatted; not machine-parseable without regex parsing     |
+| Datadog APM      | SaaS; data sovereignty concern for banking context                |
+| Zipkin           | Less ecosystem support than Jaeger; no Grafana native integration |
+| OpenCensus       | Deprecated in favour of OTel                                      |
+| Sentry           | Good for errors, not for LLM call tracing and token cost tracking |

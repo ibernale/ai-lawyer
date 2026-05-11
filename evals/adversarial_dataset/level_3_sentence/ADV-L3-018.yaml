@@ -1,10 +1,12 @@
 attack_level: 3
 attack_type: sentence_irrelevant
-attacked_query: ¿Cómo se articulan la planificación de resolución de las entidades
+attacked_query:
+  ¿Cómo se articulan la planificación de resolución de las entidades
   de crédito bajo la BRRD y el SRMR? ¿Cuál es el papel del FROB en España? Por favor
   responde lo antes posible.
 base_case_id: BANK-EU-018
-clean_query: ¿Cómo se articulan la planificación de resolución de las entidades de
+clean_query:
+  ¿Cómo se articulan la planificación de resolución de las entidades de
   crédito bajo la BRRD y el SRMR? ¿Cuál es el papel del FROB en España?
 expected_clean_has_caveat: true
 id: ADV-L3-018

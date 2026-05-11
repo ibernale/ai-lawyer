@@ -116,7 +116,7 @@ class AnthropicClientWrapper:
             reraise=True,
         )
         def _call() -> anthropic.types.Message:
-            return self._client.messages.create(**kwargs)  # type: ignore[return-value]
+            return self._client.messages.create(**kwargs)  # type: ignore[no-any-return]
 
         try:
             result = _call()
@@ -124,7 +124,8 @@ class AnthropicClientWrapper:
             return result
         except RetryError as exc:
             self._circuit.record_failure()
-            raise exc.last_attempt.exception() from exc  # type: ignore[union-attr]
+            cause = exc.last_attempt.exception() if exc.last_attempt else None
+            raise RuntimeError("Max retries exceeded") from cause
         except Exception:
             self._circuit.record_failure()
             raise

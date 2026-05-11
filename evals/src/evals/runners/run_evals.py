@@ -18,7 +18,7 @@ import subprocess
 import sys
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +36,6 @@ from evals.runners.metrics import (
     compute_hallucination_rate,
     compute_legal_quality_score,
 )
-
 
 # ---------------------------------------------------------------------------
 # Dataset loading
@@ -96,11 +95,10 @@ def load_weights(weights_path: Path | None = None) -> dict[str, float]:
 def _build_orchestrator() -> Any:
     """Construct Orchestrator from environment variables (no FastAPI dependency)."""
     import anthropic
-
-    from lex_agents_agents.orchestrator import Orchestrator, OrchestratorDeps
-    from lex_agents_agents.router import QueryRouter
-    from lex_agents_agents.regulatorio_bancario import RegulatorioBancarioAgent
     from lex_agents_agents.base_agent import AnthropicClientWrapper
+    from lex_agents_agents.orchestrator import Orchestrator, OrchestratorDeps
+    from lex_agents_agents.regulatorio_bancario import RegulatorioBancarioAgent
+    from lex_agents_agents.router import QueryRouter
     from lex_agents_rag.retriever import HybridRetriever
     from lex_agents_verifier.pipeline import VerifierPipeline
 
@@ -263,8 +261,8 @@ def _write_summary_md(output_dir: Path, summary: RunSummary, results: list[CaseR
         "",
         "## Aggregate Metrics",
         "",
-        f"| Metric | Value |",
-        f"|--------|-------|",
+        "| Metric | Value |",
+        "|--------|-------|",
         f"| cases_total | {summary.cases_total} |",
         f"| cases_passed | {summary.cases_passed} |",
         f"| cases_failed | {summary.cases_failed} |",
@@ -329,7 +327,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     run_id = str(uuid.uuid4())[:8]
     commit = _git_commit()
-    ts = datetime.now(timezone.utc).isoformat()
+    ts = datetime.now(UTC).isoformat()
     ds_sha = dataset_sha(dataset_dir)
 
     output_dir = Path(args.output) if args.output else Path(f"evals/reports/{ts.replace(':', '')[:15]}")

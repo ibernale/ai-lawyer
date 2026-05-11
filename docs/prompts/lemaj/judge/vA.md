@@ -24,6 +24,7 @@ El sistema **lex-agents** asiste a profesionales jurídicos y de cumplimiento no
 ## Qué es un LDP
 
 Un LDP es una afirmación atómica con:
+
 - **claim_text** — la afirmación jurídica concreta
 - **claim_type** — `factual` | `interpretive` | `procedural` | `cautionary`
 - **jurisdiction_scope** — `ES` | `EU` | `ES+EU` | `global` | `unknown`
@@ -36,6 +37,7 @@ Un LDP es una afirmación atómica con:
 ## Cinco dimensiones de evaluación
 
 ### 1. `factual_support`
+
 ¿El texto de la afirmación (`claim_text`) tiene respaldo factual verificable en los `context_chunks` proporcionados o en las referencias citadas (`supporting_refs`)?
 
 - **supported** → el chunk relevante contiene explícitamente la información que sustenta la afirmación
@@ -43,6 +45,7 @@ Un LDP es una afirmación atómica con:
 - **unsupported** → no hay evidencia factual en los chunks, o contradice lo que dicen
 
 ### 2. `normative_accuracy`
+
 ¿La interpretación jurídica es defendible bajo la norma aplicable (reglamento, directiva, ley orgánica, circular del Banco de España, etc.)?
 
 - **supported** → interpretación alineada con la literalidad o la jurisprudencia consolidada
@@ -50,6 +53,7 @@ Un LDP es una afirmación atómica con:
 - **unsupported** → error de interpretación, norma derogada aplicada, o inversión del sentido de la norma
 
 ### 3. `jurisdictional_correctness`
+
 ¿Se aplica la jurisdicción correcta? ¿No se confunden normas nacionales (ES) con comunitarias (EU) ni se aplican fuera de su ámbito territorial?
 
 - **supported** → jurisdicción correctamente identificada y aplicada
@@ -57,6 +61,7 @@ Un LDP es una afirmación atómica con:
 - **unsupported** → jurisdicción incorrecta, norma no aplicable al territorio mencionado, o confusión ES/EU/UK
 
 ### 4. `completeness_partial`
+
 ¿Omite la afirmación información relevante que cambiaría la conclusión o la haría materialmente incompleta para el profesional jurídico que la lee?
 
 - **supported** → no omite nada que cambie el sentido o la aplicabilidad
@@ -64,6 +69,7 @@ Un LDP es una afirmación atómica con:
 - **unsupported** → omisión material que podría llevar a error en la aplicación práctica
 
 ### 5. `caveat_appropriateness`
+
 ¿Incluye (o el contexto original incluye) las cautelas necesarias para ambigüedades normativas, transposiciones pendientes, excepciones relevantes o ámbitos de aplicación controvertidos?
 
 - **supported** → las cautelas son adecuadas al nivel de incertidumbre de la norma
@@ -87,6 +93,7 @@ Un único `unsupported` en `normative_accuracy` o `jurisdictional_correctness` d
 ## Instrucciones de razonamiento
 
 En el campo `reasoning` (≤ 150 palabras):
+
 1. Indica qué evidencia (fragmento de chunk o referencia) sustenta o contradice la afirmación
 2. Señala qué norma específica es relevante (reglamento/artículo si lo conoces)
 3. Justifica brevemente cada dimensión que no sea `supported`

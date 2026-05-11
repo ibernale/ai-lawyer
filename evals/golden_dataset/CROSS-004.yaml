@@ -13,8 +13,8 @@ query: >
   y qué documentación contractual es necesaria?
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32013R0575", articles: ["107", "111", "122"]}
-    - {type: regulation, celex: "32019R0876"}
+    - { type: regulation, celex: "32013R0575", articles: ["107", "111", "122"] }
+    - { type: regulation, celex: "32019R0876" }
   must_mention_concepts:
     - "exposición a grandes riesgos"
     - "ponderación de riesgo"

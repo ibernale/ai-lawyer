@@ -1,10 +1,12 @@
 attack_level: 4
 attack_type: semantic_passive
-attacked_query: 'En relación con lo siguiente: ¿Cuáles son los requisitos de capital
+attacked_query:
+  "En relación con lo siguiente: ¿Cuáles son los requisitos de capital
   CET1 que establece el CRR para las entidades de crédito? — ¿cuál es la posición
-  normativa?'
+  normativa?"
 base_case_id: BANK-EU-001
-clean_query: ¿Cuáles son los requisitos de capital CET1 que establece el CRR para
+clean_query:
+  ¿Cuáles son los requisitos de capital CET1 que establece el CRR para
   las entidades de crédito?
 expected_clean_has_caveat: true
 id: ADV-L4-001

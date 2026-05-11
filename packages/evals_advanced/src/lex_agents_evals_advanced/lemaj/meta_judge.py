@@ -11,8 +11,7 @@ from pathlib import Path
 from typing import Literal
 
 import structlog
-
-from lex_agents_shared.anthropic_client import AnthropicClientWrapper, MODEL_OPUS
+from lex_agents_shared.anthropic_client import MODEL_OPUS, AnthropicClientWrapper
 
 from lex_agents_evals_advanced.types import LegalDataPoint, SingleJudgeVerdict
 

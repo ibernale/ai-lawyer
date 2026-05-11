@@ -6,11 +6,10 @@ from datetime import date
 from typing import Any
 
 import structlog
+from lex_agents_ingest.embedder import BgeM3Embedder
 from pydantic import BaseModel
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import Filter, FieldCondition, MatchValue, Range, SparseVector
-
-from lex_agents_ingest.embedder import BgeM3Embedder
+from qdrant_client.http.models import FieldCondition, Filter, MatchValue, Range, SparseVector
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 

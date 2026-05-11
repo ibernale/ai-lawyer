@@ -4,12 +4,9 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from lex_agents_agents.base_agent import AgentMetadata, AgentResponse
-from lex_agents_agents.core.judge import LegalJudge, _MAX_ITERATIONS
+from lex_agents_agents.core.judge import _MAX_ITERATIONS, LegalJudge
 from lex_agents_agents.shared.definition_of_done import DefinitionOfDone, JudgeVerdict
-from lex_agents_shared.types import CitationMapping
 
 
 def _make_client() -> MagicMock:

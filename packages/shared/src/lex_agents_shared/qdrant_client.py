@@ -31,8 +31,8 @@ class QdrantClientWrapper:
         url: str,
         api_key: str | None = None,
         timeout: float = 10.0,
-    ) -> "QdrantClientWrapper":
-        client = QdrantClient(url=url, api_key=api_key or None, timeout=timeout)
+    ) -> QdrantClientWrapper:
+        client = QdrantClient(url=url, api_key=api_key or None, timeout=int(timeout))
         return cls(client)
 
     # ------------------------------------------------------------------

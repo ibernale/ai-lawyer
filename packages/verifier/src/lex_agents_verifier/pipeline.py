@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Literal
 
 import structlog
-
 from lex_agents_shared.anthropic_client import AnthropicClientWrapper
 from lex_agents_shared.types import (
     AggregateVerificationReport,
@@ -105,6 +105,7 @@ class VerifierPipeline:
         claims_total = len(verifications) + len(uncited_claims)
 
         # Step 6: Determine overall status
+        status: Literal["green", "amber", "red"]
         if broken_refs or claims_failed > 0:
             status = "red"
         elif uncited_claims or claims_uncertain > 0:
@@ -133,7 +134,7 @@ class VerifierPipeline:
             claims_uncertain=claims_uncertain,
             verifications=verifications,
             llm_calls_made=llm_calls_made,
-            verified_at=datetime.now(timezone.utc),
+            verified_at=datetime.now(UTC),
             uncited_claims=uncited_claims,
             broken_refs=broken_refs,
             status=status,

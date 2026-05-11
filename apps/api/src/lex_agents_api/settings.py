@@ -74,7 +74,7 @@ class Settings(BaseSettings):
         return v
 
     @model_validator(mode="after")
-    def prod_requires_anthropic_key(self) -> "Settings":
+    def prod_requires_anthropic_key(self) -> Settings:
         if self.env == "prod" and not self.anthropic_api_key.get_secret_value().strip():
             raise ValueError(
                 "ANTHROPIC_API_KEY is required when ENV=prod"

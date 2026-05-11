@@ -4,12 +4,11 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Literal
+from typing import Any, Literal
 
 import structlog
+from lex_agents_shared.anthropic_client import MODEL_OPUS, AnthropicClientWrapper
 from opentelemetry import trace
-
-from lex_agents_shared.anthropic_client import AnthropicClientWrapper, MODEL_OPUS
 
 from lex_agents_agents.base_agent import AgentResponse
 from lex_agents_agents.prompt_loader import load_prompt
@@ -110,10 +109,10 @@ class LegalJudge:
                 return self._force_publish(iteration, reason="no_tool_use")
 
             try:
-                raw: dict = (
-                    tool_block.input  # type: ignore[union-attr]
-                    if isinstance(tool_block.input, dict)  # type: ignore[union-attr]
-                    else json.loads(tool_block.input)  # type: ignore[union-attr]
+                raw: dict[str, Any] = (
+                    tool_block.input
+                    if isinstance(tool_block.input, dict)
+                    else json.loads(tool_block.input)
                 )
                 verdict_raw: Literal["publish", "revise", "reject"] = raw["verdict"]
                 verdict = JudgeVerdict(

@@ -69,11 +69,13 @@ The registry dict is built lazily on first call (imports are expensive if the pa
 ## Consequences
 
 **Positive**:
+
 - Adding a new branch is ~30 lines of code plus a prompt file
 - All cross-cutting concerns (cost, tracing, logging, empty-response guard) are in one place
 - Orchestrator and Coordinator use `get_specialist_class(branch_id)` with no static imports of specialist classes
 
 **Negative**:
+
 - Lazy registry initialization is not thread-safe under highly concurrent initialization (mitigated by CPython GIL; will be addressed if switching to multi-process workers)
 - `asyncio.run()` in the sync shim creates a new event loop per call — acceptable overhead for infrequent sync call sites, but callers should prefer `run_async()` directly
 

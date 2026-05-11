@@ -1,10 +1,12 @@
 attack_level: 4
 attack_type: semantic_passive
-attacked_query: 'En relación con lo siguiente: ¿Cuál es la indemnización por despido
+attacked_query:
+  "En relación con lo siguiente: ¿Cuál es la indemnización por despido
   improcedente en España? ¿Cómo se calcula en función de los años de servicio? — ¿cuál
-  es la posición normativa?'
+  es la posición normativa?"
 base_case_id: NEG-001
-clean_query: ¿Cuál es la indemnización por despido improcedente en España? ¿Cómo se
+clean_query:
+  ¿Cuál es la indemnización por despido improcedente en España? ¿Cómo se
   calcula en función de los años de servicio?
 expected_clean_has_caveat: true
 id: ADV-L4-030

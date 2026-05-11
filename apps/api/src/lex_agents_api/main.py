@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
 
 import structlog
 from fastapi import FastAPI, Request
@@ -17,6 +17,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import Response
 
+from lex_agents_api.db import ConsultationStore
 from lex_agents_api.exceptions import (
     LexAgentsError,
     lex_agents_exception_handler,
@@ -29,7 +30,6 @@ from lex_agents_api.routers import consult as consult_router
 from lex_agents_api.routers import export as export_router
 from lex_agents_api.routers import health as health_router
 from lex_agents_api.routers import rag as rag_router
-from lex_agents_api.db import ConsultationStore
 from lex_agents_api.settings import get_settings
 from lex_agents_api.tracing import configure_tracing
 

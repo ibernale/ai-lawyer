@@ -6,9 +6,13 @@ expert_reviewed: false
 query: "¿Cómo se aplican los requisitos de capital europeos a las sucursales de entidades de crédito de terceros países establecidas en la UE bajo el CRR? ¿Existe un régimen de tratamiento equivalente y qué lagunas normativas presenta?"
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32013R0575", articles: ["47"]}
-    - {type: regulation, celex: "32013L0036", articles: ["47", "48", "49", "156"]}
-    - {type: regulation, celex: "32019R0876", articles: ["21b"]}
+    - { type: regulation, celex: "32013R0575", articles: ["47"] }
+    - {
+        type: regulation,
+        celex: "32013L0036",
+        articles: ["47", "48", "49", "156"],
+      }
+    - { type: regulation, celex: "32019R0876", articles: ["21b"] }
   must_mention_concepts:
     - "sucursales de terceros países"
     - "third-country branches"

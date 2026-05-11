@@ -6,8 +6,17 @@ expert_reviewed: false
 query: "¿Qué obligaciones en materia de prevención del blanqueo de capitales y financiación del terrorismo (PBC/FT) incumben a las entidades de crédito españolas bajo la AMLD5 y la Ley 10/2010?"
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32018L0843", articles: ["11", "13", "14", "18", "30", "31", "40", "45"]}
-    - {type: legislation, jurisdiction: "ES", reference: "Ley 10/2010", articles: ["2", "3", "4", "5", "6", "7", "8", "17", "18", "26"]}
+    - {
+        type: regulation,
+        celex: "32018L0843",
+        articles: ["11", "13", "14", "18", "30", "31", "40", "45"],
+      }
+    - {
+        type: legislation,
+        jurisdiction: "ES",
+        reference: "Ley 10/2010",
+        articles: ["2", "3", "4", "5", "6", "7", "8", "17", "18", "26"],
+      }
   must_mention_concepts:
     - "blanqueo de capitales"
     - "financiación del terrorismo"

@@ -8,11 +8,11 @@ from __future__ import annotations
 
 import json
 import time
+from typing import Any
 
 import structlog
-from opentelemetry import trace
-
 from lex_agents_shared.anthropic_client import AnthropicClientWrapper
+from opentelemetry import trace
 
 from lex_agents_agents.base_agent import RoutingDecision
 from lex_agents_agents.prompt_loader import load_prompt
@@ -116,10 +116,10 @@ class QueryRouter:
                 return _DEFAULT_DECISION
 
             try:
-                raw: dict = (
-                    tool_use_block.input  # type: ignore[union-attr]
-                    if isinstance(tool_use_block.input, dict)  # type: ignore[union-attr]
-                    else json.loads(tool_use_block.input)  # type: ignore[union-attr]
+                raw: dict[str, Any] = (
+                    tool_use_block.input
+                    if isinstance(tool_use_block.input, dict)
+                    else json.loads(tool_use_block.input)
                 )
                 decision = RoutingDecision(
                     branch=raw["branch"],

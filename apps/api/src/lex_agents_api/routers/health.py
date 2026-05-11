@@ -45,7 +45,6 @@ class VersionResponse(BaseModel):
 
 def _get_qdrant_status(settings: Annotated[Settings, Depends(get_settings)]) -> str:
     """Check Qdrant availability. Returns health string."""
-    from fastapi import Request  # noqa: PLC0415
     # The wrapper is stored in app.state; accessed via request injection in real use.
     # Here we do a lightweight URL parse to avoid circular imports.
     try:

@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
-
 from lex_agents_api.main import create_app
 from lex_agents_api.settings import Settings
 

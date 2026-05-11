@@ -10,9 +10,15 @@ function StatusBadge({ status }: { status: string }) {
     red: { bg: "bg-red-100", text: "text-red-700", label: "Errores" },
     pending: { bg: "bg-gray-100", text: "text-gray-600", label: "Pendiente" },
   };
-  const c = config[status] ?? { bg: "bg-gray-100", text: "text-gray-600", label: status };
+  const c = config[status] ?? {
+    bg: "bg-gray-100",
+    text: "text-gray-600",
+    label: status,
+  };
   return (
-    <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${c.bg} ${c.text}`}>
+    <span
+      className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${c.bg} ${c.text}`}
+    >
       {c.label}
     </span>
   );
@@ -25,7 +31,8 @@ export default async function HistoricoPage() {
   try {
     records = await listConsultations(20);
   } catch (e) {
-    fetchError = e instanceof Error ? e.message : "Error al cargar el historial";
+    fetchError =
+      e instanceof Error ? e.message : "Error al cargar el historial";
   }
 
   return (
@@ -33,7 +40,9 @@ export default async function HistoricoPage() {
       <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-8 space-y-6">
         <header className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Histórico de consultas</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Histórico de consultas
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Últimas {records.length} consultas realizadas
             </p>
@@ -66,16 +75,27 @@ export default async function HistoricoPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Fecha</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Consulta</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Estado</th>
-                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">ms</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                    Fecha
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                    Consulta
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                    Estado
+                  </th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+                    ms
+                  </th>
                   <th className="sr-only">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {records.map((r) => (
-                  <tr key={r.trace_id} className="hover:bg-muted/30 transition-colors">
+                  <tr
+                    key={r.trace_id}
+                    className="hover:bg-muted/30 transition-colors"
+                  >
                     <td className="px-4 py-3 whitespace-nowrap text-muted-foreground text-xs">
                       {new Date(r.created_at).toLocaleString("es-ES", {
                         day: "2-digit",

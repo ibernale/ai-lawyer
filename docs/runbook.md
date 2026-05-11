@@ -158,17 +158,17 @@ python -c "from passlib.hash import bcrypt; print(bcrypt.hash('your_password'))"
 
 ## Common failures and remediation
 
-| Symptom | Likely cause | Remediation |
-|---------|-------------|-------------|
-| `api` exits on startup | `QDRANT_URL` not reachable | Ensure `qdrant` service is healthy first; check `QDRANT_URL` in `.env` |
-| `health` returns `anthropic_api: not_configured` | `ANTHROPIC_API_KEY` empty | Set key in `.env` |
-| `otel-collector` crash-loops | Jaeger not ready | Jaeger starts slower; collector will retry — usually self-resolves in 30s |
-| Docker build fails on `uv sync` | No internet or cache miss | Run `make build-images` with `--no-cache` or ensure network access |
-| `401 Unauthorized` on `/api/v1/*` | Token expired or `auth_enabled=false` missing | Re-authenticate via `POST /auth/token`; for dev set `AUTH_ENABLED=false` in `.env` |
-| `429 Too Many Requests` | Rate limit exceeded (30 req/min on `/consult`) | Wait 60 s; adjust limit in `settings.py` if running load tests |
-| Qdrant returns empty results | Collection not indexed | Run `make ingest-sample` or `make ingest-real` |
-| Export .docx fails with 404 | Consultation not persisted yet | Background save is async; wait 1–2 s and retry |
-| Grafana shows no data | Prometheus not scraping | Check `infra/prometheus.yml` target is `api:8000`; verify `make dev` started prometheus |
+| Symptom                                          | Likely cause                                   | Remediation                                                                             |
+| ------------------------------------------------ | ---------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `api` exits on startup                           | `QDRANT_URL` not reachable                     | Ensure `qdrant` service is healthy first; check `QDRANT_URL` in `.env`                  |
+| `health` returns `anthropic_api: not_configured` | `ANTHROPIC_API_KEY` empty                      | Set key in `.env`                                                                       |
+| `otel-collector` crash-loops                     | Jaeger not ready                               | Jaeger starts slower; collector will retry — usually self-resolves in 30s               |
+| Docker build fails on `uv sync`                  | No internet or cache miss                      | Run `make build-images` with `--no-cache` or ensure network access                      |
+| `401 Unauthorized` on `/api/v1/*`                | Token expired or `auth_enabled=false` missing  | Re-authenticate via `POST /auth/token`; for dev set `AUTH_ENABLED=false` in `.env`      |
+| `429 Too Many Requests`                          | Rate limit exceeded (30 req/min on `/consult`) | Wait 60 s; adjust limit in `settings.py` if running load tests                          |
+| Qdrant returns empty results                     | Collection not indexed                         | Run `make ingest-sample` or `make ingest-real`                                          |
+| Export .docx fails with 404                      | Consultation not persisted yet                 | Background save is async; wait 1–2 s and retry                                          |
+| Grafana shows no data                            | Prometheus not scraping                        | Check `infra/prometheus.yml` target is `api:8000`; verify `make dev` started prometheus |
 
 ---
 
@@ -207,6 +207,7 @@ dagster asset materialize --select boe_raw+ eur_lex_raw+
 ```
 
 **Common failure causes:**
+
 - Source HTTP 429 → check `RATE_LIMIT_DELAY` env var; increase if needed.
 - Qdrant connection refused → ensure `make dev` is running; check `docker compose ps`.
 - Checksum mismatch on canonical layer → re-run from raw: `dagster asset materialize --select boe_canonical`.

@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-import textwrap
 from pathlib import Path
 
-import pytest
 import yaml
-
+from lex_agents_memory.semantic.injector import _BUDGET_CHARS, SemanticInjector
 from lex_agents_memory.semantic.loader import SemanticLoader
-from lex_agents_memory.semantic.injector import SemanticInjector, _BUDGET_CHARS
 from lex_agents_memory.semantic.validator import validate_all
-
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 

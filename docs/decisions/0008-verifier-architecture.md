@@ -15,6 +15,7 @@ need to verify that each normative claim in the generated response is actually s
 cited chunk, before the response is returned to the user.
 
 Requirements:
+
 - Deterministic where possible (auditable, reproducible)
 - Low latency overhead (most responses should not need LLM calls)
 - Clear status signal for the UI (green / amber / red)
@@ -50,13 +51,13 @@ Maps: `supported` → PASSED, `not_supported` → FAILED, `partial` → UNCERTAI
 
 ### Status policy
 
-| Condition | Status |
-|---|---|
-| Any `broken_refs` (REF:n not in mapping) | `red` |
-| Any FAILED claim | `red` |
+| Condition                                            | Status  |
+| ---------------------------------------------------- | ------- |
+| Any `broken_refs` (REF:n not in mapping)             | `red`   |
+| Any FAILED claim                                     | `red`   |
 | Any `uncited_claims` (normative claim without REF:n) | `amber` |
-| Any UNCERTAIN after LLM fallback | `amber` |
-| All PASSED, no uncited | `green` |
+| Any UNCERTAIN after LLM fallback                     | `amber` |
+| All PASSED, no uncited                               | `green` |
 
 `ClaimExtractor` identifies normative claims using regex patterns for articles, norm names,
 legal obligations, jurisprudence, and regulatory bodies.
@@ -67,21 +68,23 @@ in the citation mapping).
 ## Consequences
 
 **Benefits:**
+
 - Heuristic is deterministic: same input always produces same verdict (reproducible audit log)
 - LLM cost is bounded: Haiku is called only for UNCERTAIN claims — typically <20% of claims
 - Parallel LLM calls minimize latency overhead for multi-claim responses
 - Status is machine-readable: UI can render green/amber/red badge without parsing text
 
 **Trade-offs:**
+
 - Heuristic may miss paraphrased support (trigram overlap is a proxy, not semantic similarity)
 - `partial` claims from Haiku remain UNCERTAIN — conservative by design
 - Regex patterns are Spanish-language specific; multilingual support requires extension
 
 ## Alternatives rejected
 
-| Option | Reason for rejection |
-|---|---|
-| LLM-only verification (all claims via Haiku) | 3-5× higher latency and cost; non-deterministic |
-| NER + knowledge base lookup | High implementation complexity; no marginal accuracy gain vs. entity regex |
-| Embedding similarity (claim vs. chunk) | Semantic similarity ≠ factual support; no directional verification |
-| Skip verification in MVP | Non-negotiable principle: "toda afirmación normativa lleva cita verificable" |
+| Option                                       | Reason for rejection                                                         |
+| -------------------------------------------- | ---------------------------------------------------------------------------- |
+| LLM-only verification (all claims via Haiku) | 3-5× higher latency and cost; non-deterministic                              |
+| NER + knowledge base lookup                  | High implementation complexity; no marginal accuracy gain vs. entity regex   |
+| Embedding similarity (claim vs. chunk)       | Semantic similarity ≠ factual support; no directional verification           |
+| Skip verification in MVP                     | Non-negotiable principle: "toda afirmación normativa lleva cita verificable" |

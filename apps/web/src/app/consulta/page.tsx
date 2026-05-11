@@ -35,7 +35,8 @@ const DEPTH_OPTIONS: {
   {
     value: "shallow",
     label: "Rápido",
-    tooltip: "Ruta directa: router → especialista → verificación. Sin planificación. ~10s.",
+    tooltip:
+      "Ruta directa: router → especialista → verificación. Sin planificación. ~10s.",
   },
   {
     value: "standard",
@@ -58,8 +59,12 @@ export default function ConsultaPage({
 }) {
   const [query, setQuery] = useState("");
   const [outputType, setOutputType] = useState("dictamen");
-  const [depth, setDepth] = useState<"shallow" | "standard" | "deep">("standard");
-  const [selectedJurisdictions, setSelectedJurisdictions] = useState<string[]>([]);
+  const [depth, setDepth] = useState<"shallow" | "standard" | "deep">(
+    "standard",
+  );
+  const [selectedJurisdictions, setSelectedJurisdictions] = useState<string[]>(
+    [],
+  );
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<ConsultResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +87,13 @@ export default function ConsultaPage({
     setError(null);
     setResponse(null);
     try {
-      const resp = await consultQuery(query.trim(), outputType, undefined, depth, selectedJurisdictions);
+      const resp = await consultQuery(
+        query.trim(),
+        outputType,
+        undefined,
+        depth,
+        selectedJurisdictions,
+      );
       setResponse(resp);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error desconocido");
@@ -96,10 +107,14 @@ export default function ConsultaPage({
       {/* Permanent disclaimer banner — not dismissable */}
       <div className="sticky top-0 z-40 bg-amber-50 border-b border-amber-200 px-4 py-2">
         <p className="text-xs text-amber-800 text-center">
-          <strong>Borrador asistido por IA.</strong> Requiere validación por jurista cualificado
-          antes de cualquier uso. No constituye asesoramiento legal. Sistema en fase MVP, dataset
-          y prompts no validados por experto humano.{" "}
-          <a href="/legal" className="underline font-medium hover:text-amber-900">
+          <strong>Borrador asistido por IA.</strong> Requiere validación por
+          jurista cualificado antes de cualquier uso. No constituye
+          asesoramiento legal. Sistema en fase MVP, dataset y prompts no
+          validados por experto humano.{" "}
+          <a
+            href="/legal"
+            className="underline font-medium hover:text-amber-900"
+          >
             Más información
           </a>
         </p>
@@ -107,9 +122,12 @@ export default function ConsultaPage({
 
       <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-8 space-y-6">
         <header>
-          <h1 className="text-2xl font-bold tracking-tight">Consulta jurídica</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Consulta jurídica
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Regulación bancaria · RGPD · Laboral · Mercantil · Penal económico · Administrativo
+            Regulación bancaria · RGPD · Laboral · Mercantil · Penal económico ·
+            Administrativo
           </p>
         </header>
 
@@ -125,7 +143,9 @@ export default function ConsultaPage({
 
           {/* Depth selector */}
           <div className="flex items-center gap-1">
-            <span className="text-sm font-medium text-muted-foreground mr-1">Profundidad:</span>
+            <span className="text-sm font-medium text-muted-foreground mr-1">
+              Profundidad:
+            </span>
             {DEPTH_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
@@ -150,7 +170,10 @@ export default function ConsultaPage({
           <div className="space-y-1">
             <span className="text-sm font-medium text-muted-foreground">
               Jurisdicciones{" "}
-              <span className="text-xs font-normal">(vacío = autodetectar)</span>:
+              <span className="text-xs font-normal">
+                (vacío = autodetectar)
+              </span>
+              :
             </span>
             <div className="flex flex-wrap gap-1.5">
               {JURISDICTIONS.map((j) => {
@@ -162,7 +185,9 @@ export default function ConsultaPage({
                     disabled={loading}
                     onClick={() =>
                       setSelectedJurisdictions((prev) =>
-                        active ? prev.filter((c) => c !== j.code) : [...prev, j.code],
+                        active
+                          ? prev.filter((c) => c !== j.code)
+                          : [...prev, j.code],
                       )
                     }
                     className={[
@@ -174,7 +199,9 @@ export default function ConsultaPage({
                     ].join(" ")}
                   >
                     {j.code}
-                    <span className="ml-1 hidden sm:inline text-[10px] opacity-70">{j.label}</span>
+                    <span className="ml-1 hidden sm:inline text-[10px] opacity-70">
+                      {j.label}
+                    </span>
                   </button>
                 );
               })}
@@ -193,7 +220,10 @@ export default function ConsultaPage({
 
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <label htmlFor="output-type" className="text-sm font-medium whitespace-nowrap">
+              <label
+                htmlFor="output-type"
+                className="text-sm font-medium whitespace-nowrap"
+              >
                 Tipo de documento:
               </label>
               <select

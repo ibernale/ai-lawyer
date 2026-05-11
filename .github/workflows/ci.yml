@@ -58,7 +58,7 @@ jobs:
           path: ~/.cache/uv
           key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
       - run: uv sync --all-packages
-      - run: uv run --with "pytest>=8" --with "pytest-asyncio>=0.23" pytest -x -q -m "not integration"
+      - run: uv run --with "pytest>=8" --with "pytest-asyncio>=0.23" --with "respx>=0.21" pytest -x -q -m "not integration"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -79,7 +79,7 @@ jobs:
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @lex-agents/web lint
-      - run: pnpm exec prettier --check "**/*.{ts,tsx,js,jsx,json,yaml,md}" --ignore-path .gitignore
+      - run: pnpm exec prettier --check "**/*.{ts,tsx,js,jsx,json,yaml,md}" --ignore-path .gitignore --ignore-path .prettierignore
 
   typecheck-web:
     name: Type-check Web

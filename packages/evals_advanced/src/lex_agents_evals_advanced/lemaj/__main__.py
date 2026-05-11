@@ -16,12 +16,11 @@ import sys
 from pathlib import Path
 
 import structlog
-
 from lex_agents_shared.anthropic_client import AnthropicClientWrapper
 
 from lex_agents_evals_advanced.lemaj.decomposer import LDPDecomposer
-from lex_agents_evals_advanced.lemaj.panel import JudgePanel
 from lex_agents_evals_advanced.lemaj.metrics import build_lemaj_metrics, render_report
+from lex_agents_evals_advanced.lemaj.panel import JudgePanel
 from lex_agents_evals_advanced.types import LDPVerdict
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)

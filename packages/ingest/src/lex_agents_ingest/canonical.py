@@ -6,10 +6,8 @@ import hashlib
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
-
 from lex_agents_shared.types import ChunkMetadata
-
+from pydantic import BaseModel, Field
 
 # ---------------------------------------------------------------------------
 # Raw fetch result

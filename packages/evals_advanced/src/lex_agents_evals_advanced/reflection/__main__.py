@@ -16,13 +16,12 @@ import sys
 from pathlib import Path
 
 import structlog
-
 from lex_agents_shared.anthropic_client import AnthropicClientWrapper
 
 from lex_agents_evals_advanced.reflection.failure_analyzer import analyze_failures
+from lex_agents_evals_advanced.reflection.pr_opener import open_pr
 from lex_agents_evals_advanced.reflection.prompt_proposer import PromptProposer
 from lex_agents_evals_advanced.reflection.regression_sim import simulate
-from lex_agents_evals_advanced.reflection.pr_opener import open_pr
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 

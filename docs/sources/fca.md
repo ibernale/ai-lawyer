@@ -12,11 +12,11 @@ https://www.handbook.fca.org.uk/
 
 ## Secciones cubiertas
 
-| Código | Nombre completo | URL |
-|--------|----------------|-----|
-| PRIN | Principles for Businesses | `/handbook/PRIN` |
-| COBS | Conduct of Business Sourcebook | `/handbook/COBS` |
-| SYSC | Senior Management Arrangements, Systems and Controls | `/handbook/SYSC` |
+| Código | Nombre completo                                      | URL              |
+| ------ | ---------------------------------------------------- | ---------------- |
+| PRIN   | Principles for Businesses                            | `/handbook/PRIN` |
+| COBS   | Conduct of Business Sourcebook                       | `/handbook/COBS` |
+| SYSC   | Senior Management Arrangements, Systems and Controls | `/handbook/SYSC` |
 
 Para ampliar la cobertura, añadir entradas a `COVERED_SECTIONS` en `fca.py`.
 
@@ -52,11 +52,11 @@ lex-agents/0.1 (+https://github.com/ibernale/ai-lawyer)
 
 ## Detección de cambios de formato
 
-| Señal | Causa probable |
-|-------|----------------|
-| `full_text` muy corto (<500 chars) para secciones extensas | El FCA ha migrado a contenido renderizado por JavaScript; necesita Playwright/Selenium |
-| `hierarchy` vacío | Los headings ya no usan `h2`/`h3` o la numeración ha cambiado de formato |
-| `list_documents()` devuelve sólo secciones principales sin capítulos | La estructura de TOC HTML ha cambiado |
-| HTTP 403 | El FCA ha implementado protección anti-bot |
+| Señal                                                                | Causa probable                                                                         |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `full_text` muy corto (<500 chars) para secciones extensas           | El FCA ha migrado a contenido renderizado por JavaScript; necesita Playwright/Selenium |
+| `hierarchy` vacío                                                    | Los headings ya no usan `h2`/`h3` o la numeración ha cambiado de formato               |
+| `list_documents()` devuelve sólo secciones principales sin capítulos | La estructura de TOC HTML ha cambiado                                                  |
+| HTTP 403                                                             | El FCA ha implementado protección anti-bot                                             |
 
 **Limitación conocida:** cobertura parcial. El Handbook completo tiene decenas de sourcebooks; esta implementación cubre el mínimo requerido para el MVP bancario.

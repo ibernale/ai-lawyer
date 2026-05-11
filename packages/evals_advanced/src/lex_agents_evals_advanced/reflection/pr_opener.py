@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import structlog
@@ -29,7 +29,7 @@ _SUBPROCESS_TIMEOUT_GIT = 30   # seconds
 _SUBPROCESS_TIMEOUT_GH = 30    # seconds
 
 
-def _validate_diff_inputs(diff: "PromptDiff") -> str | None:
+def _validate_diff_inputs(diff: PromptDiff) -> str | None:
     """Return error message if inputs are unsafe; None if OK."""
     if not _SAFE_BRANCH_RE.match(diff.branch):
         return f"branch name contains unsafe characters: {diff.branch!r}"
@@ -124,7 +124,7 @@ def open_pr(
     if err := _validate_diff_inputs(diff):
         logger.error("pr_opener_invalid_inputs", error=err)
         return None
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
     branch_name = f"prompt-evolution/{timestamp}-{diff.branch}"
     new_version = diff.current_version + 1
     prompt_path = Path(diff.current_prompt_path)
@@ -172,7 +172,7 @@ _ADR de referencia: 0021 (prompt evolution policy)_
     if dry_run:
         logger.info("pr_opener_dry_run", branch=branch_name, title=pr_title)
         print(f"\n{'='*60}")
-        print(f"DRY RUN — PR would be created:")
+        print("DRY RUN — PR would be created:")
         print(f"Branch: {branch_name}")
         print(f"Title: {pr_title}")
         print(f"Body preview:\n{pr_body[:500]}...")

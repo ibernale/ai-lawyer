@@ -15,23 +15,23 @@ make eval
 
 Results land in `evals/reports/<timestamp>/`:
 
-| File | Contents |
-|------|----------|
-| `results.jsonl` | One JSON per case (CaseResult) |
-| `metrics.json` | Aggregated RunSummary (read by CI) |
-| `summary.md` | Human-readable markdown table |
-| `manifest.json` | git SHA, models, dataset SHA |
+| File            | Contents                           |
+| --------------- | ---------------------------------- |
+| `results.jsonl` | One JSON per case (CaseResult)     |
+| `metrics.json`  | Aggregated RunSummary (read by CI) |
+| `summary.md`    | Human-readable markdown table      |
+| `manifest.json` | git SHA, models, dataset SHA       |
 
 ## Metrics
 
-| Metric | Definition | Weight |
-|--------|-----------|--------|
-| `citation_recall` | Fraction of expected citations found | 0.35 |
-| `citation_precision` | `claims_passed / claims_total` | 0.25 |
-| `hallucination_free` | `1 - hallucination_rate` | 0.20 |
-| `concept_coverage` | Fraction of required concepts in answer | 0.10 |
-| `forbidden_claim_free` | `1 - forbidden_claim_rate` | 0.05 |
-| `caveat_coverage` | Fraction of expected caveats mentioned | 0.05 |
+| Metric                 | Definition                              | Weight |
+| ---------------------- | --------------------------------------- | ------ |
+| `citation_recall`      | Fraction of expected citations found    | 0.35   |
+| `citation_precision`   | `claims_passed / claims_total`          | 0.25   |
+| `hallucination_free`   | `1 - hallucination_rate`                | 0.20   |
+| `concept_coverage`     | Fraction of required concepts in answer | 0.10   |
+| `forbidden_claim_free` | `1 - forbidden_claim_rate`              | 0.05   |
+| `caveat_coverage`      | Fraction of expected caveats mentioned  | 0.05   |
 
 `legal_quality_score` = weighted average. Range [0, 1]; higher is better.
 
@@ -39,12 +39,12 @@ Results land in `evals/reports/<timestamp>/`:
 
 ## CI thresholds (smoke job)
 
-| Metric | Threshold | Action |
-|--------|-----------|--------|
-| `forbidden_claim_rate` | > 0 | Hard fail |
-| `citation_recall` | < 0.70 | Hard fail |
-| `hallucination_rate` | > 0.10 | Hard fail |
-| `legal_quality_score` | < baseline × 0.95 | Hard fail (compare step) |
+| Metric                 | Threshold         | Action                   |
+| ---------------------- | ----------------- | ------------------------ |
+| `forbidden_claim_rate` | > 0               | Hard fail                |
+| `citation_recall`      | < 0.70            | Hard fail                |
+| `hallucination_rate`   | > 0.10            | Hard fail                |
+| `legal_quality_score`  | < baseline × 0.95 | Hard fail (compare step) |
 
 Full job adds: `latency_p95 > 30 000 ms`, `cost_per_query > $0.50`.
 
@@ -54,12 +54,12 @@ Full job adds: `latency_p95 > 30 000 ms`, `cost_per_query > $0.50`.
 id: BANK-EU-001
 jurisdiction: [ES, EU]
 branch: regulatorio_bancario_ue_es
-difficulty: easy          # easy | medium | hard
-expert_reviewed: false    # always false until signed by a qualified jurist
+difficulty: easy # easy | medium | hard
+expert_reviewed: false # always false until signed by a qualified jurist
 query: "¿Cuáles son los requisitos de capital CET1?"
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32013R0575", articles: ["92"]}
+    - { type: regulation, celex: "32013R0575", articles: ["92"] }
   must_mention_concepts: ["capital ordinario de nivel 1", "ratio CET1"]
   must_not_claim: ["Basilea IV está plenamente en vigor en la UE"]
   expected_caveats: ["sujeto a modificaciones por CRR3"]

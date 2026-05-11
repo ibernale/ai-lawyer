@@ -20,7 +20,8 @@ export default async function HomePage() {
           Regulatorio bancario UE+ES
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Consulta sobre normativa prudencial, supervisión y solvencia de entidades de crédito.
+          Consulta sobre normativa prudencial, supervisión y solvencia de
+          entidades de crédito.
         </p>
       </div>
 
@@ -33,8 +34,9 @@ export default async function HomePage() {
           <div className="flex items-center gap-3">
             <StatusBadge status="unavailable" label="API no disponible" />
             <span className="text-sm text-muted-foreground">
-              No se puede conectar al backend. Comprueba que los servicios están arrancados
-              con <code className="font-mono text-xs">make dev</code>.
+              No se puede conectar al backend. Comprueba que los servicios están
+              arrancados con <code className="font-mono text-xs">make dev</code>
+              .
             </span>
           </div>
         ) : (
@@ -44,13 +46,21 @@ export default async function HomePage() {
               <StatusBadge status={health.status} />
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Qdrant (índice vectorial)</span>
+              <span className="text-sm text-muted-foreground">
+                Qdrant (índice vectorial)
+              </span>
               <StatusBadge status={health.deps_status.qdrant} />
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Anthropic API</span>
+              <span className="text-sm text-muted-foreground">
+                Anthropic API
+              </span>
               <StatusBadge
-                status={health.deps_status.anthropic_api === "configured" ? "healthy" : "degraded"}
+                status={
+                  health.deps_status.anthropic_api === "configured"
+                    ? "healthy"
+                    : "degraded"
+                }
                 label={
                   health.deps_status.anthropic_api === "configured"
                     ? "Configurada"

@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import os
-from typing import Generator
 
 import structlog
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import ConfigurableResource
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 

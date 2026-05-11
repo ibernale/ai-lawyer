@@ -3,15 +3,13 @@
 from __future__ import annotations
 
 import asyncio
-import re
 import time
 
 import structlog
-from opentelemetry import trace
-
 from lex_agents_rag.assembler import AssembledContext
-from lex_agents_shared.anthropic_client import AnthropicClientWrapper, MODEL_OPUS
+from lex_agents_shared.anthropic_client import MODEL_OPUS, AnthropicClientWrapper
 from lex_agents_shared.types import CitationMapping
+from opentelemetry import trace
 
 from lex_agents_agents.base_agent import AgentMetadata, AgentResponse
 from lex_agents_agents.prompt_loader import load_prompt
@@ -172,7 +170,7 @@ class CrossJurisdictionCoordinator:
         weights: dict[str, float],
     ) -> str:
         parts = ["# Respuestas de los especialistas por rama\n"]
-        for i, (resp, name) in enumerate(zip(responses, branch_names, strict=False)):
+        for _, (resp, name) in enumerate(zip(responses, branch_names, strict=False)):
             w = weights.get(name, 1.0 / len(responses))
             parts.append(
                 f"\n## RAMA: {name} (peso: {w:.2f})\n\n{resp.answer_text}\n"

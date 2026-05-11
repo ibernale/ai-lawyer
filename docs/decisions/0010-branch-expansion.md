@@ -23,23 +23,23 @@ de la rama existente.
 
 ### Cinco ramas nuevas, en este orden de implementación
 
-| Orden | Rama | Código interno | Justificación de prioridad |
-|-------|------|----------------|---------------------------|
-| 1 | Datos personales / RGPD | `datos_personales_rgpd` | Alta demanda del DPO interno; fuentes muy delimitadas (AEPD + EDPB); regulación estable y bien estructurada |
-| 2 | Laboral | `laboral_es` | Mayor volumen estimado de consultas internas; ET + convenios sectoriales bancarios + jurisprudencia TS Sala Social |
-| 3 | Mercantil / societario | `mercantil_societario` | Complementa operaciones M&A y reestructuraciones bancarias ya en roadmap; Registro Mercantil + TRLSC + LME |
-| 4 | Penal económico | `penal_economico` | Compliance penal bancario (Ley Orgánica 1/2015, delitos societarios, blanqueo); crece con normativa AMLD6 |
-| 5 | Administrativo sancionador | `administrativo_sancionador` | Procedimiento sancionador CNMV/BdE/AEPD; recurso contencioso-administrativo sobre resoluciones supervisoras |
+| Orden | Rama                       | Código interno               | Justificación de prioridad                                                                                         |
+| ----- | -------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 1     | Datos personales / RGPD    | `datos_personales_rgpd`      | Alta demanda del DPO interno; fuentes muy delimitadas (AEPD + EDPB); regulación estable y bien estructurada        |
+| 2     | Laboral                    | `laboral_es`                 | Mayor volumen estimado de consultas internas; ET + convenios sectoriales bancarios + jurisprudencia TS Sala Social |
+| 3     | Mercantil / societario     | `mercantil_societario`       | Complementa operaciones M&A y reestructuraciones bancarias ya en roadmap; Registro Mercantil + TRLSC + LME         |
+| 4     | Penal económico            | `penal_economico`            | Compliance penal bancario (Ley Orgánica 1/2015, delitos societarios, blanqueo); crece con normativa AMLD6          |
+| 5     | Administrativo sancionador | `administrativo_sancionador` | Procedimiento sancionador CNMV/BdE/AEPD; recurso contencioso-administrativo sobre resoluciones supervisoras        |
 
 ### Ramas explícitamente excluidas de esta fase
 
-| Rama excluida | Razón |
-|---------------|-------|
-| Civil general | Amplitud máxima (CC, obligaciones, contratos, familia, sucesiones); validación experta muy costosa; valor marginal bajo para banca vs. otras ramas |
-| Fiscal | Normativa mutable, interpretaciones administrativas volátiles (DGT), riesgo alto de hallucination con consecuencias económicas directas; requiere equipo especializado en tax |
-| Procesal | Fuertemente procedimental, variación autonómica, utilidad limitada sin integración con LexNET |
-| IT / IP | Requiere fuentes específicas (OEPM, EUIPO, WIPO) no conectadas aún; demanda interna estimada baja |
-| Competencia | CNMC + DG Comp; casuística muy case-specific; riesgo de citar precedentes con matices que requieren experto |
+| Rama excluida | Razón                                                                                                                                                                         |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Civil general | Amplitud máxima (CC, obligaciones, contratos, familia, sucesiones); validación experta muy costosa; valor marginal bajo para banca vs. otras ramas                            |
+| Fiscal        | Normativa mutable, interpretaciones administrativas volátiles (DGT), riesgo alto de hallucination con consecuencias económicas directas; requiere equipo especializado en tax |
+| Procesal      | Fuertemente procedimental, variación autonómica, utilidad limitada sin integración con LexNET                                                                                 |
+| IT / IP       | Requiere fuentes específicas (OEPM, EUIPO, WIPO) no conectadas aún; demanda interna estimada baja                                                                             |
+| Competencia   | CNMC + DG Comp; casuística muy case-specific; riesgo de citar precedentes con matices que requieren experto                                                                   |
 
 La exclusión es temporal. Estas ramas se reevaluarán en Fase 7 según uso real de las ramas activas y disponibilidad de validación experta.
 
@@ -65,6 +65,7 @@ packages/agents/src/lex_agents_agents/
 ```
 
 `BaseSpecialist` expone:
+
 - `run(brief: SpecialistBrief) -> SpecialistResponse` — interfaz única para el Orchestrator/Planner
 - `_build_prompt(context: str, query: str) -> str` — hook sobreescribible por especialista
 - `_validate_response(resp: str) -> VerificationInput` — prepara la respuesta para el Verifier
@@ -76,6 +77,7 @@ packages/agents/src/lex_agents_agents/
 Se usa **una sola colección** `lex_legal_docs` con campo de payload `domain: str` (e.g., `"datos_personales"`, `"laboral"`). El retriever aplica `FieldCondition(key="domain", ...)` como filtro adicional.
 
 Razones:
+
 - Evita gestionar N colecciones con vectores duplicados (normas que cruzan dominios, e.g., LOPD ↔ laboral)
 - Simplifica el Planner multi-rama: un solo cliente Qdrant, múltiples filtros
 - Facilita búsquedas cross-domain cuando el Planner lo requiere
@@ -86,13 +88,13 @@ Alternativa descartada: colecciones separadas por rama. Rechazada porque los doc
 
 ## Mapping por rama
 
-| Rama | Jurisdicciones | Fuentes primarias | Prompt path | Filtro Qdrant |
-|------|---------------|-------------------|-------------|---------------|
-| datos_personales_rgpd | ES, EU | AEPD resoluciones, EDPB guidelines, RGPD, LOPDGDD | `docs/prompts/datos_personales_v1.md` | `domain=datos_personales` |
-| laboral_es | ES | BOE (ET, LGSS, convenios), TS Sala Social (CENDOJ-AMBER) | `docs/prompts/laboral_v1.md` | `domain=laboral` |
-| mercantil_societario | ES, EU | BOE (TRLSC, LME, LSC), BORME, EUR-Lex (directivas societarias) | `docs/prompts/mercantil_v1.md` | `domain=mercantil` |
-| penal_economico | ES, EU | BOE (CP, LO 1/2015), EUR-Lex (AMLD6, DORA art. penales) | `docs/prompts/penal_economico_v1.md` | `domain=penal_economico` |
-| administrativo_sancionador | ES | BOE (LPAC, LJCA), CNMV/BdE circulares y resoluciones | `docs/prompts/administrativo_v1.md` | `domain=administrativo` |
+| Rama                       | Jurisdicciones | Fuentes primarias                                              | Prompt path                           | Filtro Qdrant             |
+| -------------------------- | -------------- | -------------------------------------------------------------- | ------------------------------------- | ------------------------- |
+| datos_personales_rgpd      | ES, EU         | AEPD resoluciones, EDPB guidelines, RGPD, LOPDGDD              | `docs/prompts/datos_personales_v1.md` | `domain=datos_personales` |
+| laboral_es                 | ES             | BOE (ET, LGSS, convenios), TS Sala Social (CENDOJ-AMBER)       | `docs/prompts/laboral_v1.md`          | `domain=laboral`          |
+| mercantil_societario       | ES, EU         | BOE (TRLSC, LME, LSC), BORME, EUR-Lex (directivas societarias) | `docs/prompts/mercantil_v1.md`        | `domain=mercantil`        |
+| penal_economico            | ES, EU         | BOE (CP, LO 1/2015), EUR-Lex (AMLD6, DORA art. penales)        | `docs/prompts/penal_economico_v1.md`  | `domain=penal_economico`  |
+| administrativo_sancionador | ES             | BOE (LPAC, LJCA), CNMV/BdE circulares y resoluciones           | `docs/prompts/administrativo_v1.md`   | `domain=administrativo`   |
 
 ---
 
@@ -112,14 +114,17 @@ Una rama puede activarse cuando cumple **todos**:
 ## Consequences
 
 **Positivo:**
+
 - El patrón `BaseSpecialist` reduce el coste de añadir ramas futuras a ~2 días por rama vs. ~2 semanas desde cero
 - La colección unificada permite búsquedas cross-domain necesarias para el Planner (ADR 0012)
 - Las ramas tienen criterios de aceptación objetivos; no se activan hasta cumplirlos
 
 **Negativo/Riesgos:**
+
 - Cada rama nueva aumenta la superficie de hallucinations posibles; la validación experta por rama es costosa
 - La colección unificada requiere disciplina en el campo `domain` durante la ingesta; un error de etiquetado contamina resultados
 - Las 5 ramas nuevas suponen ~5× más casos necesarios en el golden dataset para mantener cobertura equivalente
 
 **Neutral:**
+
 - La rama `regulatorio_bancario_ue_es` existente se migra para heredar `BaseSpecialist` en la misma sub-fase que se implementa la primera rama nueva; coste estimado: medio día

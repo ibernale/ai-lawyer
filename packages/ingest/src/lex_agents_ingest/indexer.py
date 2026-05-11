@@ -13,7 +13,6 @@ from qdrant_client.http.models import (
     SparseVector,
     SparseVectorParams,
     VectorParams,
-    VectorsConfig,
 )
 
 from lex_agents_ingest.canonical import Chunk

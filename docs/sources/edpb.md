@@ -7,6 +7,7 @@ https://www.edpb.europa.eu/our-work-tools/our-documents_en
 ```
 
 Documentos individuales (landing page):
+
 ```
 https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/<slug>_en
 ```
@@ -45,11 +46,11 @@ lex-agents/0.1 (+https://github.com/ibernale/ai-lawyer)
 
 ## Detección de cambios de formato
 
-| Señal | Causa probable |
-|-------|----------------|
-| `full_text` vacío cuando `content_type="pdf"` | `pdfminer.six` no instalado o PDF escaneado/cifrado |
-| `list_documents()` devuelve 0 IDs | La URL `/our-work-tools/our-documents_en` ha cambiado o la estructura de links ha variado |
-| `title` = primera línea del PDF es un header/footer en lugar del título real | La maquetación del PDF ha cambiado |
-| Error HTTP 404 en descarga de PDF | La URL del PDF ha rotado (el EDPB reestructura ocasionalmente sus URLs) |
+| Señal                                                                        | Causa probable                                                                            |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `full_text` vacío cuando `content_type="pdf"`                                | `pdfminer.six` no instalado o PDF escaneado/cifrado                                       |
+| `list_documents()` devuelve 0 IDs                                            | La URL `/our-work-tools/our-documents_en` ha cambiado o la estructura de links ha variado |
+| `title` = primera línea del PDF es un header/footer en lugar del título real | La maquetación del PDF ha cambiado                                                        |
+| Error HTTP 404 en descarga de PDF                                            | La URL del PDF ha rotado (el EDPB reestructura ocasionalmente sus URLs)                   |
 
 **Dependencia externa:** `pdfminer.six` (opcional, no en `pyproject.toml`). Instalar manualmente si se requiere extracción completa: `pip install pdfminer.six`.

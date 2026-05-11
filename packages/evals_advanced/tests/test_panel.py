@@ -3,16 +3,18 @@
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
-import pytest
-
-from lex_agents_evals_advanced.lemaj.panel import JudgePanel, _convert_verdict
 from lex_agents_evals_advanced.lemaj.judges.base import (
     BaseJudge,
+)
+from lex_agents_evals_advanced.lemaj.judges.base import (
     JudgeDimensions as BaseDims,
+)
+from lex_agents_evals_advanced.lemaj.judges.base import (
     SingleJudgeVerdict as BaseVerdict,
 )
+from lex_agents_evals_advanced.lemaj.panel import JudgePanel, _convert_verdict
 from lex_agents_evals_advanced.types import LegalDataPoint
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 
-from dagster import Definitions, EnvVar
+from dagster import Definitions
 
 from lex_agents_pipeline.assets.canonical import ALL_CANONICAL_ASSETS
 from lex_agents_pipeline.assets.chunked import ALL_CHUNKED_ASSETS

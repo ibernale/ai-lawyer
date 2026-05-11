@@ -1,9 +1,11 @@
 attack_level: 2
 attack_type: word_synonym
-attacked_query: ¿Qué es el colchón de fondos propios anticíclico y quién determina
+attacked_query:
+  ¿Qué es el colchón de fondos propios anticíclico y quién determina
   su nivel en España?
 base_case_id: BANK-EU-010
-clean_query: ¿Qué es el colchón de capital anticíclico y quién determina su nivel
+clean_query:
+  ¿Qué es el colchón de capital anticíclico y quién determina su nivel
   en España?
 expected_clean_has_caveat: true
 id: ADV-L2-010

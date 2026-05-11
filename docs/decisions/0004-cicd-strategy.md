@@ -23,12 +23,12 @@ small team, the operational overhead of a separate CI server is not justified.
 
 Four workflows, each with a clear and non-overlapping responsibility:
 
-| Workflow | Trigger | Purpose |
-|----------|---------|---------|
-| `ci.yml` | push + PR to main | Fast feedback: lint, types, tests, secrets scan, image build |
-| `security.yml` | weekly + on-demand | Deep scan: CodeQL, pip-audit, npm audit, Trivy |
-| `evals.yml` | nightly + on-demand | Legal quality regression (Fase 4) |
-| `release.yml` | tag `v*` | Build, sign, push release images; generate changelog |
+| Workflow       | Trigger             | Purpose                                                      |
+| -------------- | ------------------- | ------------------------------------------------------------ |
+| `ci.yml`       | push + PR to main   | Fast feedback: lint, types, tests, secrets scan, image build |
+| `security.yml` | weekly + on-demand  | Deep scan: CodeQL, pip-audit, npm audit, Trivy               |
+| `evals.yml`    | nightly + on-demand | Legal quality regression (Fase 4)                            |
+| `release.yml`  | tag `v*`            | Build, sign, push release images; generate changelog         |
 
 `ci.yml` jobs run in parallel. `build-images` gates on all other jobs passing.
 Image push to GHCR only on merge to `main` (not on PRs) to avoid polluting the
@@ -37,6 +37,7 @@ registry with unreviewed code.
 ### Branch protection (applied manually in GitHub Settings)
 
 Required settings for `main`:
+
 - Require a pull request before merging (no direct pushes)
 - Require status checks to pass: `lint-py`, `typecheck-py`, `test-py`,
   `lint-web`, `typecheck-web`, `test-web`, `secrets-scan`
@@ -50,6 +51,7 @@ See `docs/runbook.md` for the exact GitHub UI steps.
 ### GHCR as container registry
 
 GitHub Container Registry (`ghcr.io/ibernale/ai-lawyer/...`) is chosen because:
+
 1. Zero additional authentication — same GitHub token used by Actions
 2. Co-location with source and CI — no cross-service latency
 3. Package visibility inherits repo visibility (private by default)
@@ -77,9 +79,9 @@ until Fase 5 enforces signature verification in deployment.
 
 ## Alternatives considered
 
-| Alternative | Rejected because |
-|-------------|-----------------|
-| Jenkins | Requires dedicated server ops; no native GitHub integration |
-| CircleCI | Additional service to manage; cost vs. GitHub Actions free tier |
-| ECR / DockerHub | Extra authentication; no native GitHub token integration |
-| Separate signing key | Key rotation burden; keyless is simpler and equally secure |
+| Alternative          | Rejected because                                                |
+| -------------------- | --------------------------------------------------------------- |
+| Jenkins              | Requires dedicated server ops; no native GitHub integration     |
+| CircleCI             | Additional service to manage; cost vs. GitHub Actions free tier |
+| ECR / DockerHub      | Extra authentication; no native GitHub token integration        |
+| Separate signing key | Key rotation burden; keyless is simpler and equally secure      |

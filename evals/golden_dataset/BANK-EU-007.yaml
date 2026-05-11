@@ -6,7 +6,11 @@ expert_reviewed: false
 query: "¿Cómo se calculan los requisitos de fondos propios por riesgo de crédito bajo el enfoque estándar del CRR?"
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32013R0575", articles: ["92", "107", "112", "113", "114"]}
+    - {
+        type: regulation,
+        celex: "32013R0575",
+        articles: ["92", "107", "112", "113", "114"],
+      }
   must_mention_concepts:
     - "riesgo de crédito"
     - "activos ponderados por riesgo"

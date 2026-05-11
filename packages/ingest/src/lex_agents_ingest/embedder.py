@@ -66,7 +66,7 @@ class BgeM3Embedder:
             )
 
             # ST 5.x returns ndarray (dense only); older versions returned dict
-            import numpy as np  # noqa: PLC0415
+            import numpy as np
 
             if isinstance(outputs, dict):
                 dense_vecs: list[list[float]] = outputs["dense_vecs"].tolist()

@@ -27,6 +27,7 @@ lock-file reproducibility, and native monorepo workspace support.
 
 Using the Anthropic Python SDK directly rather than LangChain, LlamaIndex, or
 similar frameworks. Rationale:
+
 1. **Full control** over prompt versioning, model selection, and token budgets —
    legal accuracy requires deterministic, auditable prompt management.
 2. **No framework abstraction leakage** — legal citation verification requires
@@ -40,6 +41,7 @@ similar frameworks. Rationale:
 ### Qdrant
 
 Qdrant is selected over alternatives (Weaviate, Chroma, Pinecone) because:
+
 1. **Native hybrid search** (dense + sparse vectors in one query, HNSW + BM42)
    without requiring a separate BM25 pipeline.
 2. **Self-hosted on Docker** — data sovereignty for banking-grade PII policy.
@@ -80,11 +82,11 @@ Production deployment strategy deferred to Fase 5.
 
 ## Alternatives considered
 
-| Alternative | Rejected because |
-|-------------|-----------------|
-| LangChain | Opaque abstractions; version churn; hard to audit prompt versions |
-| LlamaIndex | Similar concerns; less control over retrieval pipeline |
-| Weaviate | No native hybrid search without module config complexity |
-| Pinecone | Managed/cloud-only; data sovereignty concern |
-| OpenAI | Provider lock-in; Anthropic's extended thinking better for legal reasoning |
-| Poetry | Slower than uv; workspace support less mature |
+| Alternative | Rejected because                                                           |
+| ----------- | -------------------------------------------------------------------------- |
+| LangChain   | Opaque abstractions; version churn; hard to audit prompt versions          |
+| LlamaIndex  | Similar concerns; less control over retrieval pipeline                     |
+| Weaviate    | No native hybrid search without module config complexity                   |
+| Pinecone    | Managed/cloud-only; data sovereignty concern                               |
+| OpenAI      | Provider lock-in; Anthropic's extended thinking better for legal reasoning |
+| Poetry      | Slower than uv; workspace support less mature                              |

@@ -19,7 +19,7 @@ import structlog
 from bs4 import BeautifulSoup
 
 from lex_agents_ingest.base import Source
-from lex_agents_ingest.canonical import CanonicalDocument, HierarchyNode, RawDocument
+from lex_agents_ingest.canonical import CanonicalDocument, RawDocument
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
@@ -65,7 +65,7 @@ class BdeSource(Source):
             try:
                 resp = await self._client.get(rss_url)
                 resp.raise_for_status()
-            except Exception:  # noqa: BLE001
+            except Exception:
                 continue
 
             try:
@@ -103,7 +103,7 @@ class BdeSource(Source):
         try:
             resp = await self._client.get(_LISTING_URL)
             resp.raise_for_status()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("bde.html_listing_failed", error=str(exc))
             return []
 
@@ -146,7 +146,7 @@ class BdeSource(Source):
         try:
             resp = await self._client.get(url)
             resp.raise_for_status()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("bde.fetch_failed", doc_id=doc_id, url=url, error=str(exc))
             raise
 

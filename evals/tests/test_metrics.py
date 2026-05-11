@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import pytest
-
 from lex_agents_shared.types import CitationMapping, VerificationReport
+
 from evals.runners.metrics import (
     CaseResult,
     aggregate_summary,
-    compute_caveat_coverage,
     compute_citation_precision,
     compute_citation_recall,
     compute_concept_coverage,
@@ -16,7 +15,6 @@ from evals.runners.metrics import (
     compute_hallucination_rate,
     compute_legal_quality_score,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

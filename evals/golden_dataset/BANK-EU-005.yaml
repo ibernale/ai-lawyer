@@ -6,7 +6,11 @@ expert_reviewed: false
 query: "¿En qué consiste el ratio de financiación estable neta (NSFR) y cuál es su umbral mínimo bajo el CRR?"
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32019R0876", articles: ["428a", "428b", "428c"]}
+    - {
+        type: regulation,
+        celex: "32019R0876",
+        articles: ["428a", "428b", "428c"],
+      }
   must_mention_concepts:
     - "financiación estable neta"
     - "NSFR"

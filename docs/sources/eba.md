@@ -41,11 +41,11 @@ lex-agents/0.1 (+https://github.com/ibernale/ai-lawyer)
 
 ## Detección de cambios de formato
 
-| Señal | Causa probable |
-|-------|----------------|
-| JSON API devuelve error 404/406 | El portal EBA (Drupal) ha cambiado la arquitectura del backend |
-| `list_documents()` devuelve 0 IDs (también en HTML) | La URL o estructura de la página de listado ha cambiado |
-| `status` = `unknown` en >80% | Las etiquetas `<dt>` del portal han cambiado de nombre |
-| `topic` vacío en >50% | La estructura de metadatos `<dl>` ha sido reemplazada |
+| Señal                                               | Causa probable                                                 |
+| --------------------------------------------------- | -------------------------------------------------------------- |
+| JSON API devuelve error 404/406                     | El portal EBA (Drupal) ha cambiado la arquitectura del backend |
+| `list_documents()` devuelve 0 IDs (también en HTML) | La URL o estructura de la página de listado ha cambiado        |
+| `status` = `unknown` en >80%                        | Las etiquetas `<dt>` del portal han cambiado de nombre         |
+| `topic` vacío en >50%                               | La estructura de metadatos `<dl>` ha sido reemplazada          |
 
 **Nota:** El portal EBA usa Drupal; los endpoints JSON son internos y pueden cambiar con actualizaciones del CMS sin previo aviso.

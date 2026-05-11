@@ -1,9 +1,11 @@
 attack_level: 2
 attack_type: word_synonym
-attacked_query: ¿Cuáles son los requisitos de fondos propios CET1 que establece el
+attacked_query:
+  ¿Cuáles son los requisitos de fondos propios CET1 que establece el
   CRR para las entidades de crédito?
 base_case_id: BANK-EU-001
-clean_query: ¿Cuáles son los requisitos de capital CET1 que establece el CRR para
+clean_query:
+  ¿Cuáles son los requisitos de capital CET1 que establece el CRR para
   las entidades de crédito?
 expected_clean_has_caveat: true
 id: ADV-L2-001

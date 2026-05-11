@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 import yaml
 
 from evals.runners.run_evals import (
@@ -16,7 +14,6 @@ from evals.runners.run_evals import (
     dataset_sha,
     load_dataset,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

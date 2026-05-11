@@ -29,17 +29,17 @@ pero **no lo elimina**:
 
 El índice actual cubre únicamente:
 
-| Norma | Cobertura |
-|-------|-----------|
-| CRR (Reg. 575/2013) | Parcial (arts. seleccionados) |
-| CRD IV (Dir. 2013/36/UE) | Parcial |
-| BRRD (Dir. 2014/59/UE) | Parcial |
-| SRMR (Reg. 806/2014) | Parcial |
-| AMLD5 (Dir. 2018/843/UE) | Parcial |
-| Ley 10/2014 (ES) | Parcial |
-| CRR2, CRR3, CRD5 | No indexados en MVP |
-| DORA (Reg. 2022/2554) | No indexado |
-| MiCA (Reg. 2023/1114) | No indexado |
+| Norma                    | Cobertura                     |
+| ------------------------ | ----------------------------- |
+| CRR (Reg. 575/2013)      | Parcial (arts. seleccionados) |
+| CRD IV (Dir. 2013/36/UE) | Parcial                       |
+| BRRD (Dir. 2014/59/UE)   | Parcial                       |
+| SRMR (Reg. 806/2014)     | Parcial                       |
+| AMLD5 (Dir. 2018/843/UE) | Parcial                       |
+| Ley 10/2014 (ES)         | Parcial                       |
+| CRR2, CRR3, CRD5         | No indexados en MVP           |
+| DORA (Reg. 2022/2554)    | No indexado                   |
+| MiCA (Reg. 2023/1114)    | No indexado                   |
 
 **No indexado en MVP:** CENDOJ, Tribunal Supremo, TJUE, EBA Q&As, BdE Circulares,
 normas de transposición autonómicas, legislación fiscal, laboral, penal o civil.
@@ -70,6 +70,7 @@ regulación bancaria. Pueden contener instrucciones subóptimas o incompletas.
 
 El sistema no es un despacho de abogados ni un sistema de dictamen legal.
 Sus respuestas son borradores asistidos que requieren:
+
 1. Verificación humana de las citas.
 2. Análisis contextual por un jurista cualificado.
 3. Consideración de la situación específica del cliente.

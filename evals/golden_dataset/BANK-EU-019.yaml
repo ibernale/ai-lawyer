@@ -6,8 +6,42 @@ expert_reviewed: false
 query: "¿Cuáles son las obligaciones de divulgación de información de Pilar 3 que impone el CRR a las entidades de crédito, y qué papel juegan las circulares del Banco de España?"
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32013R0575", articles: ["431", "432", "433", "434", "435", "436", "437", "438", "440", "441", "442", "443", "444", "445", "446", "447", "448", "449", "450", "451", "452", "453", "454", "455"]}
-    - {type: legislation, jurisdiction: "ES", reference: "Circular 2/2023 Banco de España"}
+    - {
+        type: regulation,
+        celex: "32013R0575",
+        articles:
+          [
+            "431",
+            "432",
+            "433",
+            "434",
+            "435",
+            "436",
+            "437",
+            "438",
+            "440",
+            "441",
+            "442",
+            "443",
+            "444",
+            "445",
+            "446",
+            "447",
+            "448",
+            "449",
+            "450",
+            "451",
+            "452",
+            "453",
+            "454",
+            "455",
+          ],
+      }
+    - {
+        type: legislation,
+        jurisdiction: "ES",
+        reference: "Circular 2/2023 Banco de España",
+      }
   must_mention_concepts:
     - "Pilar 3"
     - "divulgación de información"

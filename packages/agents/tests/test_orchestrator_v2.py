@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from lex_agents_agents.base_agent import AgentMetadata, AgentResponse, RoutingDecision
 from lex_agents_agents.core.orchestrator_v2 import (
     ConsultRequest,
@@ -19,7 +18,6 @@ from lex_agents_agents.shared.definition_of_done import (
     JudgeVerdict,
     PlannerOutput,
 )
-from lex_agents_shared.types import CitationMapping
 
 
 def _make_deps() -> OrchestratorDeps:

@@ -30,7 +30,7 @@ expert_reviewed: false
 query: "..."
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "...", articles: ["..."]}
+    - { type: regulation, celex: "...", articles: ["..."] }
   must_mention_concepts: ["..."]
   must_not_claim: ["..."]
   expected_caveats: ["..."]

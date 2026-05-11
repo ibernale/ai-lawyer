@@ -23,15 +23,15 @@ from pathlib import Path
 
 import structlog
 
-from lex_agents_memory.types import ProceduralPattern, SemanticEntry
-from lex_agents_memory.semantic.injector import SemanticInjector
-from lex_agents_memory.semantic.loader import SemanticLoader
 from lex_agents_memory.procedural.injector import ProceduralInjector
 from lex_agents_memory.procedural.loader import ProceduralLoader
+from lex_agents_memory.semantic.injector import SemanticInjector
+from lex_agents_memory.semantic.loader import SemanticLoader
+from lex_agents_memory.types import ProceduralPattern, SemanticEntry
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
-__all__ = ["MemoryInjector", "SemanticEntry", "ProceduralPattern"]
+__all__ = ["MemoryInjector", "ProceduralPattern", "SemanticEntry"]
 
 
 class MemoryInjector:
