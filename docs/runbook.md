@@ -191,6 +191,90 @@ docker compose -f infra/docker-compose.yml logs api | jq .
 
 ---
 
+## Fase 6 operations
+
+### Re-materializar un asset Dagster
+
+```bash
+# Re-run a single Dagster asset (e.g., after source changes or failures)
+dagster asset materialize --select boe_raw
+
+# Or for a group
+dagster asset materialize --select boe_raw+ eur_lex_raw+
+
+# Via Dagster UI: http://localhost:3002 → Assets → select asset → Materialize
+# Monitor run in UI; GREEN = success, RED = inspect logs for root cause.
+```
+
+**Common failure causes:**
+- Source HTTP 429 → check `RATE_LIMIT_DELAY` env var; increase if needed.
+- Qdrant connection refused → ensure `make dev` is running; check `docker compose ps`.
+- Checksum mismatch on canonical layer → re-run from raw: `dagster asset materialize --select boe_canonical`.
+
+---
+
+### Revisar PR de prompt evolution
+
+Prompt evolution PRs are opened automatically by the reflection pipeline (ADR 0021).
+**They require human review before merge — CODEOWNERS prevents auto-merge.**
+
+Checklist:
+
+1. Read the PR body: verify the failing case and `diff_text` match.
+2. Check the regression simulation table: all 5 neighbor cases must pass (✅). If any fail (❌), close PR.
+3. Run locally:
+   ```bash
+   uv run python -m lex_agents_evals_advanced.reflection run --dry-run --specialist <branch_name>
+   ```
+4. Confirm the mandatory IA caveat and jurisdictional caveats are intact in the proposed prompt.
+5. Confirm the change does not expand specialist scope beyond ADRs 0010–0021.
+6. Assign to a qualified lawyer for content review.
+7. Merge only after all checklist items are confirmed.
+
+---
+
+### Añadir patrón procedimental
+
+```bash
+# Open the seed SQL for editing
+make procedural-edit
+# → opens packages/memory/src/lex_agents_memory/data/seed.sql in $EDITOR
+
+# Add INSERT INTO procedural_patterns (pattern_id, jurisdiction, ...) VALUES (...)
+# See existing rows for format reference
+
+# Apply migration to development DB
+make procedural-apply
+
+# Validate
+uv run pytest packages/memory/tests/test_procedural.py -q
+
+# Open PR with @ibernale review required (CODEOWNERS enforces)
+```
+
+**Invariant:** procedural patterns are read-only at runtime. No code path writes to `procedural.db`
+after seeding. If you need to modify a pattern, update `seed.sql` and reseed.
+
+---
+
+### Abrir nueva fuente documental
+
+Follow ADR 0018 (8-step checklist):
+
+1. **Identify source**: confirm URL stability, license, and update frequency.
+2. **Create scraper** in `packages/ingest/src/lex_agents_ingest/sources/<source>.py`.
+3. **Create raw Dagster asset** in `packages/pipeline/src/lex_agents_pipeline/assets/sources.py`.
+4. **Create canonical asset** with normalized `LegalDocument` schema.
+5. **Add tests** in `packages/ingest/tests/` with at least 3 fixture documents.
+6. **Manual GREEN gate**: run `dagster asset materialize --select <source>_canonical` and verify
+   ≥ 10 documents indexed in Qdrant with expected chunk count.
+7. **Add to CI** by including the asset in `.github/workflows/ingest.yml`.
+8. **Update `docs/sources/`** with source metadata (maintainer, license, update schedule).
+
+Never add a source that is not GREEN-gated — AMBER/RED sources degrade retrieval quality.
+
+---
+
 ## On-call escalation
 
 Internal Slack: `#lex-agents-oncall`. Escalate to:

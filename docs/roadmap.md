@@ -109,6 +109,61 @@ Alcance: regulación bancaria UE+ES (CRR, CRD IV, BRRD, Ley 11/2015).
 
 ---
 
+---
+
+## Fase 7 — Post-v0.2.0 (backlog)
+
+Estas iniciativas están planificadas pero no tienen fecha confirmada.
+Cada una tiene un gate explícito que debe cumplirse antes de iniciar la implementación.
+
+### F7-A: CENDOJ — jurisprudencia bancaria y mercantil
+
+- Integrar sentencias del CENDOJ (Centro de Documentación Judicial) relacionadas con
+  supervisión bancaria, resolución y mercantil societario.
+- **Gate:** autorización formal del CGPJ + revisión de licencias de uso comercial.
+- Ampliar `CitationMapping` con campos `court`, `date`, `ecli`.
+
+### F7-B: Memoria episódica
+
+- Almacenar per-user/per-session consultas pasadas para permitir referencias contextuales.
+- **Gate:** política de retención de datos RGPD aprobada por DPO; consentimiento usuario explícito.
+- Requiere tabla `episodic_memory` en PostgreSQL + TTL configurable.
+
+### F7-C: Despliegue corporativo SSO
+
+- Autenticación SSO via SAML 2.0/OIDC con Azure AD corporativo (Grupo Santander).
+- **Gate:** aprobación IT Security + Compliance; revisión de permisos de datos.
+- Reemplaza sistema de usuarios JSON actual.
+
+### F7-D: Validación experta del dataset completo
+
+- Revisar los 30+ casos del golden dataset con juristas de cumplimiento.
+- **Gate:** contratar tiempo de jurista; acuerdo de confidencialidad si se usan casos reales.
+- Prerequisito para cualquier despliegue en producción real.
+
+### F7-E: Ramas adicionales
+
+- **Civil**: contratos bancarios, hipotecas, garantías (fuentes: CC, LEC, Código de Comercio).
+- **Fiscal**: tributación de instrumentos financieros (fuentes: LIS, IRPF, IVA).
+- **Procesal**: ejecución hipotecaria, procesos concursales (fuentes: LC, LEC).
+- **Competencia**: abuso de posición dominante en servicios financieros (fuentes: TFUE, LDC).
+- Cada rama requiere prompt dedicado, evaluación LeMAJ, y aprobación en ADR.
+
+### F7-F: Más jurisdicciones LatAm
+
+- **MX**: CNBV circulares, BANXICO disposiciones, DOF.
+- **AR**: BCRA comunicaciones, CNV resoluciones.
+- **CO**: SFC circulares externas.
+- **Gate por jurisdicción**: fuentes estables + revisión de cobertura + jurista local para validación de prompts.
+
+### F7-G: Inferencia federada / on-prem
+
+- Opción de despliegue con modelos on-premise para datos clasificados.
+- **Gate:** requisitos de residencia de datos definidos por regulación aplicable; viabilidad técnica evaluada.
+- Candidatos: modelos open-source fine-tuned + vLLM / LM Studio.
+
+---
+
 ## Descartado (con justificación)
 
 | Feature | Motivo |

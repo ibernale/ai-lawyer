@@ -194,3 +194,83 @@ OTel traces exported via OTLP gRPC to `OTEL_EXPORTER_OTLP_ENDPOINT` (default: Ja
 model, token counts, latency, and cost estimate for per-call auditability.
 
 See [ADR 0005](decisions/0005-observability.md).
+
+---
+
+## Fase 6 full stack (v0.2.0)
+
+### System graph
+
+```mermaid
+graph TD
+  User --> API[FastAPI + JWT]
+  API --> OV2[OrchestratorV2]
+  OV2 -->|depth=shallow| Router[QueryRouter]
+  OV2 -->|standard/deep| Planner[LegalPlanner + MemoryInjector]
+  Planner -->|semantic| KnowledgeYAML[docs/knowledge/]
+  Planner -->|procedural| SQLite[procedural.db]
+  Planner --> Coordinator[CrossJurisdictionCoordinator]
+  Coordinator -->|parallel| S1[regulatorio_bancario]
+  Coordinator -->|parallel| S2[datos_personales]
+  Coordinator -->|parallel| S3[laboral]
+  Coordinator -->|parallel| S4[mercantil]
+  Coordinator -->|parallel| S5[penal_economico]
+  Coordinator -->|parallel| S6[administrativo]
+  S1 & S2 & S3 & S4 & S5 & S6 --> Judge[LegalJudge ≤2 iter]
+  Judge --> Verifier[VerifierPipeline]
+  Verifier --> API
+  Dagster[Dagster Pipeline] --> Qdrant[(Qdrant)]
+  Qdrant --> Retriever[HybridRetriever]
+  Retriever --> Coordinator
+  LeMAJ[LeMAJ 5-Judge Panel] -.->|nightly| Judge
+  Reflection[Reflection Pipeline] -.->|PR opener ADR 0021| PromptStore[docs/prompts/]
+  Adversarial[Adversarial Suite 180 cases] -.->|weekly CI| Metrics
+```
+
+### Data flow (standard/deep path)
+
+1. `POST /api/v1/consult` → JWT auth → `OrchestratorV2.run()`
+2. `LegalPlanner.plan()` — Opus tool_use → `PlannerOutput` (branches, jurisdictions, DoD)
+3. `MemoryInjector.build_context()` — prepends semantic + procedural memory to planner user_msg
+4. `HybridRetriever.search()` — dense+sparse RRF → cross-encoder rerank → `AssembledContext`
+5. `CrossJurisdictionCoordinator.run_parallel()` — up to 6 specialists concurrently
+6. `LegalJudge.judge()` — Opus tool_use verdict; if "revise" and iteration < 2, loops
+7. `CrossJurisdictionCoordinator.synthesize()` — Opus synthesis with EU > national hierarchy
+8. `VerifierPipeline.run()` — claim extraction + heuristic + Haiku fallback
+9. `ConsultResponse` returned with `branch_answers`, `planner_output`, `judge_verdict`, `cost_breakdown_by_agent`
+
+### Cost model (approximate, v0.2.0)
+
+| Path | Models | Typical cost |
+|------|--------|-------------|
+| shallow | Haiku (rewrite) + Opus (specialist) + Haiku (verify) | $0.05–0.15 |
+| standard (2 branches) | + Opus (planner) + Opus (synthesis) | $0.15–0.40 |
+| deep (2 branches, 1 revision) | + Opus (judge ×2) + Opus (specialist ×4) | $0.40–1.20 |
+
+### Security perimeter
+
+- JWT HS256 bearer token (8 h TTL). All `/api/v1/*` endpoints require auth.
+- Input sanitization: control chars stripped, query length 10–4 000, jurisdictions allowlist.
+- Prompt injection defense: claim/chunk text isolated in `<claim>` and `<chunk_text>` XML tags.
+- `pr_opener.py`: branch name and rationale validated against strict allowlist regex before any git/gh call.
+- No PII logged in plain text (`enable_pii_redaction=true` in prod).
+
+### Known limitations (v0.2.0)
+
+- Episodic memory disabled (ADR 0013: retention policy not yet approved).
+- BR and MX jurisdictions have no indexed sources; planner annotates as "asesoría local requerida".
+- CENDOJ integration pending CGPJ authorization (ADR 0018).
+- LeMAJ and adversarial suite are nightly/weekly jobs; not in the real-time query path.
+- Reflection PRs require human review before merge (ADR 0021 + CODEOWNERS); no auto-merge ever.
+
+### PMJ model selection (Fase 6)
+
+| Component | Model | Rationale |
+|---|---|---|
+| LegalPlanner | claude-opus-4-7 | Complex decomposition requires deep reasoning |
+| Specialist agents (×6) | claude-opus-4-7 | Multi-norm jurisdiction analysis |
+| LegalJudge | claude-opus-4-7 | Evaluative scoring against DoD |
+| Synthesis (coordinator) | claude-opus-4-7 | EU > national hierarchy merge |
+| LeMAJ judges (×5) | claude-opus-4-7 | Panel deliberation requires consistency |
+| Query rewriter | claude-haiku-4-5-20251001 | Latency-sensitive, simple task |
+| Citation verifier | claude-haiku-4-5-20251001 | Parallel mechanical verdict |

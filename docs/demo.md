@@ -1,6 +1,6 @@
-# Demo guide — lex-agents v0.1.0
+# Demo guide — lex-agents v0.2.0
 
-Guion para demostración de 10 minutos. Audiencia: dirección jurídica y cumplimiento.
+Guion para demostración de 20 minutos. Audiencia: dirección jurídica y cumplimiento.
 
 ---
 
@@ -83,8 +83,108 @@ En cualquier respuesta:
 
 ---
 
+---
+
+## Bloque 2 — Consulta profunda multi-jurisdicción (5 min)
+
+**Objetivo:** mostrar el stack PMJ completo (Planner + Maker + Judge) y la vista cross-jurisdicción.
+
+Tipo documento **Dictamen**, profundidad **Profundo**, jurisdicciones seleccionadas: **ES, EU, UK, BR**.
+
+Consulta:
+
+> Un banco español filial de Santander quiere implantar un modelo de scoring crediticio basado en machine learning que usa datos biométricos para clientes en España, Reino Unido y Brasil. ¿Qué debemos analizar?
+
+**Puntos a destacar:**
+- Banner de detección: "Ramas detectadas automáticamente: `regulatorio_bancario`, `datos_personales_rgpd`" + jurisdicciones ES, EU, UK, BR.
+- Panel "Razonamiento del sistema" → muestra ramas, pesos, DoD (Planner), scores del Judge por dimensión.
+- Collapsibles por rama: "Respuestas por rama especializada" → expandir `datos_personales_rgpd` para mostrar el análisis RGPD específico.
+- Judge: si detecta brecha "AI Act aplicabilidad", la muestra en "Brechas identificadas"; el sistema itera una vez.
+- UK: la rama incluye nota de cobertura limitada (FCA/PRA sources, no CENDOJ).
+- BR: la rama incluye aviso "asesoría local requerida" — no hay fuentes BACEN indexadas en v0.2.0.
+- Caveat obligatorio en la respuesta final: "Borrador asistido por IA, requiere validación jurista".
+
+**Metadatos técnicos:**
+- Latencia típica: 45–70 s (deep path, 2 ramas, 1 iteración Judge)
+- Coste estimado: ~$0.40–0.60
+
+---
+
+## Bloque 3 — Memoria estratificada (4 min)
+
+**Objetivo:** mostrar cómo la memoria procedimental y semántica condiciona el análisis.
+
+Abrir Jaeger (`http://localhost:16686`) → buscar trace de la consulta anterior.
+
+**Puntos a destacar:**
+- Span `planner.plan` → atributo `memory.injected=true`.
+- Atributo `memory.semantic_snippets` muestra qué fragmentos de `docs/knowledge/` se inyectaron.
+- Atributo `memory.procedural_patterns` muestra si el patrón CRR-transitional se activó.
+- Explicar: la memoria semántica aporta definiciones de 11 jurisdicciones + 16 frameworks sin ocupar tokens de RAG; la procedimental aporta pasos y precondiciones del análisis CRR.
+
+---
+
+## Bloque 4 — LeMAJ y pipeline adversarial (3 min)
+
+**Objetivo:** mostrar la capa de calidad offline.
+
+```bash
+# Dry-run LeMAJ sobre los últimos 5 dictámenes guardados
+uv run python -m lex_agents_evals_advanced.lemaj run --dry-run --last 5
+
+# Mostrar salida: LDP rates, Kappa inter-juez, review_required cases
+```
+
+**Puntos a destacar:**
+- LeMAJ: 5 jueces independientes (Factual / Normativa / Jurisdiccional / Completud / Cautelas) + MetaJudge de consenso.
+- Kappa Cohen: si < 0.6, el sistema marca `review_required=True` y registra en Grafana.
+- Reflection pipeline: cuando un caso falla, `FailureAnalyzer` → `PromptProposer` (propone diff) → `RegressionSim` → `PROpener` abre PR automáticamente. **Nunca hace merge automático** (ADR 0021).
+
+```bash
+# Adversarial suite dry-run
+uv run python -m lex_agents_evals_advanced.adversarial run \
+  --dataset evals/adversarial_dataset/ --dry-run
+```
+
+- 180 casos: 6 niveles × 30 pares (jailbreak, prompt injection, scope bypass, etc.).
+- Umbral CI: jailbreak_acceptance_rate = 0.0 (zero tolerance).
+
+---
+
+## Bloque 5 — Grafana (2 min)
+
+Abrir `http://localhost:3001` → dashboard "lex-agents".
+
+**Paneles a mostrar:**
+- Depth distribution: ver qué % de consultas son deep vs. standard vs. shallow.
+- Branch distribution: ramas más consultadas.
+- Cost per branch: coste acumulado por especialista.
+- Adversarial panel: confirmar jailbreak_acceptance_rate = 0 (verde).
+
+Cambiar a dashboard "LeMAJ":
+- LDP supported/unsupported rates por rama.
+- Kappa inter-juez tendencia.
+
+---
+
+## Bloque 6 — Prompt evolution PR + roadmap (1 min)
+
+```bash
+# Simular apertura de PR de mejora de prompt (dry-run)
+uv run python -m lex_agents_evals_advanced.reflection run \
+  --specialist datos_personales_rgpd --dry-run
+```
+
+- Muestra cómo el sistema propone automáticamente una mejora del prompt de un especialista.
+- El PR incluye diff, simulación de regresión y checklist para revisión humana.
+- Mencionar roadmap Fase 7: CENDOJ, memoria episódica, SSO corporativo, más jurisdicciones LatAm.
+
+---
+
 ## Notas para el presentador
 
 - El dataset de evaluación (`evals/golden_dataset/`) tiene `expert_reviewed: false` en todos los casos. Mencionar esto explícitamente: el sistema está en fase MVP, los prompts y el dataset no han sido revisados por un jurista.
 - La interfaz está en español; el código y los commits están en inglés (convención del proyecto).
-- Si la latencia es alta (> 15 s), probable causa: primera llamada cold-start del modelo. Las siguientes son más rápidas.
+- Si la latencia es alta (> 15 s en shallow, > 70 s en deep), probable causa: primera llamada cold-start del modelo. Las siguientes son más rápidas.
+- Costes son estimaciones basadas en precios públicos Anthropic (mayo 2026); pueden variar.
+- UK y BR aparecen en el planner pero tienen cobertura limitada de fuentes — siempre mencionar esto en la demo para evitar falsas expectativas.
