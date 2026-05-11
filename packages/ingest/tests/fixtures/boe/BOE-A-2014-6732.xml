@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<documento>
+  <metadatos>
+    <identificador>BOE-A-2014-6732</identificador>
+    <titulo>Ley 10/2014, de 26 de junio, de ordenación, supervisión y solvencia de entidades de crédito.</titulo>
+    <fecha_publicacion>27/06/2014</fecha_publicacion>
+    <rango>Ley</rango>
+    <departamento>Jefatura del Estado</departamento>
+    <materias>
+      <materia>Entidades de crédito</materia>
+    </materias>
+  </metadatos>
+  <texto>
+    <articulo id="A1" num="1">
+      <marginales>Objeto y ámbito de aplicación.</marginales>
+      <parrafo>La presente ley tiene por objeto la regulación, ordenación, supervisión y solvencia de las entidades de crédito que operen en España.</parrafo>
+    </articulo>
+    <articulo id="A2" num="2">
+      <marginales>Definiciones.</marginales>
+      <parrafo>A los efectos de la presente ley, se entenderá por entidad de crédito toda empresa que tenga como actividad típica y habitual recibir fondos del público.</parrafo>
+    </articulo>
+    <articulo id="A3" num="3">
+      <marginales>Autorización y registro de entidades de crédito.</marginales>
+      <parrafo>El ejercicio de la actividad bancaria requerirá la previa obtención de autorización administrativa del Banco de España.</parrafo>
+    </articulo>
+  </texto>
+</documento>
