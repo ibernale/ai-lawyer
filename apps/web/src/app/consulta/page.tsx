@@ -13,6 +13,30 @@ const OUTPUT_TYPES = [
   { value: "analisis_riesgo", label: "Análisis de riesgo" },
 ];
 
+const DEPTH_OPTIONS: {
+  value: "shallow" | "standard" | "deep";
+  label: string;
+  tooltip: string;
+}[] = [
+  {
+    value: "shallow",
+    label: "Rápido",
+    tooltip: "Ruta directa: router → especialista → verificación. Sin planificación. ~10s.",
+  },
+  {
+    value: "standard",
+    label: "Estándar",
+    tooltip:
+      "Planner descompone la consulta y coordina especialistas. Verificación completa. ~30s.",
+  },
+  {
+    value: "deep",
+    label: "Profundo",
+    tooltip:
+      "Planner + Maker(s) + Judge iterativo (máx. 2 iter.). Mayor calidad, más coste y tiempo. ~60s.",
+  },
+];
+
 export default function ConsultaPage({
   searchParams,
 }: {
@@ -20,6 +44,7 @@ export default function ConsultaPage({
 }) {
   const [query, setQuery] = useState("");
   const [outputType, setOutputType] = useState("dictamen");
+  const [depth, setDepth] = useState<"shallow" | "standard" | "deep">("standard");
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<ConsultResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +67,7 @@ export default function ConsultaPage({
     setError(null);
     setResponse(null);
     try {
-      const resp = await consultQuery(query.trim(), outputType);
+      const resp = await consultQuery(query.trim(), outputType, undefined, depth);
       setResponse(resp);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error desconocido");
@@ -69,7 +94,7 @@ export default function ConsultaPage({
         <header>
           <h1 className="text-2xl font-bold tracking-tight">Consulta jurídica</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Regulación bancaria UE + España · Uso interno
+            Regulación bancaria · RGPD · Laboral · Mercantil · Penal económico · Administrativo
           </p>
         </header>
 
@@ -82,6 +107,29 @@ export default function ConsultaPage({
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
             disabled={loading}
           />
+
+          {/* Depth selector */}
+          <div className="flex items-center gap-1">
+            <span className="text-sm font-medium text-muted-foreground mr-1">Profundidad:</span>
+            {DEPTH_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                title={opt.tooltip}
+                onClick={() => setDepth(opt.value)}
+                disabled={loading}
+                className={[
+                  "px-3 py-1 text-xs font-medium rounded-md border transition-colors",
+                  depth === opt.value
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background text-muted-foreground border-input hover:bg-accent hover:text-accent-foreground",
+                  "disabled:opacity-50 disabled:cursor-not-allowed",
+                ].join(" ")}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
 
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">

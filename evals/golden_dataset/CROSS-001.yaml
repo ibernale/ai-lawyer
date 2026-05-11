@@ -1,0 +1,33 @@
+id: CROSS-001
+jurisdiction: [ES, EU, US]
+branch: cross_jurisdiction
+branches: [regulatorio_bancario_ue_es, datos_personales_rgpd]
+difficulty: hard
+expert_reviewed: false
+run_in: fase_6_3
+query: >
+  Una entidad bancaria española transfiere datos personales de clientes a su
+  filial en Estados Unidos para gestión centralizada del riesgo de crédito.
+  ¿Qué requisitos normativos deben cumplirse desde la perspectiva bancaria y
+  de protección de datos?
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32013R0575", articles: ["13"]}
+    - {type: regulation, celex: "32016R0679", articles: ["44", "46", "49"]}
+    - {type: decision, celex: "32021D0914"}
+  must_mention_concepts:
+    - "transferencia internacional"
+    - "cláusulas contractuales tipo"
+    - "riesgo de crédito"
+    - "RGPD"
+    - "CRR"
+  must_not_claim:
+    - "Estados Unidos tiene decisión de adecuación vigente"
+  expected_caveats:
+    - "evaluación de impacto"
+    - "medidas complementarias"
+  output_type: dictamen
+notes: >
+  Caso canónico cross-jurisdicción bancario+RGPD. Requiere coordinación
+  de las ramas regulatorio_bancario_ue_es y datos_personales_rgpd.
+  Pendiente validación experta. run_in=fase_6_3.

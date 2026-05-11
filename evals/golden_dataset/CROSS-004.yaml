@@ -1,0 +1,32 @@
+id: CROSS-004
+jurisdiction: [ES, EU, UK]
+branch: cross_jurisdiction
+branches: [regulatorio_bancario_ue_es]
+difficulty: hard
+expert_reviewed: false
+run_in: fase_6_3
+query: >
+  Santander España, como entidad supervisada por el BCE bajo el MUS, quiere
+  extender una línea de crédito sindicado a una contraparte corporativa con
+  sede en Reino Unido (post-Brexit). ¿Qué tratamiento prudencial tiene la
+  exposición, qué requisitos de equivalencia aplican para la contraparte UK
+  y qué documentación contractual es necesaria?
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32013R0575", articles: ["107", "111", "122"]}
+    - {type: regulation, celex: "32019R0876"}
+  must_mention_concepts:
+    - "exposición a grandes riesgos"
+    - "ponderación de riesgo"
+    - "equivalencia"
+    - "post-Brexit"
+    - "crédito sindicado"
+  must_not_claim:
+    - "Reino Unido mantiene acceso pleno al mercado único financiero"
+  expected_caveats:
+    - "equivalencia UK sujeta a revisión periódica por la Comisión"
+    - "documentación conforme a ley aplicable pactada"
+  output_type: dictamen
+notes: >
+  Caso canónico cross-jurisdicción bancario ES+EU+UK (Santander específico).
+  Pendiente validación experta. run_in=fase_6_3.

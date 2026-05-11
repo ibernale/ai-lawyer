@@ -83,3 +83,23 @@ class VerificationReport(BaseModel):
             "green: all PASSED, no uncited"
         ),
     )
+    branch: str = Field(
+        default="",
+        description="Specialist branch that produced this response (empty string = single branch)",
+    )
+
+
+class AggregateVerificationReport(BaseModel):
+    """Aggregated verification across multiple specialist branches."""
+
+    response_id: str
+    branch_reports: list[VerificationReport]  # one per branch
+    overall_status: Literal["green", "amber", "red"]
+    overall_claims_total: int
+    overall_claims_passed: int
+    overall_claims_failed: int
+    overall_claims_uncertain: int
+    overall_broken_refs: list[int]
+    overall_uncited_claims: list[str]
+    # overall_status = "red" if any branch is red,
+    # "amber" if any amber + no red, "green" if all green

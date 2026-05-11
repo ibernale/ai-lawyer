@@ -148,6 +148,24 @@ export type ConsultResponse = {
     depth?: string;
   };
   metadata: Record<string, unknown>;
+  // PMJ metadata (present when depth=standard or deep)
+  depth_used?: string;
+  iterations?: number;
+  planner_output?: {
+    branches: { name: string; priority: number; weight: number }[];
+    jurisdictions: string[];
+    output_type: string;
+    depth: string;
+    sub_tasks: { id: string; branch: string; weight: number }[];
+  } | null;
+  judge_verdict?: {
+    verdict: "publish" | "revise" | "reject";
+    scores: Record<string, number>;
+    gaps: string[];
+    iteration_brief: string;
+    iteration: number;
+  } | null;
+  cost_breakdown_by_agent?: Record<string, number>;
 };
 
 export type ConsultationSummary = {
@@ -166,6 +184,7 @@ export async function consultQuery(
   query: string,
   outputType?: string,
   jurisdictionHint?: string,
+  depth?: "shallow" | "standard" | "deep",
 ): Promise<ConsultResponse> {
   return apiFetch<ConsultResponse>("/api/v1/consult", {
     method: "POST",
@@ -173,6 +192,7 @@ export async function consultQuery(
       query,
       output_type: outputType ?? null,
       jurisdiction_hint: jurisdictionHint ?? null,
+      depth: depth ?? null,
     }),
   });
 }
