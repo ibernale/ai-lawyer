@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<REGULATION>
+  <TITLE>
+    <TI>Reglamento (UE) n.º 575/2013 del Parlamento Europeo y del Consejo, de 26 de junio de 2013, sobre los requisitos prudenciales de las entidades de crédito</TI>
+  </TITLE>
+  <DATE.PUB>27/06/2013</DATE.PUB>
+  <PREAMBLE>
+    <RECITAL NUM="1">Con el fin de garantizar la estabilidad financiera en toda la Unión, es indispensable que las normas prudenciales aplicables a las entidades de crédito sean sólidas y coherentes.</RECITAL>
+    <RECITAL NUM="2">En el Informe de Larosière de 2009 se llegó a la conclusión de que era necesario reforzar el marco de supervisión financiera.</RECITAL>
+    <RECITAL NUM="3">El presente Reglamento, junto con la Directiva 2013/36/UE, constituye el marco jurídico que rige el acceso a la actividad de las entidades de crédito.</RECITAL>
+  </PREAMBLE>
+  <ENACTING.TERMS>
+    <ARTICLE IDENTIFIER="Art. 1">
+      <TI.ART>Ámbito</TI.ART>
+      <PARAG>El presente Reglamento establece normas uniformes sobre los requisitos prudenciales generales que deberán cumplir las entidades supervisadas de conformidad con la Directiva 2013/36/UE.</PARAG>
+    </ARTICLE>
+    <ARTICLE IDENTIFIER="Art. 92">
+      <TI.ART>Requisitos de fondos propios</TI.ART>
+      <PARAG>Las entidades deberán cumplir en todo momento los siguientes requisitos de fondos propios:</PARAG>
+      <PARAG>a) una ratio de capital de nivel 1 ordinario del 4,5 %;</PARAG>
+      <PARAG>b) una ratio de capital de nivel 1 del 6 %;</PARAG>
+      <PARAG>c) una ratio de capital total del 8 %.</PARAG>
+    </ARTICLE>
+  </ENACTING.TERMS>
+</REGULATION>

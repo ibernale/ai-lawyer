@@ -16,6 +16,8 @@ dependencies = [
     "opentelemetry-instrumentation-fastapi>=0.47b0",
     "opentelemetry-exporter-otlp-proto-grpc>=1.26.0",
     "lex-agents-shared",
+    "lex-agents-ingest",
+    "lex-agents-rag",
 ]
 
 [project.optional-dependencies]

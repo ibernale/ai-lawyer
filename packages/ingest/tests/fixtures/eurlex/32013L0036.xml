@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DIRECTIVE>
+  <TITLE>
+    <TI>Directiva 2013/36/UE del Parlamento Europeo y del Consejo, de 26 de junio de 2013, relativa al acceso a la actividad de las entidades de crédito y a la supervisión prudencial de las entidades de crédito y las empresas de inversión</TI>
+  </TITLE>
+  <DATE.PUB>27/06/2013</DATE.PUB>
+  <PREAMBLE>
+    <RECITAL NUM="1">La Directiva 2006/48/CE y la Directiva 2006/49/CE han sido objeto de importantes modificaciones.</RECITAL>
+  </PREAMBLE>
+  <ENACTING.TERMS>
+    <ARTICLE IDENTIFIER="Art. 1">
+      <TI.ART>Objeto</TI.ART>
+      <PARAG>La presente Directiva establece normas relativas al acceso a la actividad de las entidades de crédito y su supervisión prudencial.</PARAG>
+    </ARTICLE>
+    <ARTICLE IDENTIFIER="Art. 74">
+      <TI.ART>Gobierno interno</TI.ART>
+      <PARAG>Las entidades dispondrán de sólidos acuerdos de gobierno corporativo, incluida una estructura organizativa clara con líneas de responsabilidad bien definidas.</PARAG>
+    </ARTICLE>
+  </ENACTING.TERMS>
+</DIRECTIVE>

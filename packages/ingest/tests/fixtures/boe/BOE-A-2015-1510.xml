@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<documento>
+  <metadatos>
+    <identificador>BOE-A-2015-1510</identificador>
+    <titulo>Real Decreto 84/2015, de 13 de febrero, por el que se desarrolla la Ley 10/2014.</titulo>
+    <fecha_publicacion>14/02/2015</fecha_publicacion>
+    <rango>Real Decreto</rango>
+    <departamento>Ministerio de Economía y Competitividad</departamento>
+  </metadatos>
+  <texto>
+    <articulo id="A1" num="1">
+      <marginales>Objeto.</marginales>
+      <parrafo>El presente real decreto tiene por objeto el desarrollo reglamentario de la Ley 10/2014.</parrafo>
+    </articulo>
+    <articulo id="A2" num="2">
+      <marginales>Recursos propios mínimos.</marginales>
+      <parrafo>Las entidades de crédito deberán mantener en todo momento un nivel de recursos propios suficiente para cubrir los requisitos mínimos de capital.</parrafo>
+    </articulo>
+  </texto>
+</documento>

@@ -28,6 +28,13 @@ class Settings(BaseSettings):
     # Qdrant
     qdrant_url: str = "http://localhost:6333"
     qdrant_api_key: SecretStr = SecretStr("")
+    qdrant_collection: str = "lex_legal_docs"
+
+    # RAG
+    rag_top_k: int = 10
+    embedder_model: str = "BAAI/bge-m3"
+    reranker_enabled: bool = True
+    reranker_model: str = "BAAI/bge-reranker-v2-m3"
 
     # OpenTelemetry
     otel_exporter_otlp_endpoint: str = "http://localhost:4317"

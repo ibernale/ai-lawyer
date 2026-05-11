@@ -17,6 +17,7 @@ from lex_agents_api.exceptions import (
 from lex_agents_api.logging_config import configure_logging
 from lex_agents_api.middleware import CorrelationIdMiddleware
 from lex_agents_api.routers import health as health_router
+from lex_agents_api.routers import rag as rag_router
 from lex_agents_api.settings import get_settings
 from lex_agents_api.tracing import configure_tracing
 
@@ -73,6 +74,7 @@ def create_app() -> FastAPI:
 
     # Routers
     app.include_router(health_router.router)
+    app.include_router(rag_router.router)
 
     # OTel auto-instrumentation
     FastAPIInstrumentor.instrument_app(app)

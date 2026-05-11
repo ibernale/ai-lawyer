@@ -11,7 +11,7 @@ PYTHON  := $(UV) run python
 
 .PHONY: help install lint format type-check test test-watch \
         eval eval-quick dev dev-detached down logs \
-        build-images ingest-sample qdrant-shell db-reset
+        build-images ingest-sample ingest-real qdrant-shell db-reset
 
 # ─── Help ─────────────────────────────────────────────────────────────────────
 help: ## Show this help
@@ -71,8 +71,11 @@ build-images: ## Build all Docker images
 	$(DOCKER) $(DC_FILE) build
 
 # ─── Data / ingestion ─────────────────────────────────────────────────────────
-ingest-sample: ## [Fase 2] Ingest a small sample of BOE + EUR-Lex docs
-	@echo "⚠  ingest-sample: not yet implemented (Fase 2)"
+ingest-sample: ## Ingest fixture sample docs using local XML files (no network)
+	$(PYTHON) scripts/ingest_sample.py
+
+ingest-real: ## Ingest sample docs from live BOE + EUR-Lex APIs (requires network + ANTHROPIC_API_KEY)
+	$(PYTHON) scripts/ingest_real.py
 
 # ─── Database / Qdrant ────────────────────────────────────────────────────────
 qdrant-shell: ## Open a shell inside the qdrant container

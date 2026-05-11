@@ -8,6 +8,11 @@ members = [
     "packages/shared",
 ]
 
+[tool.uv.sources]
+lex-agents-shared = { workspace = true }
+lex-agents-ingest = { workspace = true }
+lex-agents-rag = { workspace = true }
+
 # ─── Shared ruff config (inherited by all packages) ───────────────────────────
 [tool.ruff]
 target-version = "py312"
