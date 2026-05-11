@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 import structlog
 from lex_agents_shared.anthropic_client import AnthropicClientWrapper
@@ -16,14 +17,22 @@ from lex_agents_shared.types import (
 
 from .citation_parser import CitationParser
 from .claim_extractor import Claim, ClaimExtractor
+from .doc_segment_verifier import DocSegmentVerifier
 from .heuristic_verifier import HeuristicVerifier
 from .llm_verifier import LLMVerifier
+
+if TYPE_CHECKING:
+    from lex_agents_documents.types import DocumentSegment
+
+_DOC_REF_RE = re.compile(r"\[DOC:(\d+)\]")
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
 
 class VerifierPipeline:
     """Full verification pipeline: extraction → heuristic → LLM fallback."""
+
+    _doc_verifier: DocSegmentVerifier = DocSegmentVerifier()
 
     def __init__(self, anthropic_client: AnthropicClientWrapper) -> None:
         self._client = anthropic_client
@@ -211,3 +220,44 @@ class VerifierPipeline:
             overall_broken_refs=overall_broken_refs,
             overall_uncited_claims=overall_uncited_claims,
         )
+
+    def verify_doc_segments(
+        self,
+        answer_text: str,
+        segments: list[DocumentSegment],
+    ) -> list[ClaimVerification]:
+        """Verify all [DOC:s] citations in answer_text against the provided segments.
+
+        For each [DOC:s] reference found in answer_text, extracts the surrounding
+        context (±150 chars) and runs DocSegmentVerifier against the indexed segment.
+
+        Args:
+            answer_text: The agent answer containing [DOC:s] references.
+            segments: Ordered list of DocumentSegment objects (1-based by index).
+
+        Returns:
+            List of ClaimVerification, one per [DOC:s] match found.
+        """
+        results: list[ClaimVerification] = []
+        for match in _DOC_REF_RE.finditer(answer_text):
+            s = int(match.group(1))
+            if s < 1 or s > len(segments):
+                results.append(ClaimVerification(
+                    ref_index=s,
+                    verdict="FAILED",
+                    method="heuristic",
+                    confidence=0.0,
+                    failure_reason="REJECTED_BROKEN_DOC_REF",
+                ))
+                continue
+            # Extract surrounding sentence for claim context
+            start = max(0, match.start() - 150)
+            end = min(len(answer_text), match.end() + 150)
+            surrounding = answer_text[start:end]
+            result = self._doc_verifier.verify(
+                claim_text=surrounding,
+                segment_text=segments[s - 1].text,
+                segment_index=s,
+            )
+            results.append(result)
+        return results
