@@ -1,6 +1,9 @@
 "use client";
 
+import type React from "react";
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type {
   CitationMapping,
   ConsultResponse,
@@ -165,30 +168,63 @@ function VerificationBanner({ report }: { report: VerificationReport }) {
 // [REF:n] inline chip renderer
 // ---------------------------------------------------------------------------
 
+function RefChip({
+  idx,
+  citation,
+  onChipClick,
+}: {
+  idx: number;
+  citation: CitationMapping | undefined;
+  onChipClick: (c: CitationMapping) => void;
+}) {
+  return (
+    <button
+      onClick={() => citation && onChipClick(citation)}
+      className="inline-flex items-center rounded bg-primary/10 px-1.5 py-0.5 text-xs font-mono font-medium text-primary hover:bg-primary/20 transition-colors mx-0.5"
+      title={citation?.hierarchy_path ?? `REF:${idx}`}
+    >
+      [{idx}]
+    </button>
+  );
+}
+
 function renderAnswerWithChips(
   text: string,
   citations: CitationMapping[],
   onChipClick: (citation: CitationMapping) => void,
 ) {
+  // Split on [REF:n] markers, keeping the delimiters
   const parts = text.split(/(\[REF:\d+\])/g);
-  return parts.map((part, i) => {
+
+  const nodes: React.ReactNode[] = parts.map((part, i) => {
     const match = part.match(/^\[REF:(\d+)\]$/);
     if (match) {
       const idx = parseInt(match[1]!, 10);
-      const citation = citations.find((c) => c.index === idx);
       return (
-        <button
+        <RefChip
           key={i}
-          onClick={() => citation && onChipClick(citation)}
-          className="inline-flex items-center rounded bg-primary/10 px-1.5 py-0.5 text-xs font-mono font-medium text-primary hover:bg-primary/20 transition-colors mx-0.5"
-          title={citation?.hierarchy_path ?? `REF:${idx}`}
-        >
-          [{idx}]
-        </button>
+          idx={idx}
+          citation={citations.find((c) => c.index === idx)}
+          onChipClick={onChipClick}
+        />
       );
     }
-    return part;
+    // Render each text segment as markdown so headers, bold, and lists are styled
+    return (
+      <ReactMarkdown
+        key={i}
+        remarkPlugins={[remarkGfm]}
+        components={{
+          // Inline rendering — no extra wrapper div between paragraphs
+          p: ({ children }) => <span className="block mb-2">{children}</span>,
+        }}
+      >
+        {part}
+      </ReactMarkdown>
+    );
   });
+
+  return nodes;
 }
 
 // ---------------------------------------------------------------------------
