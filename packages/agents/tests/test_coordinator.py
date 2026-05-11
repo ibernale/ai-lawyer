@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from lex_agents_agents.base_agent import AgentMetadata, AgentResponse
 from lex_agents_agents.core.coordinator import CrossJurisdictionCoordinator
 from lex_agents_agents.shared.definition_of_done import BranchTask, PlannerOutput

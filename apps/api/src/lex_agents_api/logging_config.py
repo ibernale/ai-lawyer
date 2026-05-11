@@ -7,10 +7,8 @@ import sys
 from typing import Any
 
 import structlog
-from structlog.types import EventDict, WrappedLogger
-
 from lex_agents_shared.pii import redact_pii
-
+from structlog.types import EventDict, WrappedLogger
 
 # ---------------------------------------------------------------------------
 # Custom processors

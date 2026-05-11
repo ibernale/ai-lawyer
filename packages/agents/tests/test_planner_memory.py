@@ -5,13 +5,11 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-
-from lex_agents_agents.core.planner import LegalPlanner, _DEFAULT_OUTPUT
+from lex_agents_agents.core.planner import LegalPlanner
 from lex_agents_agents.shared.definition_of_done import PlannerOutput
-
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 

@@ -6,8 +6,8 @@ expert_reviewed: false
 query: "¿Cómo deben tratar prudencialmente las entidades de crédito sus exposiciones en criptoactivos bajo el CRR3 (artículo 501c) antes de que MiCA esté plenamente implementado? ¿Qué incertidumbres normativas persisten?"
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32024R1623", articles: ["501c"]}
-    - {type: regulation, celex: "32023R1114", articles: ["1", "2", "3"]}
+    - { type: regulation, celex: "32024R1623", articles: ["501c"] }
+    - { type: regulation, celex: "32023R1114", articles: ["1", "2", "3"] }
   must_mention_concepts:
     - "criptoactivos"
     - "MiCA"

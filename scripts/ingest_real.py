@@ -16,8 +16,6 @@ import os
 
 import httpx
 from anthropic import Anthropic
-from qdrant_client import QdrantClient
-
 from lex_agents_ingest.chunker import LegalChunker
 from lex_agents_ingest.contextualizer import Contextualizer
 from lex_agents_ingest.embedder import BgeM3Embedder
@@ -26,6 +24,7 @@ from lex_agents_ingest.pipeline import IngestPipeline
 from lex_agents_ingest.sources.boe import BoeSource
 from lex_agents_ingest.sources.eurlex import EurlexSource
 from lex_agents_ingest.storage import IngestStorage
+from qdrant_client import QdrantClient
 
 
 async def _run(source: object, anthropic_key: str) -> None:

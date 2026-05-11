@@ -16,7 +16,6 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-import time
 from datetime import datetime
 from pathlib import Path
 
@@ -63,7 +62,7 @@ def _load_counter() -> dict:
     if _DEV_COUNTER_FILE.exists():
         try:
             return json.loads(_DEV_COUNTER_FILE.read_text())
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
     return {"date": "", "count": 0}
 
@@ -71,7 +70,7 @@ def _load_counter() -> dict:
 def _save_counter(data: dict) -> None:
     try:
         _DEV_COUNTER_FILE.write_text(json.dumps(data))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning("cendoj_puntual.counter_save_failed", error=str(exc))
 
 
@@ -127,7 +126,6 @@ class CendojPuntualSource(Source):
         """Return a short sample of recent CENDOJ document IDs (dev only)."""
         _check_and_increment()
         await asyncio.sleep(5)
-        import httpx
 
         # The CENDOJ public search has changed over time; we use a basic GET
         # against the open-data endpoint with a generic recent-date filter.
@@ -135,7 +133,7 @@ class CendojPuntualSource(Source):
         try:
             resp = await self._client.get(url)
             resp.raise_for_status()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("cendoj_puntual.list_failed", error=str(exc))
             return []
 

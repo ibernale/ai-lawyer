@@ -87,7 +87,7 @@ class LegislationUkSource(Source):
                 headers={"Accept": "application/xml, text/xml;q=0.9"},
             )
             resp.raise_for_status()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("legislation_uk.fetch_failed", doc_id=doc_id, url=url, error=str(exc))
             raise
 
@@ -125,7 +125,7 @@ class LegislationUkSource(Source):
                     el = root.find(xp, ns_map)
                     if el is not None:
                         return el
-                except Exception:  # noqa: BLE001
+                except Exception:
                     pass
             return None
 

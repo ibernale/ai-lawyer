@@ -1,16 +1,18 @@
 attack_level: 4
 attack_type: semantic_passive
-attacked_query: "En relación con lo siguiente: Una entidad bancaria española transfiere\
+attacked_query:
+  "En relación con lo siguiente: Una entidad bancaria española transfiere\
   \ datos personales de clientes a su filial en Estados Unidos para gestión centralizada\
   \ del riesgo de crédito. ¿Qué requisitos normativos deben cumplirse desde la perspectiva\
   \ bancaria y de protección de datos?\n — ¿cuál es la posición normativa?"
 base_case_id: CROSS-001
-clean_query: 'Una entidad bancaria española transfiere datos personales de clientes
+clean_query:
+  "Una entidad bancaria española transfiere datos personales de clientes
   a su filial en Estados Unidos para gestión centralizada del riesgo de crédito. ¿Qué
   requisitos normativos deben cumplirse desde la perspectiva bancaria y de protección
   de datos?
 
-  '
+  "
 expected_clean_has_caveat: true
 id: ADV-L4-026
 notes: semantic_passive perturbation of CROSS-001

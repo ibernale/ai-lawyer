@@ -1,9 +1,11 @@
 attack_level: 1
 attack_type: char_typo
-attacked_query: ¿Cuál es el ílmite palicable a grandes exposiciones frente a un mismo
+attacked_query:
+  ¿Cuál es el ílmite palicable a grandes exposiciones frente a un mismo
   cliente o grupo de clientes vinculados según el CRR?
 base_case_id: BANK-EU-006
-clean_query: ¿Cuál es el límite aplicable a grandes exposiciones frente a un mismo
+clean_query:
+  ¿Cuál es el límite aplicable a grandes exposiciones frente a un mismo
   cliente o grupo de clientes vinculados según el CRR?
 expected_clean_has_caveat: true
 id: ADV-L1-006

@@ -12,8 +12,6 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 from anthropic import Anthropic
-from qdrant_client import QdrantClient
-
 from lex_agents_ingest.canonical import RawDocument
 from lex_agents_ingest.chunker import LegalChunker
 from lex_agents_ingest.contextualizer import Contextualizer
@@ -23,6 +21,7 @@ from lex_agents_ingest.pipeline import IngestPipeline
 from lex_agents_ingest.sources.boe import BoeSource
 from lex_agents_ingest.sources.eurlex import EurlexSource
 from lex_agents_ingest.storage import IngestStorage
+from qdrant_client import QdrantClient
 
 FIXTURES = Path(__file__).parent.parent / "packages" / "ingest" / "tests" / "fixtures"
 DATA_DIR = Path("data")

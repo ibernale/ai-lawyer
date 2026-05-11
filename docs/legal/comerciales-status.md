@@ -7,11 +7,11 @@
 
 ## Fuentes afectadas
 
-| Fuente | Propietario | Clase Python |
-|--------|-------------|--------------|
-| Aranzadi | Thomson Reuters | `AranzadiSource` |
-| La Ley | Wolters Kluwer | `LaLeySource` |
-| Tirant lo Blanch | Tirant lo Blanch Editorial | `TirantSource` |
+| Fuente           | Propietario                | Clase Python     |
+| ---------------- | -------------------------- | ---------------- |
+| Aranzadi         | Thomson Reuters            | `AranzadiSource` |
+| La Ley           | Wolters Kluwer             | `LaLeySource`    |
+| Tirant lo Blanch | Tirant lo Blanch Editorial | `TirantSource`   |
 
 ---
 

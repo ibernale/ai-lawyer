@@ -6,8 +6,17 @@ expert_reviewed: false
 query: "¿Existen divergencias entre la normativa europea (CRD IV) y la española (Ley 10/2014) en materia de colchones macroprudenciales de capital? ¿Puede España imponer colchones más estrictos que los previstos en la CRD IV?"
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32013L0036", articles: ["130", "131", "133", "134", "136", "160"]}
-    - {type: legislation, jurisdiction: "ES", reference: "Ley 10/2014", articles: ["44", "45", "46"]}
+    - {
+        type: regulation,
+        celex: "32013L0036",
+        articles: ["130", "131", "133", "134", "136", "160"],
+      }
+    - {
+        type: legislation,
+        jurisdiction: "ES",
+        reference: "Ley 10/2014",
+        articles: ["44", "45", "46"],
+      }
   must_mention_concepts:
     - "colchón para entidades de importancia sistémica mundial"
     - "colchón para otras entidades de importancia sistémica"

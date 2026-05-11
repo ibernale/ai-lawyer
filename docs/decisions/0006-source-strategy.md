@@ -56,6 +56,7 @@ fixtures XML precomittadas en `packages/ingest/tests/fixtures/<source>/`.
 Las pruebas usan `respx` para mockear `httpx.AsyncClient`.
 
 Para capturar una fixture nueva:
+
 ```bash
 python scripts/capture_fixture.py boe BOE-A-2014-6732
 python scripts/capture_fixture.py eurlex 32013R0575

@@ -13,19 +13,15 @@ import json
 import re
 import tempfile
 from pathlib import Path
-from typing import Any
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 from lex_agents_evals_advanced.reflection.failure_analyzer import analyze_failures
-from lex_agents_evals_advanced.reflection.regression_sim import simulate
 from lex_agents_evals_advanced.reflection.pr_opener import open_pr
+from lex_agents_evals_advanced.reflection.regression_sim import simulate
 from lex_agents_evals_advanced.types import (
     PromptDiff,
     RegressionResult,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -12,9 +12,9 @@ query: >
   de protección de datos?
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32013R0575", articles: ["13"]}
-    - {type: regulation, celex: "32016R0679", articles: ["44", "46", "49"]}
-    - {type: decision, celex: "32021D0914"}
+    - { type: regulation, celex: "32013R0575", articles: ["13"] }
+    - { type: regulation, celex: "32016R0679", articles: ["44", "46", "49"] }
+    - { type: decision, celex: "32021D0914" }
   must_mention_concepts:
     - "transferencia internacional"
     - "cláusulas contractuales tipo"

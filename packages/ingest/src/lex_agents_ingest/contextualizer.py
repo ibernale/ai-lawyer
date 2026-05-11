@@ -8,9 +8,9 @@ from pathlib import Path
 import structlog
 from anthropic import Anthropic
 from anthropic.types import MessageParam
+from lex_agents_shared.anthropic_client import MODEL_HAIKU
 
 from lex_agents_ingest.canonical import CanonicalDocument, Chunk
-from lex_agents_shared.anthropic_client import MODEL_HAIKU
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 

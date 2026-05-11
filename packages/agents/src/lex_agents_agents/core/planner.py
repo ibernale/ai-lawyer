@@ -4,12 +4,11 @@ from __future__ import annotations
 
 import json
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import structlog
+from lex_agents_shared.anthropic_client import MODEL_OPUS, AnthropicClientWrapper
 from opentelemetry import trace
-
-from lex_agents_shared.anthropic_client import AnthropicClientWrapper, MODEL_OPUS
 
 from lex_agents_agents.prompt_loader import load_prompt
 from lex_agents_agents.shared.definition_of_done import (
@@ -104,7 +103,7 @@ class LegalPlanner:
         self,
         client: AnthropicClientWrapper,
         prompt_version: int = 1,
-        memory_injector: "MemoryInjector | None" = None,
+        memory_injector: MemoryInjector | None = None,
     ) -> None:
         self._client = client
         self._cfg = load_prompt("planner", version=prompt_version)
@@ -176,10 +175,10 @@ class LegalPlanner:
                 return _DEFAULT_OUTPUT
 
             try:
-                raw: dict = (
-                    tool_block.input  # type: ignore[union-attr]
-                    if isinstance(tool_block.input, dict)  # type: ignore[union-attr]
-                    else json.loads(tool_block.input)  # type: ignore[union-attr]
+                raw: dict[str, Any] = (
+                    tool_block.input
+                    if isinstance(tool_block.input, dict)
+                    else json.loads(tool_block.input)
                 )
 
                 sub_tasks = [

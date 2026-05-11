@@ -1,10 +1,12 @@
 attack_level: 1
 attack_type: char_typo
-attacked_query: ¿Qué pirncipios y ílmites establece la CRD IV en materia de política
+attacked_query:
+  ¿Qué pirncipios y ílmites establece la CRD IV en materia de política
   de remuneración del personal de una entidad de crédito, y cómo se han transpuesto
   en España?
 base_case_id: BANK-EU-015
-clean_query: ¿Qué principios y límites establece la CRD IV en materia de política
+clean_query:
+  ¿Qué principios y límites establece la CRD IV en materia de política
   de remuneración del personal de una entidad de crédito, y cómo se han transpuesto
   en España?
 expected_clean_has_caveat: true

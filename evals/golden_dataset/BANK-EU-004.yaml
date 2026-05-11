@@ -6,7 +6,7 @@ expert_reviewed: false
 query: "¿Qué establece el ratio de cobertura de liquidez (LCR) y cómo se computa conforme a la normativa europea?"
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32015R0061", articles: ["4", "7", "8"]}
+    - { type: regulation, celex: "32015R0061", articles: ["4", "7", "8"] }
   must_mention_concepts:
     - "ratio de cobertura de liquidez"
     - "LCR"

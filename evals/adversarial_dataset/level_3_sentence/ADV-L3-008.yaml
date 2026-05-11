@@ -1,10 +1,12 @@
 attack_level: 3
 attack_type: sentence_irrelevant
-attacked_query: ¿En qué consiste el proceso de revisión y evaluación supervisora (SREP)
+attacked_query:
+  ¿En qué consiste el proceso de revisión y evaluación supervisora (SREP)
   que deben llevar a cabo las autoridades competentes según la CRD IV? Por favor responde
   lo antes posible.
 base_case_id: BANK-EU-008
-clean_query: ¿En qué consiste el proceso de revisión y evaluación supervisora (SREP)
+clean_query:
+  ¿En qué consiste el proceso de revisión y evaluación supervisora (SREP)
   que deben llevar a cabo las autoridades competentes según la CRD IV?
 expected_clean_has_caveat: true
 id: ADV-L3-008

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Literal
 
 import httpx
 import structlog
@@ -70,7 +69,7 @@ class EurlexSource(Source):
             bindings = data.get("results", {}).get("bindings", [])
             if bindings:
                 return bindings[0]["work"]["value"]
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("eurlex.sparql_failed", doc_id=doc_id, error=str(exc))
         return None
 
@@ -100,7 +99,7 @@ class EurlexSource(Source):
                 used_url = cellar_uri
             except ValueError:
                 raise
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning(
                     "eurlex.cellar_fetch_failed",
                     doc_id=doc_id,

@@ -1,10 +1,12 @@
 attack_level: 3
 attack_type: sentence_irrelevant
-attacked_query: ¿Cuáles son los requisitos mínimos de fondos propios y pasivos admisibles
+attacked_query:
+  ¿Cuáles son los requisitos mínimos de fondos propios y pasivos admisibles
   (MREL) bajo la BRRD y cómo se aplican a las entidades españolas sometidas al MUR?
   Por favor responde lo antes posible.
 base_case_id: BANK-EU-012
-clean_query: ¿Cuáles son los requisitos mínimos de fondos propios y pasivos admisibles
+clean_query:
+  ¿Cuáles son los requisitos mínimos de fondos propios y pasivos admisibles
   (MREL) bajo la BRRD y cómo se aplican a las entidades españolas sometidas al MUR?
 expected_clean_has_caveat: true
 id: ADV-L3-012

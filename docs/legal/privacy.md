@@ -15,14 +15,14 @@ responsable formal designado hasta que el sistema salga del entorno MVP.
 
 ## 2. Datos que se procesan
 
-| Categoría | Dato | Dónde | Retención |
-|-----------|------|-------|-----------|
-| Consultas jurídicas | Texto de la query del usuario | SQLite local (`data/consultations.db`) | Manual; sin purga automática en MVP |
-| Respuestas generadas | Texto completo de la respuesta + citas | SQLite local | Ídem |
-| Trazas de ejecución | `trace_id`, latencia, modelo, coste estimado | SQLite local | Ídem |
-| Logs de aplicación | Eventos de sistema (nivel INFO+); PII redactado antes de escritura | stdout / fichero local | Rotación por el sistema operativo del host |
-| Feedback de usuario | Tipo de incidencia + descripción + extracto de respuesta | `evals/feedback/*.json` | Manual |
-| Datos enviados a Anthropic | Query del usuario + fragmentos de normas recuperados de Qdrant | API Anthropic (ver §4) | Según política de Anthropic |
+| Categoría                  | Dato                                                               | Dónde                                  | Retención                                  |
+| -------------------------- | ------------------------------------------------------------------ | -------------------------------------- | ------------------------------------------ |
+| Consultas jurídicas        | Texto de la query del usuario                                      | SQLite local (`data/consultations.db`) | Manual; sin purga automática en MVP        |
+| Respuestas generadas       | Texto completo de la respuesta + citas                             | SQLite local                           | Ídem                                       |
+| Trazas de ejecución        | `trace_id`, latencia, modelo, coste estimado                       | SQLite local                           | Ídem                                       |
+| Logs de aplicación         | Eventos de sistema (nivel INFO+); PII redactado antes de escritura | stdout / fichero local                 | Rotación por el sistema operativo del host |
+| Feedback de usuario        | Tipo de incidencia + descripción + extracto de respuesta           | `evals/feedback/*.json`                | Manual                                     |
+| Datos enviados a Anthropic | Query del usuario + fragmentos de normas recuperados de Qdrant     | API Anthropic (ver §4)                 | Según política de Anthropic                |
 
 **No se procesan** datos especialmente sensibles (salud, ideología, biometría)
 ni datos de clientes de Santander. Las queries deben ser consultas jurídicas

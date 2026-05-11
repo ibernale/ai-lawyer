@@ -13,8 +13,8 @@ query: >
   procedimientos y qué principios de non bis in idem aplican?
 expected:
   must_cite_any_of:
-    - {type: law, boe_id: "BOE-A-2014-6488", articles: ["97", "98"]}
-    - {type: regulation, celex: "32013R0575", articles: ["92"]}
+    - { type: law, boe_id: "BOE-A-2014-6488", articles: ["97", "98"] }
+    - { type: regulation, celex: "32013R0575", articles: ["92"] }
   must_mention_concepts:
     - "non bis in idem"
     - "procedimiento sancionador"

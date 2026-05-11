@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import Any
 
 import httpx
 import structlog
@@ -70,7 +69,7 @@ class AepdSource(Source):
             except httpx.HTTPStatusError as exc:
                 logger.warning("aepd.list_http_error", url=url, status=exc.response.status_code)
                 break
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning("aepd.list_fetch_error", url=url, error=str(exc))
                 break
 

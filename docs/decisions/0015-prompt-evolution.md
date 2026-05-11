@@ -59,6 +59,7 @@ Revisión humana (jurista + engineer)
 hipótesis, no pura reproducibilidad)
 
 **Inputs:**
+
 1. `failed_cases`: los `CaseResult` con `passed=False` del último nightly run
 2. `current_prompt`: contenido de `docs/prompts/<branch>_vN.md`
 3. `adr_context`: `docs/decisions/` (acceso de lectura completo)
@@ -69,18 +70,23 @@ hipótesis, no pura reproducibilidad)
 
 ```markdown
 ## Análisis causal
+
 [Por qué fallaron los casos: patrones identificados en el prompt actual]
 
 ## Hipótesis de mejora
+
 [Qué cambio específico abordaría los fallos observados]
 
 ## Diff propuesto
+
 [Diff unificado del prompt: líneas eliminadas (-) y añadidas (+)]
 
 ## Consistencia con ADRs
+
 [Verificación explícita: ¿el cambio contradice algún ADR? Si sí, señalarlo]
 
 ## Simulación de regresión
+
 [Resultado esperado del prompt modificado sobre los 5 casos de regresión]
 ```
 
@@ -93,11 +99,13 @@ para que el revisor humano tome la decisión consciente.
 ### Scope del Reflection Agent
 
 **Puede proponer cambios a:**
+
 - `docs/prompts/<branch>_vN.md` — instrucciones del especialista
 - `docs/prompts/router_vN.md` — instrucciones de routing
 - `docs/prompts/planner_vN.md` — instrucciones del Planner (ADR 0012)
 
 **No puede proponer cambios a:**
+
 - Código Python (packages/, apps/)
 - Esquemas de datos (pydantic models, SQLite DDL)
 - Configuración de infraestructura (docker-compose, GitHub Actions)
@@ -113,12 +121,13 @@ prompt del Reflection Agent y se verifica en el PR check automático (diff path 
 
 Los prompts usan semver de dos niveles: `MAJOR.MINOR`
 
-| Tipo de cambio | Versión | Ejemplo |
-|---------------|---------|---------|
-| Cambio de política (scope, cautelas, formato de output) | MAJOR++ | v1.0 → v2.0 |
+| Tipo de cambio                                                 | Versión | Ejemplo     |
+| -------------------------------------------------------------- | ------- | ----------- |
+| Cambio de política (scope, cautelas, formato de output)        | MAJOR++ | v1.0 → v2.0 |
 | Mejora puntual (añadir ejemplo, aclarar instrucción existente) | MINOR++ | v1.0 → v1.1 |
 
 El runner de evals registra la versión exacta del prompt en `manifest.json`:
+
 ```json
 {
   "prompt_versions": {
@@ -133,10 +142,12 @@ Esto permite comparar runs con distintas versiones de prompt y aislar el efecto 
 cada cambio.
 
 **Convención de nombres de archivo:**
+
 ```
 docs/prompts/regulatorio_bancario_v1.md   ← versión activa
 docs/prompts/regulatorio_bancario_v2.md   ← propuesta en PR
 ```
+
 Solo una versión está activa en cada momento; la configuración del especialista
 apunta a la ruta explícita.
 
@@ -180,11 +191,13 @@ baselines de optimización manual y automática, especialmente para tareas con s
 compleja.
 
 **Qué adoptamos de GEPA:**
+
 - Reflexión textual sobre casos fallidos como mecanismo de generación de hipótesis
 - Separación entre análisis causal y propuesta de cambio
 - Validación de la propuesta contra casos de regresión antes de presentarla
 
 **Qué no adoptamos:**
+
 - El loop completo automatizado (reflexión → modificación → evaluación → siguiente iteración sin intervención humana). En contexto jurídico bancario, la automatización completa del loop de prompt evolution es inaceptable hasta que exista gobernanza formal de cambios en sistemas de asesoramiento.
 - Búsqueda de población de prompts (evolución genética). El coste de evaluar N candidatos es desproporcionado; la reflexión dirigida es suficiente.
 
@@ -193,14 +206,17 @@ compleja.
 ## Consequences
 
 **Positivo:**
+
 - Escala el proceso de mejora de prompts de manual-por-caso a semi-automático con revisión humana como gate
 - El análisis causal del Reflection Agent genera documentación de por qué se hizo cada cambio, mejorando el conocimiento del equipo
 - El conflict check con ADRs previene que la evolución de prompts deshaga decisiones de arquitectura
 
 **Negativo/Riesgos:**
+
 - Si el equipo aprueba PRs sin leer el análisis causal, el gate humano se convierte en teatro. El checklist de revisión mitiga pero no elimina este riesgo
 - El Reflection Agent puede proponer cambios que mejoran los casos fallidos pero son jurídicamente incorrectos; por eso la revisión por jurista cualificado está en el checklist, no es opcional
 - El prompt audit cada 10 versiones MINOR requiere tiempo de jurista; si no se cumple, el drift puede acumularse
 
 **Neutral:**
+
 - El framework es independiente del modelo base; si se cambia de Claude a otro modelo, el loop de reflexión sigue siendo válido

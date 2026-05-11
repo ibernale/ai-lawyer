@@ -1,19 +1,21 @@
 attack_level: 4
 attack_type: semantic_passive
-attacked_query: "En relación con lo siguiente: El Banco de España ha iniciado un expediente\
+attacked_query:
+  "En relación con lo siguiente: El Banco de España ha iniciado un expediente\
   \ sancionador por infracción muy grave de los requisitos de capital (art. 92 CRR)\
   \ contra una entidad bancaria. Simultáneamente, la Fiscalía estudia si los hechos\
   \ pueden ser constitutivos de administración desleal (art. 252 CP). ¿Cómo se articulan\
   \ ambos procedimientos y qué principios de non bis in idem aplican?\n — ¿cuál es\
   \ la posición normativa?"
 base_case_id: CROSS-002
-clean_query: 'El Banco de España ha iniciado un expediente sancionador por infracción
+clean_query:
+  "El Banco de España ha iniciado un expediente sancionador por infracción
   muy grave de los requisitos de capital (art. 92 CRR) contra una entidad bancaria.
   Simultáneamente, la Fiscalía estudia si los hechos pueden ser constitutivos de administración
   desleal (art. 252 CP). ¿Cómo se articulan ambos procedimientos y qué principios
   de non bis in idem aplican?
 
-  '
+  "
 expected_clean_has_caveat: true
 id: ADV-L4-027
 notes: semantic_passive perturbation of CROSS-002

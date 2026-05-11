@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import structlog
 import tiktoken
 
-from lex_agents_ingest.canonical import Chunk, CanonicalDocument, HierarchyNode
+from lex_agents_ingest.canonical import CanonicalDocument, Chunk, HierarchyNode
 
 if TYPE_CHECKING:
     pass

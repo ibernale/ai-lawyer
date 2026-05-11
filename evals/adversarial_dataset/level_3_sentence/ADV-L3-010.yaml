@@ -1,9 +1,11 @@
 attack_level: 3
 attack_type: sentence_irrelevant
-attacked_query: ¿Qué es el colchón de capital anticíclico y quién determina su nivel
+attacked_query:
+  ¿Qué es el colchón de capital anticíclico y quién determina su nivel
   en España? Por favor responde lo antes posible.
 base_case_id: BANK-EU-010
-clean_query: ¿Qué es el colchón de capital anticíclico y quién determina su nivel
+clean_query:
+  ¿Qué es el colchón de capital anticíclico y quién determina su nivel
   en España?
 expected_clean_has_caveat: true
 id: ADV-L3-010

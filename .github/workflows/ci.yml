@@ -22,8 +22,9 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
-      - run: uv run ruff check .
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml', 'uv.lock') }}
+      - run: uv sync --all-packages
+      - run: uv run --with "ruff>=0.3" ruff check .
 
   typecheck-py:
     name: Type-check Python
@@ -40,7 +41,7 @@ jobs:
           path: ~/.cache/uv
           key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
       - run: uv sync --all-packages
-      - run: uv run mypy --strict packages/ apps/api/src/
+      - run: uv run --with "mypy>=1.0" mypy --strict packages/ apps/api/src/
 
   test-py:
     name: Test Python
@@ -57,7 +58,7 @@ jobs:
           path: ~/.cache/uv
           key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
       - run: uv sync --all-packages
-      - run: uv run pytest -x -q -m "not integration"
+      - run: uv run --with "pytest>=8" --with "pytest-asyncio>=0.23" --with "respx>=0.21" pytest -x -q -m "not integration"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -72,15 +73,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @lex-agents/web lint
-      - run: pnpm exec prettier --check "**/*.{ts,tsx,js,jsx,json,yaml,md}" --ignore-path .gitignore
+      - run: pnpm exec prettier --check "**/*.{ts,tsx,js,jsx,json,yaml,md}" --ignore-path .gitignore --ignore-path .prettierignore
 
   typecheck-web:
     name: Type-check Web
@@ -90,8 +89,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -107,8 +104,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: "20"

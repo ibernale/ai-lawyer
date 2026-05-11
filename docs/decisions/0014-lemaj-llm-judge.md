@@ -55,6 +55,7 @@ class LegalDataPoint:
 ```
 
 **Algoritmo de extracción de LDPs:**
+
 1. El texto de respuesta se segmenta en oraciones usando spaCy (idioma ES)
 2. Cada oración con verbo modal o predicado normativo (debe, puede, prohíbe, obliga,
    establece, requiere…) se candidata como LDP
@@ -66,13 +67,13 @@ class LegalDataPoint:
 
 ### Cinco criterios de evaluación por LDP
 
-| Criterio | Definición | Escala |
-|----------|-----------|--------|
-| `factual_support` | ¿El chunk citado contiene base textual para el LDP? | pass / fail / uncertain |
-| `normative_accuracy` | ¿La interpretación del precepto citado es jurídicamente defendible? | pass / fail / uncertain |
-| `jurisdictional_correctness` | ¿Se aplica la norma de la jurisdicción correcta para la cuestión planteada? | pass / fail / uncertain |
-| `completeness_partial` | ¿El LDP omite información del mismo chunk que cambiaría materialmente la conclusión? | pass / fail / uncertain |
-| `caveat_appropriateness` | ¿El LDP lleva las cautelas necesarias si la norma es ambigua, está en revisión, o tiene excepciones relevantes? | pass / fail / uncertain |
+| Criterio                     | Definición                                                                                                      | Escala                  |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| `factual_support`            | ¿El chunk citado contiene base textual para el LDP?                                                             | pass / fail / uncertain |
+| `normative_accuracy`         | ¿La interpretación del precepto citado es jurídicamente defendible?                                             | pass / fail / uncertain |
+| `jurisdictional_correctness` | ¿Se aplica la norma de la jurisdicción correcta para la cuestión planteada?                                     | pass / fail / uncertain |
+| `completeness_partial`       | ¿El LDP omite información del mismo chunk que cambiaría materialmente la conclusión?                            | pass / fail / uncertain |
+| `caveat_appropriateness`     | ¿El LDP lleva las cautelas necesarias si la norma es ambigua, está en revisión, o tiene excepciones relevantes? | pass / fail / uncertain |
 
 `uncertain` significa: el juez no tiene suficiente información en el contexto para
 decidir; no es sinónimo de "fallo". Los `uncertain` no penalizan pero disparan
@@ -84,14 +85,15 @@ un flag de revisión humana.
 
 **3 configuraciones distintas + 1 meta-juez:**
 
-| Rol | Modelo | Temperatura | Prompt variant |
-|-----|--------|-------------|----------------|
-| Juez A | claude-opus-4-7 | 0.1 | Criterios literales del ADR |
-| Juez B | claude-opus-4-7 | 0.3 | Criterios + ejemplos few-shot de fallos pasados |
-| Juez C | claude-sonnet-4-6 | 0.1 | Criterios con chain-of-thought explícito |
-| Meta-juez | claude-opus-4-7 | 0.0 | Árbitro: recibe los 3 veredictos + razonamientos, decide |
+| Rol       | Modelo            | Temperatura | Prompt variant                                           |
+| --------- | ----------------- | ----------- | -------------------------------------------------------- |
+| Juez A    | claude-opus-4-7   | 0.1         | Criterios literales del ADR                              |
+| Juez B    | claude-opus-4-7   | 0.3         | Criterios + ejemplos few-shot de fallos pasados          |
+| Juez C    | claude-sonnet-4-6 | 0.1         | Criterios con chain-of-thought explícito                 |
+| Meta-juez | claude-opus-4-7   | 0.0         | Árbitro: recibe los 3 veredictos + razonamientos, decide |
 
 **Protocolo de decisión:**
+
 - Los 3 jueces coinciden → decisión final sin meta-juez (ahorro de coste)
 - 2 de 3 coinciden → mayoría, meta-juez solo revisa si `uncertain` está en minoría
 - Desacuerdo total → meta-juez arbitra con razonamiento explícito
@@ -136,6 +138,7 @@ python -m evals judge → extracción LDPs + panel de jueces + LeMAJRunMetrics
 ```
 
 Nuevos campos en `CaseResult`:
+
 ```python
 ldp_accuracy: float | None = None
 ldps_human_review: int | None = None
@@ -143,6 +146,7 @@ inter_judge_kappa: float | None = None
 ```
 
 Los runs de `evals judge` se almacenan en `evals/reports/lemaj_<timestamp>/`:
+
 - `ldps.jsonl` — un JSON por LDP con todos los veredictos
 - `lemaj_metrics.json` — `LeMAJRunMetrics`
 - `human_review.md` — lista de LDPs marcados para revisión
@@ -156,11 +160,11 @@ independientes para no contaminar las métricas de CI con evaluaciones no determ
 
 ADR 0009 rechazó LLM-as-judge por cuatro razones. LeMAJ aborda cada una:
 
-| Razón ADR 0009 | Respuesta LeMAJ |
-|----------------|-----------------|
-| Determinismo (flaky CI) | LeMAJ no corre en CI; nightly únicamente |
-| Coste ($5-10/run) | Presupuesto máximo $15/run nightly; aceptable con frecuencia diaria |
-| Latencia (dobla wall-clock) | No está en el path crítico; corre asíncronamente tras el run heurístico |
+| Razón ADR 0009                 | Respuesta LeMAJ                                                                                                |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Determinismo (flaky CI)        | LeMAJ no corre en CI; nightly únicamente                                                                       |
+| Coste ($5-10/run)              | Presupuesto máximo $15/run nightly; aceptable con frecuencia diaria                                            |
+| Latencia (dobla wall-clock)    | No está en el path crítico; corre asíncronamente tras el run heurístico                                        |
 | Circularidad (mismo proveedor) | Panel con 3 configuraciones distintas reduce correlación; Cohen's Kappa mide el grado de acuerdo independiente |
 
 ADR 0009 sigue vigente para CI. LeMAJ opera en la capa de evaluación profunda donde
@@ -171,14 +175,17 @@ el coste y el no-determinismo son aceptables.
 ## Consequences
 
 **Positivo:**
+
 - Detecta clases de errores (interpretación normativa incorrecta, omisión de caveats) que las métricas heurísticas no pueden detectar
 - Cohen's Kappa como métrica de calidad del propio sistema de evaluación es un mecanismo de auto-diagnóstico valioso
 - La separación CI/LeMAJ protege la velocidad de desarrollo sin sacrificar profundidad de evaluación
 
 **Negativo/Riesgos:**
+
 - El costo de $15/run es aceptable hoy; si el golden dataset crece a 200+ casos puede requerir sampling estratificado
 - La extracción de LDPs con NLP (spaCy + LLM) puede ser imprecisa para texto jurídico denso; requiere validación humana de la calidad de la extracción antes de confiar en las métricas
 - La definición de `normative_accuracy` es parcialmente subjetiva; el human_review_required actúa como válvula de seguridad
 
 **Neutral:**
+
 - La arquitectura del panel es escalable: añadir un cuarto juez o cambiar modelos es un cambio de configuración, no de código

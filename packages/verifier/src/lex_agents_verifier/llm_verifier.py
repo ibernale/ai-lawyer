@@ -7,7 +7,6 @@ import json
 from pathlib import Path
 
 import structlog
-
 from lex_agents_shared.anthropic_client import MODEL_HAIKU, AnthropicClientWrapper
 from lex_agents_shared.types import ClaimVerification
 
@@ -71,14 +70,14 @@ class LLMVerifier:
         claims_with_chunks: list[tuple[Claim, str, ClaimVerification]],
     ) -> list[ClaimVerification]:
         """Process only UNCERTAIN claims via Haiku; return updated list."""
-        results: list[ClaimVerification] = []
+        results: list[tuple[int, ClaimVerification]] = []
         tasks: list[tuple[int, asyncio.Task[ClaimVerification]]] = []
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         for i, (claim, chunk_text, existing) in enumerate(claims_with_chunks):
             if existing.verdict != "UNCERTAIN":
-                results.append((i, existing))  # type: ignore[arg-type]
+                results.append((i, existing))
                 continue
 
             task = loop.create_task(
@@ -92,22 +91,20 @@ class LLMVerifier:
             gathered = await asyncio.gather(*awaitables, return_exceptions=True)
             for idx, outcome in zip(indices, gathered):
                 original = claims_with_chunks[idx][2]
-                if isinstance(outcome, Exception):
+                if isinstance(outcome, BaseException):
                     logger.warning(
                         "llm_verifier.call_failed",
                         ref_index=original.ref_index,
                         error=str(outcome),
                     )
-                    results.append((idx, original))  # type: ignore[arg-type]
+                    results.append((idx, original))
                 else:
-                    results.append((idx, outcome))  # type: ignore[arg-type]
+                    results.append((idx, outcome))
 
-        # Sort by original index and extract ClaimVerification objects
-        # results is a mix of (i, cv) tuples from both paths
         # Re-assemble in original order
         ordered: list[ClaimVerification] = [existing for (_, _, existing) in claims_with_chunks]
-        for i, existing in results:  # type: ignore[misc]
-            ordered[i] = existing  # type: ignore[index]
+        for i, cv in results:
+            ordered[i] = cv
 
         return ordered
 
@@ -129,7 +126,7 @@ class LLMVerifier:
             "</chunk_text>"
         )
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         response = await loop.run_in_executor(
             None,
@@ -142,7 +139,8 @@ class LLMVerifier:
             ),
         )
 
-        raw_text = response.content[0].text.strip() if response.content else ""
+        first = response.content[0] if response.content else None
+        raw_text = first.text.strip() if first is not None and hasattr(first, "text") else ""
 
         # Strip markdown code fences if present
         if raw_text.startswith("```"):

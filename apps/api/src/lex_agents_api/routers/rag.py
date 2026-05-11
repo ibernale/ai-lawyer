@@ -9,17 +9,15 @@ from typing import Any
 import structlog
 from anthropic import Anthropic
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-from qdrant_client import QdrantClient
-
 from lex_agents_ingest.embedder import BgeM3Embedder
-from lex_agents_ingest.indexer import QdrantIndexer
 from lex_agents_rag.assembler import ContextAssembler
 from lex_agents_rag.query_rewriter import LegalQueryRewriter
 from lex_agents_rag.reranker import RerankerConfig, make_reranker
 from lex_agents_rag.retriever import HybridRetriever, SearchFilters
 from lex_agents_shared.anthropic_client import MODEL_OPUS
 from lex_agents_shared.types import CitationMapping
+from pydantic import BaseModel
+from qdrant_client import QdrantClient
 
 from lex_agents_api.auth import CurrentUser, require_auth
 from lex_agents_api.settings import Settings, get_settings

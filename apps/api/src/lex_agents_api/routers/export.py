@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import json
-import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from io import BytesIO
-from typing import Any
 from pathlib import Path
+from typing import Any
 
 import structlog
 from docx import Document
@@ -16,7 +15,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from lex_agents_agents.orchestrator import ConsultResponse
 from lex_agents_api.auth import CurrentUser, require_auth
 from lex_agents_api.db import ConsultationStore
 from lex_agents_api.routers.consult import get_store
@@ -51,7 +49,7 @@ def _build_docx(record_json: str, query: str) -> bytes:
     title.runs[0].font.color.rgb = RGBColor(0x1A, 0x56, 0xDB)  # brand blue
 
     doc.add_paragraph(f"Consulta: {query}")
-    doc.add_paragraph(f"Fecha: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
+    doc.add_paragraph(f"Fecha: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}")
     doc.add_paragraph(f"Modelo: {metadata.get('model', 'desconocido')}")
     doc.add_paragraph(f"Prompt version: {metadata.get('prompt_version', '-')}")
 
@@ -112,7 +110,7 @@ async def export_consultation(
         raise HTTPException(status_code=404, detail=f"Consultation {trace_id!r} not found")
 
     docx_bytes = _build_docx(record.response_json, record.query)
-    filename = f"analisis_{trace_id[:8]}_{datetime.now(timezone.utc).strftime('%Y%m%d')}.docx"
+    filename = f"analisis_{trace_id[:8]}_{datetime.now(UTC).strftime('%Y%m%d')}.docx"
 
     logger.info("consultation_exported", trace_id=trace_id, format="docx")
     return StreamingResponse(
@@ -147,12 +145,12 @@ async def submit_feedback(
     feedback_dir = Path("evals/feedback")
     feedback_dir.mkdir(parents=True, exist_ok=True)
 
-    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+    ts = datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
     filename = feedback_dir / f"{ts}_{trace_id[:8]}.json"
 
     payload = {
         "trace_id": trace_id,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "issue_type": body.issue_type,
         "description": body.description,
         "query": record.query,

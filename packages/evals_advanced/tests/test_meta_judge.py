@@ -5,8 +5,6 @@ from __future__ import annotations
 import asyncio
 from unittest.mock import MagicMock
 
-import pytest
-
 from lex_agents_evals_advanced.lemaj.meta_judge import MetaJudge
 from lex_agents_evals_advanced.types import JudgeDimensions, LegalDataPoint, SingleJudgeVerdict
 

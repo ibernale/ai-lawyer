@@ -27,30 +27,31 @@ flowchart TD
 `LegalQueryRewriter` usa `claude-haiku-4-5-20251001` (temperature=0) para
 expandir acrónimos legales antes de la búsqueda:
 
-| Acrónimo | Expansión |
-|---|---|
-| CRR | Reglamento (UE) n.º 575/2013 |
-| CRD IV | Directiva 2013/36/UE |
-| CET1 | capital de nivel 1 ordinario |
-| MUS | Mecanismo Único de Supervisión |
+| Acrónimo | Expansión                      |
+| -------- | ------------------------------ |
+| CRR      | Reglamento (UE) n.º 575/2013   |
+| CRD IV   | Directiva 2013/36/UE           |
+| CET1     | capital de nivel 1 ordinario   |
+| MUS      | Mecanismo Único de Supervisión |
 
 ## Capa 2: Recuperación híbrida
 
-| Parámetro | Valor |
-|---|---|
+| Parámetro        | Valor       |
+| ---------------- | ----------- |
 | Modelo embedding | BAAI/bge-m3 |
-| Dimensión densa | 1024 |
-| Distancia | Cosine |
-| k_dense | 50 |
-| k_sparse | 50 |
-| k_rrf | 30 |
-| k (RRF) | 60 |
+| Dimensión densa  | 1024        |
+| Distancia        | Cosine      |
+| k_dense          | 50          |
+| k_sparse         | 50          |
+| k_rrf            | 30          |
+| k (RRF)          | 60          |
 
 Fórmula RRF: `score(d) = Σ_{L} 1 / (k + rank(d, L))`
 
 ## Capa 3: Reranking
 
 `CrossEncoderReranker` basado en `BAAI/bge-reranker-v2-m3`.
+
 - Input: top-30 de RRF + query
 - Output: top-K (por defecto K=10)
 - Lazy-load: el modelo (~1.1 GB) se descarga al primer uso en producción
@@ -59,6 +60,7 @@ Fórmula RRF: `score(d) = Σ_{L} 1 / (k + rank(d, L))`
 ## Capa 4: Ensamblaje y generación
 
 `ContextAssembler` formatea cada chunk como:
+
 ```
 [REF:n]
 <hierarchy_path>
@@ -90,11 +92,11 @@ Campos del payload: todos los campos de `ChunkMetadata` + `text` + `context_text
 
 ## Filtros disponibles
 
-| Campo | Tipo | Ejemplo |
-|---|---|---|
-| `jurisdiction` | string | `"EU"` \| `"ES"` |
-| `status` | string | `"vigente"` |
-| `document_type` | string | `"regulation"` |
+| Campo              | Tipo       | Ejemplo          |
+| ------------------ | ---------- | ---------------- |
+| `jurisdiction`     | string     | `"EU"` \| `"ES"` |
+| `status`           | string     | `"vigente"`      |
+| `document_type`    | string     | `"regulation"`   |
 | `entry_into_force` | date range | `≤ "2024-01-01"` |
 
 ## Métricas de calidad (Fase 4)

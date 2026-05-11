@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import pytest
-import respx
-import httpx
 from pathlib import Path
 
-from lex_agents_ingest.sources.eurlex import EurlexSource
+import httpx
+import pytest
+import respx
 from lex_agents_ingest.canonical import CanonicalDocument, RawDocument
+from lex_agents_ingest.sources.eurlex import EurlexSource
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "eurlex"
 

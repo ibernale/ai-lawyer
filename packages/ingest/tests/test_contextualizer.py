@@ -4,12 +4,10 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock
 
 from lex_agents_ingest.canonical import CanonicalDocument, Chunk
-from lex_agents_ingest.contextualizer import CONTEXT_SYSTEM_PROMPT, Contextualizer
+from lex_agents_ingest.contextualizer import Contextualizer
 
 
 def _make_doc() -> CanonicalDocument:

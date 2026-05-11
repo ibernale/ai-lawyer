@@ -1,11 +1,13 @@
 attack_level: 3
 attack_type: sentence_irrelevant
-attacked_query: ¿De qué manera interactúan los requisitos de resiliencia operativa
+attacked_query:
+  ¿De qué manera interactúan los requisitos de resiliencia operativa
   digital establecidos en DORA con los colchones de capital exigidos por la CRD V?
   ¿Puede un incumplimiento de DORA desencadenar la activación de requisitos adicionales
   de capital? Por favor responde lo antes posible.
 base_case_id: BANK-EU-024
-clean_query: ¿De qué manera interactúan los requisitos de resiliencia operativa digital
+clean_query:
+  ¿De qué manera interactúan los requisitos de resiliencia operativa digital
   establecidos en DORA con los colchones de capital exigidos por la CRD V? ¿Puede
   un incumplimiento de DORA desencadenar la activación de requisitos adicionales de
   capital?

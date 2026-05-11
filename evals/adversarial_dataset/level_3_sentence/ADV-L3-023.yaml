@@ -1,11 +1,13 @@
 attack_level: 3
 attack_type: sentence_irrelevant
-attacked_query: ¿Cómo deben tratar prudencialmente las entidades de crédito sus exposiciones
+attacked_query:
+  ¿Cómo deben tratar prudencialmente las entidades de crédito sus exposiciones
   en criptoactivos bajo el CRR3 (artículo 501c) antes de que MiCA esté plenamente
   implementado? ¿Qué incertidumbres normativas persisten? Por favor responde lo antes
   posible.
 base_case_id: BANK-EU-023
-clean_query: ¿Cómo deben tratar prudencialmente las entidades de crédito sus exposiciones
+clean_query:
+  ¿Cómo deben tratar prudencialmente las entidades de crédito sus exposiciones
   en criptoactivos bajo el CRR3 (artículo 501c) antes de que MiCA esté plenamente
   implementado? ¿Qué incertidumbres normativas persisten?
 expected_clean_has_caveat: true

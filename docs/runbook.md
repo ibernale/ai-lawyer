@@ -158,17 +158,17 @@ python -c "from passlib.hash import bcrypt; print(bcrypt.hash('your_password'))"
 
 ## Common failures and remediation
 
-| Symptom | Likely cause | Remediation |
-|---------|-------------|-------------|
-| `api` exits on startup | `QDRANT_URL` not reachable | Ensure `qdrant` service is healthy first; check `QDRANT_URL` in `.env` |
-| `health` returns `anthropic_api: not_configured` | `ANTHROPIC_API_KEY` empty | Set key in `.env` |
-| `otel-collector` crash-loops | Jaeger not ready | Jaeger starts slower; collector will retry — usually self-resolves in 30s |
-| Docker build fails on `uv sync` | No internet or cache miss | Run `make build-images` with `--no-cache` or ensure network access |
-| `401 Unauthorized` on `/api/v1/*` | Token expired or `auth_enabled=false` missing | Re-authenticate via `POST /auth/token`; for dev set `AUTH_ENABLED=false` in `.env` |
-| `429 Too Many Requests` | Rate limit exceeded (30 req/min on `/consult`) | Wait 60 s; adjust limit in `settings.py` if running load tests |
-| Qdrant returns empty results | Collection not indexed | Run `make ingest-sample` or `make ingest-real` |
-| Export .docx fails with 404 | Consultation not persisted yet | Background save is async; wait 1–2 s and retry |
-| Grafana shows no data | Prometheus not scraping | Check `infra/prometheus.yml` target is `api:8000`; verify `make dev` started prometheus |
+| Symptom                                          | Likely cause                                   | Remediation                                                                             |
+| ------------------------------------------------ | ---------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `api` exits on startup                           | `QDRANT_URL` not reachable                     | Ensure `qdrant` service is healthy first; check `QDRANT_URL` in `.env`                  |
+| `health` returns `anthropic_api: not_configured` | `ANTHROPIC_API_KEY` empty                      | Set key in `.env`                                                                       |
+| `otel-collector` crash-loops                     | Jaeger not ready                               | Jaeger starts slower; collector will retry — usually self-resolves in 30s               |
+| Docker build fails on `uv sync`                  | No internet or cache miss                      | Run `make build-images` with `--no-cache` or ensure network access                      |
+| `401 Unauthorized` on `/api/v1/*`                | Token expired or `auth_enabled=false` missing  | Re-authenticate via `POST /auth/token`; for dev set `AUTH_ENABLED=false` in `.env`      |
+| `429 Too Many Requests`                          | Rate limit exceeded (30 req/min on `/consult`) | Wait 60 s; adjust limit in `settings.py` if running load tests                          |
+| Qdrant returns empty results                     | Collection not indexed                         | Run `make ingest-sample` or `make ingest-real`                                          |
+| Export .docx fails with 404                      | Consultation not persisted yet                 | Background save is async; wait 1–2 s and retry                                          |
+| Grafana shows no data                            | Prometheus not scraping                        | Check `infra/prometheus.yml` target is `api:8000`; verify `make dev` started prometheus |
 
 ---
 
@@ -188,6 +188,91 @@ open http://localhost:16686
 # Structured logs (JSON)
 docker compose -f infra/docker-compose.yml logs api | jq .
 ```
+
+---
+
+## Fase 6 operations
+
+### Re-materializar un asset Dagster
+
+```bash
+# Re-run a single Dagster asset (e.g., after source changes or failures)
+dagster asset materialize --select boe_raw
+
+# Or for a group
+dagster asset materialize --select boe_raw+ eur_lex_raw+
+
+# Via Dagster UI: http://localhost:3002 → Assets → select asset → Materialize
+# Monitor run in UI; GREEN = success, RED = inspect logs for root cause.
+```
+
+**Common failure causes:**
+
+- Source HTTP 429 → check `RATE_LIMIT_DELAY` env var; increase if needed.
+- Qdrant connection refused → ensure `make dev` is running; check `docker compose ps`.
+- Checksum mismatch on canonical layer → re-run from raw: `dagster asset materialize --select boe_canonical`.
+
+---
+
+### Revisar PR de prompt evolution
+
+Prompt evolution PRs are opened automatically by the reflection pipeline (ADR 0021).
+**They require human review before merge — CODEOWNERS prevents auto-merge.**
+
+Checklist:
+
+1. Read the PR body: verify the failing case and `diff_text` match.
+2. Check the regression simulation table: all 5 neighbor cases must pass (✅). If any fail (❌), close PR.
+3. Run locally:
+   ```bash
+   uv run python -m lex_agents_evals_advanced.reflection run --dry-run --specialist <branch_name>
+   ```
+4. Confirm the mandatory IA caveat and jurisdictional caveats are intact in the proposed prompt.
+5. Confirm the change does not expand specialist scope beyond ADRs 0010–0021.
+6. Assign to a qualified lawyer for content review.
+7. Merge only after all checklist items are confirmed.
+
+---
+
+### Añadir patrón procedimental
+
+```bash
+# Open the seed SQL for editing
+make procedural-edit
+# → opens packages/memory/src/lex_agents_memory/data/seed.sql in $EDITOR
+
+# Add INSERT INTO procedural_patterns (pattern_id, jurisdiction, ...) VALUES (...)
+# See existing rows for format reference
+
+# Apply migration to development DB
+make procedural-apply
+
+# Validate
+uv run pytest packages/memory/tests/test_procedural.py -q
+
+# Open PR with @ibernale review required (CODEOWNERS enforces)
+```
+
+**Invariant:** procedural patterns are read-only at runtime. No code path writes to `procedural.db`
+after seeding. If you need to modify a pattern, update `seed.sql` and reseed.
+
+---
+
+### Abrir nueva fuente documental
+
+Follow ADR 0018 (8-step checklist):
+
+1. **Identify source**: confirm URL stability, license, and update frequency.
+2. **Create scraper** in `packages/ingest/src/lex_agents_ingest/sources/<source>.py`.
+3. **Create raw Dagster asset** in `packages/pipeline/src/lex_agents_pipeline/assets/sources.py`.
+4. **Create canonical asset** with normalized `LegalDocument` schema.
+5. **Add tests** in `packages/ingest/tests/` with at least 3 fixture documents.
+6. **Manual GREEN gate**: run `dagster asset materialize --select <source>_canonical` and verify
+   ≥ 10 documents indexed in Qdrant with expected chunk count.
+7. **Add to CI** by including the asset in `.github/workflows/ingest.yml`.
+8. **Update `docs/sources/`** with source metadata (maintainer, license, update schedule).
+
+Never add a source that is not GREEN-gated — AMBER/RED sources degrade retrieval quality.
 
 ---
 

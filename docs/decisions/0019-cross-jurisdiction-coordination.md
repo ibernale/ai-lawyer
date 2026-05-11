@@ -40,11 +40,11 @@ Citations from all branches are merged into a single sequential list. Deduplicat
 
 ### Depth integration
 
-| depth | Coordination |
-|-------|-------------|
-| shallow | Single specialist, no coordination |
-| standard | Planner → parallel Makers if >1 branch → LLM synthesis |
-| deep | Planner → parallel Makers → Judge → (revise → repeat Makers) → LLM synthesis |
+| depth    | Coordination                                                                 |
+| -------- | ---------------------------------------------------------------------------- |
+| shallow  | Single specialist, no coordination                                           |
+| standard | Planner → parallel Makers if >1 branch → LLM synthesis                       |
+| deep     | Planner → parallel Makers → Judge → (revise → repeat Makers) → LLM synthesis |
 
 The Judge evaluates the synthesized output against the Planner's `DefinitionOfDone`. The DoD carries `must_consider_jurisdictions` from the Planner, ensuring the Judge flags responses that miss a required jurisdiction.
 
@@ -57,12 +57,14 @@ The Judge loop runs at most 2 iterations (`_MAX_ITERATIONS = 2`). At iteration 2
 ## Consequences
 
 **Positive**:
+
 - Multi-branch queries receive integrated analysis rather than a single-branch approximation
 - EU > national hierarchy is explicit and auditable from the synthesis prompt
 - Contradictions are surfaced to the reader rather than silently resolved
 - Branch failures are isolated; one failing specialist does not kill the entire consult
 
 **Negative**:
+
 - Synthesis adds one LLM call (claude-opus-4-7) per multi-branch query — approximately $0.01–0.05 extra cost depending on branch count and response length
 - Branch/response alignment in `synthesize()` assumes `run_parallel()` returns responses in the same order as `sub_tasks` sorted by priority; this invariant must be preserved if `run_parallel()` is modified
 - Cross-jurisdiction integration is tested at the unit level with mocked specialists; end-to-end quality requires human expert review (eval stub CROSS-004, `run_in: fase_6_3`)

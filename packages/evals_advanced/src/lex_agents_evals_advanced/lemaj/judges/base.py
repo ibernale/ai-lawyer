@@ -7,12 +7,11 @@ five quality dimensions in a single tool-use call.
 from __future__ import annotations
 
 import json
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from abc import ABC
+from dataclasses import dataclass
 from typing import ClassVar
 
 import structlog
-
 from lex_agents_shared.anthropic_client import AnthropicClientWrapper
 
 try:

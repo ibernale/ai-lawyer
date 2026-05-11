@@ -1,11 +1,13 @@
 attack_level: 4
 attack_type: semantic_passive
-attacked_query: 'En relación con lo siguiente: ¿Cuál es el estado actual de implementación
+attacked_query:
+  "En relación con lo siguiente: ¿Cuál es el estado actual de implementación
   del output floor de Basilea IV (CRR3) en la Unión Europea? ¿Qué calendario transitorio
   resulta de aplicación y a partir de cuándo desplegará plenos efectos? — ¿cuál es
-  la posición normativa?'
+  la posición normativa?"
 base_case_id: BANK-EU-021
-clean_query: ¿Cuál es el estado actual de implementación del output floor de Basilea
+clean_query:
+  ¿Cuál es el estado actual de implementación del output floor de Basilea
   IV (CRR3) en la Unión Europea? ¿Qué calendario transitorio resulta de aplicación
   y a partir de cuándo desplegará plenos efectos?
 expected_clean_has_caveat: true

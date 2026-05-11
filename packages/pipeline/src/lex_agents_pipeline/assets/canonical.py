@@ -8,14 +8,17 @@ any underlying document changes.
 from __future__ import annotations
 
 import hashlib
-import json
 import os
 from pathlib import Path
 from typing import Any
 
 import structlog
-from dagster import AssetCheckResult, AssetCheckSpec, AssetExecutionContext, DataVersion, Output, asset, asset_check
-
+from dagster import (
+    AssetExecutionContext,
+    DataVersion,
+    Output,
+    asset,
+)
 from lex_agents_ingest.canonical import RawDocument
 from lex_agents_ingest.storage import IngestStorage
 

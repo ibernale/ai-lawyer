@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from lex_agents_agents.base_agent import AgentMetadata, AgentResponse
 from lex_agents_agents.core.orchestrator_v2 import (
     ConsultRequest,

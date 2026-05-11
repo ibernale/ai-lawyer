@@ -7,7 +7,6 @@ from typing import Any
 
 import structlog
 
-from lex_agents_memory.types import SemanticEntry
 from lex_agents_memory.semantic.loader import SemanticLoader
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
@@ -72,7 +71,7 @@ class SemanticInjector:
         self._loader = loader
 
     @classmethod
-    def from_dir(cls, knowledge_dir: Path) -> "SemanticInjector":
+    def from_dir(cls, knowledge_dir: Path) -> SemanticInjector:
         return cls(SemanticLoader(knowledge_dir))
 
     def build_context(

@@ -9,19 +9,18 @@ from __future__ import annotations
 
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Literal
 
 import structlog
-from opentelemetry import trace
-from pydantic import BaseModel, Field
-
 from lex_agents_rag.assembler import ContextAssembler
 from lex_agents_rag.query_rewriter import LegalQueryRewriter
 from lex_agents_rag.reranker import BaseReranker
 from lex_agents_rag.retriever import HybridRetriever, SearchFilters
 from lex_agents_shared.anthropic_client import AnthropicClientWrapper
 from lex_agents_shared.types import CitationMapping, VerificationReport
+from opentelemetry import trace
+from pydantic import BaseModel, Field
 
 from lex_agents_agents.base_agent import AgentResponse, RoutingDecision
 from lex_agents_agents.core.coordinator import CrossJurisdictionCoordinator
@@ -63,6 +62,7 @@ class ConsultResponse(BaseModel):
     planner_output: dict[str, Any] | None = None
     judge_verdict: dict[str, Any] | None = None
     cost_breakdown_by_agent: dict[str, float] = Field(default_factory=dict)
+    branch_answers: dict[str, str] = Field(default_factory=dict)
 
 
 @dataclass
@@ -150,6 +150,7 @@ class OrchestratorV2:
         decision = self._plan_to_routing(plan)
         assembled, rewritten = await self._rag(req, plan.jurisdictions)
 
+        branch_answers: dict[str, str] = {}
         if len(plan.sub_tasks) <= 1:
             task = plan.sub_tasks[0] if plan.sub_tasks else BranchTask(
                 id="T1", branch=decision.branch, priority=1, weight=1.0,
@@ -160,10 +161,15 @@ class OrchestratorV2:
             agent_resp = await specialist.run_async(
                 rewritten.expanded_query, assembled, trace_id, sub_task=task
             )
+            branch_answers[task.branch] = agent_resp.answer_text
         else:
             responses = await self._coordinator.run_parallel(
                 plan.sub_tasks, assembled, trace_id
             )
+            branch_answers = {
+                t.branch: r.answer_text
+                for t, r in zip(plan.sub_tasks, responses)
+            }
             agent_resp = self._coordinator.synthesize(responses, plan, trace_id)
 
         verification = await self._verify(trace_id, agent_resp, assembled)
@@ -175,6 +181,7 @@ class OrchestratorV2:
             decision=decision,
             depth_used="standard",
             planner_output=plan,
+            branch_answers=branch_answers,
         )
 
     # ── Deep path ────────────────────────────────────────────────────────────
@@ -195,6 +202,7 @@ class OrchestratorV2:
         iterations = 0
         judge_verdict_dict: dict[str, Any] | None = None
         cost_breakdown: dict[str, float] = {}
+        final_branch_answers: dict[str, str] = {}
 
         current_query = rewritten.expanded_query
         final_resp: AgentResponse | None = None
@@ -234,9 +242,19 @@ class OrchestratorV2:
                 cost_breakdown[branch] = cost_breakdown.get(branch, 0.0) + resp.metadata.cost_estimate_usd
 
             if verdict.verdict in ("publish", "reject"):
+                # Capture per-branch answers from the final iteration
                 if len(responses) > 1:
+                    cost_breakdown.update({
+                        t.branch: cost_breakdown.get(t.branch, 0.0) + r.metadata.cost_estimate_usd
+                        for t, r in zip(plan.sub_tasks, responses)
+                    })
+                    final_branch_answers = {
+                        t.branch: r.answer_text
+                        for t, r in zip(plan.sub_tasks, responses)
+                    }
                     final_resp = self._coordinator.synthesize(responses, plan, trace_id)
                 else:
+                    final_branch_answers = {}
                     final_resp = responses[0]
                 break
 
@@ -246,7 +264,7 @@ class OrchestratorV2:
 
         if final_resp is None:
             if responses:
-                final_resp = responses[0] if len(responses) == 1 else self._coordinator.synthesize(responses, plan, trace_id)  # type: ignore[possibly-undefined]
+                final_resp = responses[0] if len(responses) == 1 else self._coordinator.synthesize(responses, plan, trace_id)
             else:
                 return self._out_of_scope(trace_id, req.query, "deep", plan)
 
@@ -262,6 +280,7 @@ class OrchestratorV2:
             judge_verdict=judge_verdict_dict,
             iterations=iterations,
             cost_breakdown=cost_breakdown,
+            branch_answers=final_branch_answers,
         )
 
     # ── Helpers ─────────────────────────────────────────────────────────────
@@ -289,12 +308,13 @@ class OrchestratorV2:
             return None
         with tracer.start_as_current_span("orchestrator_v2.verify"):
             chunk_store = {m.chunk_id: m.fragment_text for m in assembled.citation_mapping}
-            return await self._deps.verifier.run(
+            result: VerificationReport | None = await self._deps.verifier.run(
                 response_id=trace_id,
                 answer_text=agent_resp.answer_text,
                 citations=assembled.citation_mapping,
                 chunk_store=chunk_store,
             )
+            return result
 
     @staticmethod
     def _is_out_of_scope(plan: PlannerOutput) -> bool:
@@ -340,6 +360,7 @@ class OrchestratorV2:
         judge_verdict: dict[str, Any] | None = None,
         iterations: int = 0,
         cost_breakdown: dict[str, float] | None = None,
+        branch_answers: dict[str, str] | None = None,
     ) -> ConsultResponse:
         meta = final.metadata
         return ConsultResponse(
@@ -381,4 +402,5 @@ class OrchestratorV2:
             ),
             judge_verdict=judge_verdict,
             cost_breakdown_by_agent=cost_breakdown or {},
+            branch_answers=branch_answers or {},
         )

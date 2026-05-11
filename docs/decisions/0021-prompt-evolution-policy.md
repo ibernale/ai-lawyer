@@ -21,11 +21,13 @@ El riesgo principal que este ADR mitiga: **una IA proponiendo y fusionando cambi
 ### Alcance: solo prompts de especialistas (Fase 1)
 
 Los únicos prompts elegibles para evolución automática son los de especialistas:
+
 ```
 docs/prompts/especialistas/<branch>/v<N>.md
 ```
 
 Los siguientes están **protegidos** y excluidos en la Fase 1:
+
 - `docs/prompts/router/**`
 - `docs/prompts/planner/**`
 - `docs/prompts/judge/**`
@@ -42,6 +44,7 @@ FailureAnalyzer → PromptProposer → RegressionSim → PROpener
 #### Etapa 1: FailureAnalyzer
 
 Criterios de fallo por caso:
+
 - `ldp_unsupported_rate > 0.15` (más del 15% de LDPs no soportados), O
 - `concept_coverage < 0.60` (menos del 60% de conceptos esperados cubiertos).
 
@@ -50,11 +53,12 @@ Los casos fallidos se agrupan por `branch_expected`. Solo los clusters con ≥1 
 #### Etapa 2: PromptProposer
 
 Para cada cluster, llama a claude-opus-4-7 con:
+
 - El prompt actual del especialista.
 - Hasta 3 casos fallidos con sus LDPs no soportados y razonamiento de los jueces.
 - Instrucciones explícitas de generar un diff unificado conservador.
 
-El prompt del proposer incluye explícitamente: *"No amplíes el alcance del especialista, mantén todas las cautelas, sé conservador".*
+El prompt del proposer incluye explícitamente: _"No amplíes el alcance del especialista, mantén todas las cautelas, sé conservador"._
 
 Output: diff en formato unificado (`--- a/... +++ b/...`) + rationale.
 
@@ -63,6 +67,7 @@ Validación automática de ADR compliance: si el rationale contiene `⚠️` o l
 #### Etapa 3: RegressionSim
 
 Para cada diff propuesto:
+
 1. Aplica el diff **en memoria** (no a disco) con `patch --output=-`.
 2. Carga hasta 5 casos "vecinos" del golden_dataset para la misma rama (selección por orden de archivo; selección por similitud embeddings prevista para Fase 6.4).
 3. Evalúa heurísticamente cada caso con el prompt candidato: cobertura de conceptos esperados + tasa de claims prohibidos.
@@ -73,6 +78,7 @@ Si no hay casos vecinos disponibles: el diff se acepta por defecto (con nota en 
 #### Etapa 4: PROpener
 
 Para cada diff aceptado por RegressionSim:
+
 1. Crea rama `prompt-evolution/<timestamp>-<branch>`.
 2. Aplica el diff al archivo de prompt en disco.
 3. Incrementa versión MINOR en el frontmatter YAML del prompt (`version: N` → `version: N+1`).
@@ -84,6 +90,7 @@ Para cada diff aceptado por RegressionSim:
 ### Gobernanza: revisión humana obligatoria
 
 El archivo `.github/CODEOWNERS` asigna `@ibernale` como revisor requerido de todos los prompts de especialistas:
+
 ```
 docs/prompts/especialistas/**  @ibernale
 ```
@@ -91,6 +98,7 @@ docs/prompts/especialistas/**  @ibernale
 GitHub impide el merge de cualquier PR que modifique rutas bajo `docs/prompts/especialistas/` sin al menos una aprobación de `@ibernale`. Esto garantiza que ningún cambio pueda fusionarse sin revisión humana, incluso si alguien obtiene permisos de escritura en el repositorio.
 
 El checklist de cada PR incluye:
+
 - Revisión por jurista del impacto en tono y alcance.
 - Verificación de que las cautelas legales obligatorias se mantienen.
 - Compatibilidad con ADRs 0010–0021.
@@ -105,11 +113,13 @@ Auditoría cada 10 versiones MINOR: un jurista revisa el delta acumulado para de
 ### Modo dry-run
 
 El comando:
+
 ```
 python -m lex_agents_evals_advanced.reflection run \
   --results-dir evals/reports/<run_id>/ \
   --dry-run
 ```
+
 ejecuta todo el pipeline pero omite las llamadas a git y gh. Imprime los diffs propuestos y el resultado de la simulación de regresión. Útil para depuración y auditoría manual.
 
 ---

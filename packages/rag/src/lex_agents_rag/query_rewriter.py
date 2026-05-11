@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import structlog
 from anthropic import Anthropic
-from pydantic import BaseModel
-
 from lex_agents_shared.anthropic_client import MODEL_HAIKU
+from pydantic import BaseModel
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
@@ -55,7 +54,7 @@ class LegalQueryRewriter:
         response = self._client.messages.create(
             model=MODEL_HAIKU,
             max_tokens=512,
-            temperature=0,  # type: ignore[arg-type]
+            temperature=0,
             system=_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": query}],
         )

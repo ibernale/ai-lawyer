@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Literal
-
+from typing import Literal
 
 # ---------------------------------------------------------------------------
 # Legal Data Point — atomic verifiable claim extracted from an agent response

@@ -39,6 +39,7 @@ Airflow organiza el trabajo en DAGs de **tareas**. Las dependencias se expresan 
 produce cada tarea ni en qué estado se encuentran.
 
 Para implementar re-materialización selectiva con Airflow habría que:
+
 - Añadir lógica custom de versionado en cada tarea
 - Gestionar el estado de los artefactos en un almacén externo (S3, base de datos propia)
 - Escribir sensores ad-hoc para detectar cambios en formato o modelo
@@ -74,17 +75,17 @@ dependencias declaradas sobre otros assets, y checks de calidad (`AssetCheckSpec
 
 Esto encaja directamente con el modelo de datos de lex-agents:
 
-| Entidad lex-agents | Asset Dagster |
-|-------------------|---------------|
-| Documento raw descargado | `boe_raw`, `eurlex_raw`, … |
-| Documento canónico parseado | `boe_canonical`, … |
-| Chunks | `boe_chunked` (versión = hash del config del chunker) |
-| Chunks contextualizados | `boe_contextualized` (versión = hash del prompt) |
-| Vectores | `boe_embedded` (versión = nombre del modelo de embedding) |
-| Índice Qdrant | `boe_indexed` |
+| Entidad lex-agents          | Asset Dagster                                             |
+| --------------------------- | --------------------------------------------------------- |
+| Documento raw descargado    | `boe_raw`, `eurlex_raw`, …                                |
+| Documento canónico parseado | `boe_canonical`, …                                        |
+| Chunks                      | `boe_chunked` (versión = hash del config del chunker)     |
+| Chunks contextualizados     | `boe_contextualized` (versión = hash del prompt)          |
+| Vectores                    | `boe_embedded` (versión = nombre del modelo de embedding) |
+| Índice Qdrant               | `boe_indexed`                                             |
 
 Cuando cambia la versión de `boe_contextualized` (porque cambió el prompt), Dagster
-marca automáticamente `boe_embedded` y `boe_indexed` como *stale* sin necesidad de
+marca automáticamente `boe_embedded` y `boe_indexed` como _stale_ sin necesidad de
 código adicional. El job `reindex_all_job` puede re-materializar únicamente los
 assets afectados.
 
@@ -109,12 +110,13 @@ packages/pipeline/src/lex_agents_pipeline/
 ### Re-materialización selectiva via DataVersion
 
 Cada asset declara su `DataVersion` de forma que:
+
 - `*_chunked`: versión = hash del config del chunker (`max_tokens`, `overlap`)
 - `*_contextualized`: versión = sha256 del archivo de prompt activo
 - `*_embedded`: versión = nombre del modelo de embedding
 - `*_indexed`: sin versión propia — depende del upstream
 
-Cuando un `DataVersion` cambia, Dagster marca los assets downstream como *stale*
+Cuando un `DataVersion` cambia, Dagster marca los assets downstream como _stale_
 y el sensor `embedding_model_change_sensor` lanza automáticamente `reindex_all_job`.
 
 ### Idempotencia
@@ -126,6 +128,7 @@ secundarios.
 ### Asset checks
 
 Cada asset expone al menos un check:
+
 - `*_raw`: `n_docs >= 1`, `no_zero_byte_files`
 - `*_canonical`: `parse_error_rate < 5%`
 - `*_indexed`: `qdrant_collection_exists`, `points_count > 0`
@@ -158,6 +161,7 @@ existente, no reemplazos.
 ## Consequences
 
 **Positivo:**
+
 - Linaje visual en la Dagster UI: desde un chunk indexado se puede navegar hasta el
   documento raw, la versión del prompt y el modelo de embedding
 - Re-materialización selectiva sin código de infraestructura ad-hoc
@@ -165,6 +169,7 @@ existente, no reemplazos.
 - Los asset checks documentan los contratos de calidad de los datos
 
 **Negativo/Riesgos:**
+
 - Dagster añade dependencias (`dagster`, `dagster-webserver`) que aumentan el tamaño
   de la imagen Docker del pipeline
 - La curva de aprendizaje del modelo asset-first es mayor que la de scripts simples;
@@ -173,6 +178,7 @@ existente, no reemplazos.
   cuando el volumen de runs sea elevado
 
 **Neutral:**
+
 - Dagster no gestiona los datos en sí: los artefactos intermedios (raw, canonical,
   chunks, vectors) siguen en el filesystem local (`data/`). En producción, esto
   debería migrarse a un almacén persistente (S3, NFS), lo que Dagster soporta

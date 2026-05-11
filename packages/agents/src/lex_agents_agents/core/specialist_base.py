@@ -8,10 +8,9 @@ from abc import abstractmethod
 from typing import ClassVar
 
 import structlog
-from opentelemetry import trace
-
 from lex_agents_rag.assembler import AssembledContext
-from lex_agents_shared.anthropic_client import AnthropicClientWrapper, MODEL_OPUS
+from lex_agents_shared.anthropic_client import MODEL_OPUS, AnthropicClientWrapper
+from opentelemetry import trace
 
 from lex_agents_agents.base_agent import AgentMetadata, AgentResponse, BaseAgent
 from lex_agents_agents.prompt_loader import load_prompt

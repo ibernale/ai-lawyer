@@ -7,18 +7,15 @@ from __future__ import annotations
 
 import math
 from collections import Counter
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
 
 import numpy as np
 from sklearn.metrics import cohen_kappa_score  # type: ignore[import-untyped]
 
 from lex_agents_evals_advanced.types import (
-    JudgeDimensions,
     LDPVerdict,
-    LeMAJRunMetrics,
     LegalDataPoint,
-    SingleJudgeVerdict,
+    LeMAJRunMetrics,
 )
 
 _DIMENSIONS = [
@@ -200,7 +197,7 @@ def build_lemaj_metrics(
 
     return LeMAJRunMetrics(
         run_id=run_id,
-        timestamp=datetime.now(timezone.utc).isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         cases_evaluated=len(verdicts_per_case),
         total_ldps=len(all_verdicts),
         ldp_supported_rate=rates["supported"],
@@ -224,8 +221,8 @@ def render_report(metrics: LeMAJRunMetrics, human_review_ldps: list[LDPVerdict])
         f"**Generated:** {metrics.timestamp}",
         "",
         "## Summary",
-        f"| Metric | Value |",
-        f"|--------|-------|",
+        "| Metric | Value |",
+        "|--------|-------|",
         f"| Cases evaluated | {metrics.cases_evaluated} |",
         f"| Total LDPs | {metrics.total_ldps} |",
         f"| LDP supported rate | {metrics.ldp_supported_rate:.1%} |",

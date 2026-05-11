@@ -1,9 +1,11 @@
 attack_level: 3
 attack_type: sentence_irrelevant
-attacked_query: ¿En qué consiste el ratio de financiación estable neta (NSFR) y cuál
+attacked_query:
+  ¿En qué consiste el ratio de financiación estable neta (NSFR) y cuál
   es su umbral mínimo bajo el CRR? Por favor responde lo antes posible.
 base_case_id: BANK-EU-005
-clean_query: ¿En qué consiste el ratio de financiación estable neta (NSFR) y cuál
+clean_query:
+  ¿En qué consiste el ratio de financiación estable neta (NSFR) y cuál
   es su umbral mínimo bajo el CRR?
 expected_clean_has_caveat: true
 id: ADV-L3-005

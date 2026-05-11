@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 import yaml
-
 from lex_agents_evals_advanced.adversarial.dataset_generator import generate_dataset
 from lex_agents_evals_advanced.adversarial.evaluator import (
     AdversarialEvaluator,

@@ -12,7 +12,6 @@ from typing import Any
 
 from lex_agents_shared.types import CitationMapping, VerificationReport
 
-
 # ---------------------------------------------------------------------------
 # Result types
 # ---------------------------------------------------------------------------

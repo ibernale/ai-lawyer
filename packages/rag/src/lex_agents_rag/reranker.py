@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 import structlog
 from pydantic import BaseModel
@@ -38,11 +39,11 @@ class CrossEncoderReranker(BaseReranker):
 
     def __init__(self, model_name: str = "BAAI/bge-reranker-v2-m3") -> None:
         self._model_name = model_name
-        self._model: object | None = None
+        self._model: Any = None
 
-    def _load_model(self) -> object:
+    def _load_model(self) -> Any:
         if self._model is None:
-            from sentence_transformers import CrossEncoder  # type: ignore[import-untyped]
+            from sentence_transformers import CrossEncoder
 
             logger.info("reranker_loading", model=self._model_name)
             self._model = CrossEncoder(self._model_name, trust_remote_code=True)
@@ -57,7 +58,7 @@ class CrossEncoderReranker(BaseReranker):
 
         model = self._load_model()
         pairs = [(query, c.text) for c in chunks]
-        scores: list[float] = model.predict(pairs).tolist()  # type: ignore[union-attr]
+        scores: list[float] = model.predict(pairs).tolist()
 
         ranked = sorted(
             zip(scores, chunks), key=lambda x: x[0], reverse=True

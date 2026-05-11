@@ -6,7 +6,6 @@ from dataclasses import dataclass
 
 import regex
 import structlog
-
 from lex_agents_shared.types import CitationMapping
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)

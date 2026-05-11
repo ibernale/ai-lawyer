@@ -6,11 +6,10 @@ from datetime import date
 from typing import Any
 
 import structlog
+from lex_agents_ingest.embedder import BgeM3Embedder
 from pydantic import BaseModel
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import Filter, FieldCondition, MatchValue, Range, SparseVector
-
-from lex_agents_ingest.embedder import BgeM3Embedder
+from qdrant_client.http.models import FieldCondition, Filter, MatchValue, Range, SparseVector
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
@@ -165,7 +164,7 @@ class HybridRetriever:
             conditions.append(
                 FieldCondition(
                     key="entry_into_force",
-                    range=Range(lte=filters.in_force_at.isoformat()),
+                    range=Range(lte=filters.in_force_at.isoformat()),  # type: ignore[arg-type]
                 )
             )
         if filters.document_type:
@@ -175,7 +174,7 @@ class HybridRetriever:
                 )
             )
 
-        return Filter(must=conditions) if conditions else Filter()
+        return Filter(must=conditions) if conditions else Filter()  # type: ignore[arg-type]
 
     @staticmethod
     def _format_source_label(payload: dict[str, Any]) -> str:

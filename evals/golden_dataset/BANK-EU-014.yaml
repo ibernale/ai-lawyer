@@ -6,9 +6,19 @@ expert_reviewed: false
 query: "¿Qué requisitos de idoneidad (fit & proper) deben cumplir los miembros del consejo de administración de una entidad de crédito española según la CRD IV y la normativa del Banco de España?"
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32013L0036", articles: ["91"]}
-    - {type: legislation, jurisdiction: "ES", reference: "Ley 10/2014", articles: ["24", "25", "26"]}
-    - {type: legislation, jurisdiction: "ES", reference: "Real Decreto 84/2015", articles: ["30", "31", "32", "33"]}
+    - { type: regulation, celex: "32013L0036", articles: ["91"] }
+    - {
+        type: legislation,
+        jurisdiction: "ES",
+        reference: "Ley 10/2014",
+        articles: ["24", "25", "26"],
+      }
+    - {
+        type: legislation,
+        jurisdiction: "ES",
+        reference: "Real Decreto 84/2015",
+        articles: ["30", "31", "32", "33"],
+      }
   must_mention_concepts:
     - "idoneidad"
     - "honorabilidad comercial y profesional"

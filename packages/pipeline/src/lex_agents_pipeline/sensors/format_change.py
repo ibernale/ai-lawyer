@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 def _get_ingest_all_job():  # type: ignore[return]
     try:
-        from lex_agents_pipeline.jobs.ingest_jobs import ingest_all_job  # noqa: PLC0415
+        from lex_agents_pipeline.jobs.ingest_jobs import ingest_all_job
         return ingest_all_job
     except ImportError:
         return None
@@ -42,7 +42,7 @@ def _get_ingest_all_job():  # type: ignore[return]
 
 def _get_reindex_all_job():  # type: ignore[return]
     try:
-        from lex_agents_pipeline.jobs.ingest_jobs import reindex_all_job  # noqa: PLC0415
+        from lex_agents_pipeline.jobs.ingest_jobs import reindex_all_job
         return reindex_all_job
     except ImportError:
         return None
@@ -139,7 +139,7 @@ def _fetch_fingerprint(source: dict[str, str]) -> str | None:
             # Headers gave no useful signal; fall back to content hash
             fp = _fingerprint_from_content(source["url"])
         return fp
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning("sensor: fingerprint fetch failed for %s: %s", source["name"], exc)
         return None
 
@@ -154,7 +154,7 @@ def _try_create_github_issue(source_name: str, old_fp: str, new_fp: str) -> None
         "Please review the source parser and update extraction logic if needed."
     )
     try:
-        result = subprocess.run(  # noqa: S603
+        result = subprocess.run(
             ["gh", "issue", "create", "--title", title, "--body", body],  # noqa: S607
             capture_output=True,
             text=True,
@@ -172,7 +172,7 @@ def _try_create_github_issue(source_name: str, old_fp: str, new_fp: str) -> None
         logger.info("sensor: gh CLI not available — skipping issue creation for %s", source_name)
     except subprocess.TimeoutExpired:
         logger.warning("sensor: gh CLI timed out for %s", source_name)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning("sensor: unexpected error calling gh for %s: %s", source_name, exc)
 
 
@@ -258,7 +258,7 @@ def embedding_model_change_sensor(
     a RunRequest for the reindex_all_job (or ingest_all_job as fallback) so that
     all embedded and indexed assets are re-materialised with the new model.
     """
-    import os  # noqa: PLC0415
+    import os
 
     current_model = os.environ.get("EMBEDDER_MODEL_NAME", "sentence-transformers/all-MiniLM-L6-v2")
 

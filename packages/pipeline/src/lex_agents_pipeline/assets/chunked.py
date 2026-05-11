@@ -7,14 +7,12 @@ When max_tokens or overlap changes, all downstream assets re-materialize.
 from __future__ import annotations
 
 import hashlib
-import json
 import os
 from pathlib import Path
 from typing import Any
 
 import structlog
 from dagster import AssetExecutionContext, DataVersion, Output, asset
-
 from lex_agents_ingest.chunker import LegalChunker
 from lex_agents_ingest.storage import IngestStorage
 

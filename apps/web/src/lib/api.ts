@@ -48,7 +48,10 @@ function setStoredToken(token: string): void {
 
 async function fetchToken(): Promise<string | null> {
   try {
-    const body = new URLSearchParams({ username: "demo", password: "demo1234" });
+    const body = new URLSearchParams({
+      username: "demo",
+      password: "demo1234",
+    });
     const res = await fetch(`${API_BASE}/auth/token`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -74,7 +77,8 @@ async function getToken(): Promise<string | null> {
 // ---------------------------------------------------------------------------
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const isAuthEndpoint = path.startsWith("/health") || path.startsWith("/version");
+  const isAuthEndpoint =
+    path.startsWith("/health") || path.startsWith("/version");
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(init?.headers as Record<string, string>),
@@ -93,7 +97,8 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
       const retry = await fetch(`${API_BASE}${path}`, { ...init, headers });
-      if (!retry.ok) throw new Error(`API error ${retry.status}: ${retry.statusText}`);
+      if (!retry.ok)
+        throw new Error(`API error ${retry.status}: ${retry.statusText}`);
       return retry.json() as Promise<T>;
     }
   }
@@ -166,6 +171,7 @@ export type ConsultResponse = {
     iteration: number;
   } | null;
   cost_breakdown_by_agent?: Record<string, number>;
+  branch_answers?: Record<string, string>;
 };
 
 export type ConsultationSummary = {
@@ -185,6 +191,7 @@ export async function consultQuery(
   outputType?: string,
   jurisdictionHint?: string,
   depth?: "shallow" | "standard" | "deep",
+  jurisdictions?: string[],
 ): Promise<ConsultResponse> {
   return apiFetch<ConsultResponse>("/api/v1/consult", {
     method: "POST",
@@ -193,14 +200,20 @@ export async function consultQuery(
       output_type: outputType ?? null,
       jurisdiction_hint: jurisdictionHint ?? null,
       depth: depth ?? null,
+      jurisdictions:
+        jurisdictions && jurisdictions.length > 0 ? jurisdictions : null,
     }),
   });
 }
 
-export async function getConsultation(traceId: string): Promise<ConsultResponse> {
+export async function getConsultation(
+  traceId: string,
+): Promise<ConsultResponse> {
   return apiFetch<ConsultResponse>(`/api/v1/consult/${traceId}`);
 }
 
-export async function listConsultations(limit = 20): Promise<ConsultationSummary[]> {
+export async function listConsultations(
+  limit = 20,
+): Promise<ConsultationSummary[]> {
   return apiFetch<ConsultationSummary[]>(`/api/v1/consult?limit=${limit}`);
 }

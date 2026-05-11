@@ -12,7 +12,13 @@ from pathlib import Path
 from typing import Any
 
 import structlog
-from dagster import AssetExecutionContext, AssetCheckResult, AssetCheckSpec, DataVersion, Output, asset, asset_check
+from dagster import (
+    AssetCheckResult,
+    AssetExecutionContext,
+    Output,
+    asset,
+    asset_check,
+)
 
 from lex_agents_pipeline.resources.clients import QdrantResource
 

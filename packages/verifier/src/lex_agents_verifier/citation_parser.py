@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import regex
 import structlog
-
 from lex_agents_shared.types import CitationMapping
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)

@@ -27,10 +27,10 @@ Every prompt file begins with YAML frontmatter:
 
 ```yaml
 ---
-name: <path/to/prompt>       # matches directory path
-version: <int>               # increment on breaking changes
-model: <model-id>            # exact Anthropic model ID
-temperature: <float>         # 0.0–1.0
+name: <path/to/prompt> # matches directory path
+version: <int> # increment on breaking changes
+model: <model-id> # exact Anthropic model ID
+temperature: <float> # 0.0–1.0
 max_tokens: <int>
 owner: <team-or-person>
 last_review_date: <YYYY-MM-DD>
@@ -41,6 +41,7 @@ change_summary: <one-line description>
 ## When to create a new version
 
 Create `v(N+1).md` when:
+
 - The model ID changes
 - Temperature or max_tokens change significantly
 - The prompt structure changes (new/removed sections)

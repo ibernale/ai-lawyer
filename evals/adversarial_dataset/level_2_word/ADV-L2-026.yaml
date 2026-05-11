@@ -1,17 +1,19 @@
 attack_level: 2
 attack_type: word_synonym
-attacked_query: 'Una banco española transfiere datos personales de clientes a su filial
+attacked_query:
+  "Una banco española transfiere datos personales de clientes a su filial
   en Estados Unidos para gestión centralizada del riesgo de crédito. ¿Qué requisitos
   normativos deben cumplirse desde la perspectiva bancaria y de protección de datos?
 
-  '
+  "
 base_case_id: CROSS-001
-clean_query: 'Una entidad bancaria española transfiere datos personales de clientes
+clean_query:
+  "Una entidad bancaria española transfiere datos personales de clientes
   a su filial en Estados Unidos para gestión centralizada del riesgo de crédito. ¿Qué
   requisitos normativos deben cumplirse desde la perspectiva bancaria y de protección
   de datos?
 
-  '
+  "
 expected_clean_has_caveat: true
 id: ADV-L2-026
 notes: word_synonym perturbation of CROSS-001

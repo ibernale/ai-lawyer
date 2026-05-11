@@ -35,23 +35,23 @@ La extracción se realiza con `LDPDecomposer` (claude-opus-4-7, temp=0.0, tool_u
 
 ### Panel de 3 jueces
 
-| Juez | Clase | Modelo | Temperatura | Prompt |
-|------|-------|--------|------------|--------|
-| A | `JudgeA` | claude-opus-4-7 | 0.0 | `lemaj/judge/vA.md` — instrucciones literales |
-| B | `JudgeB` | claude-opus-4-7 | 0.0 | `lemaj/judge/vB.md` — mismas instrucciones + 2 few-shot |
-| C | `JudgeC` | claude-haiku-4-5-20251001 | 0.0 | `lemaj/judge/vA.md` — modelo distinto, mismo prompt |
+| Juez | Clase    | Modelo                    | Temperatura | Prompt                                                  |
+| ---- | -------- | ------------------------- | ----------- | ------------------------------------------------------- |
+| A    | `JudgeA` | claude-opus-4-7           | 0.0         | `lemaj/judge/vA.md` — instrucciones literales           |
+| B    | `JudgeB` | claude-opus-4-7           | 0.0         | `lemaj/judge/vB.md` — mismas instrucciones + 2 few-shot |
+| C    | `JudgeC` | claude-haiku-4-5-20251001 | 0.0         | `lemaj/judge/vA.md` — modelo distinto, mismo prompt     |
 
 La variación deliberada (prompt B con few-shot, modelo C más rápido) aumenta la diversidad del panel sin sesgo de formación idéntica.
 
 Cada juez evalúa 5 dimensiones por LDP:
 
-| Dimensión | Qué mide |
-|-----------|----------|
-| `factual_support` | Base factual verificable en chunks recuperados |
-| `normative_accuracy` | Interpretación jurídica defendible |
-| `jurisdictional_correctness` | Jurisdicción correcta (ES/EU/UK/global) |
-| `completeness_partial` | Omisiones materiales |
-| `caveat_appropriateness` | Cautelas necesarias presentes |
+| Dimensión                    | Qué mide                                       |
+| ---------------------------- | ---------------------------------------------- |
+| `factual_support`            | Base factual verificable en chunks recuperados |
+| `normative_accuracy`         | Interpretación jurídica defendible             |
+| `jurisdictional_correctness` | Jurisdicción correcta (ES/EU/UK/global)        |
+| `completeness_partial`       | Omisiones materiales                           |
+| `caveat_appropriateness`     | Cautelas necesarias presentes                  |
 
 Cada dimensión: `supported` / `partial` / `unsupported`. Veredicto global `overall` ídem.
 
@@ -80,11 +80,11 @@ Umbral: **Fleiss κ < 0.6** en una dimensión indica que la definición de esa d
 
 Por run de evaluación (directorio `evals/reports/<run_id>/lemaj/`):
 
-| Archivo | Formato | Contenido |
-|---------|---------|-----------|
-| `lemaj_verdicts.jsonl` | JSONL | Un `LDPVerdict` por línea |
-| `lemaj_metrics.json` | JSON | `LeMAJRunMetrics` con tasas, kappas, coste |
-| `lemaj_report.md` | Markdown | Resumen tabular + LDPs `review_required` |
+| Archivo                | Formato  | Contenido                                  |
+| ---------------------- | -------- | ------------------------------------------ |
+| `lemaj_verdicts.jsonl` | JSONL    | Un `LDPVerdict` por línea                  |
+| `lemaj_metrics.json`   | JSON     | `LeMAJRunMetrics` con tasas, kappas, coste |
+| `lemaj_report.md`      | Markdown | Resumen tabular + LDPs `review_required`   |
 
 ### Presupuesto de coste
 

@@ -4,7 +4,8 @@ import { LegalDisclaimer } from "@/components/legal-disclaimer";
 
 export const metadata: Metadata = {
   title: "lex-agents — Consulta jurídica asistida",
-  description: "Plataforma multi-agente de consulta jurídica especializada (uso interno)",
+  description:
+    "Plataforma multi-agente de consulta jurídica especializada (uso interno)",
 };
 
 const NAV_ITEMS = [
@@ -14,7 +15,11 @@ const NAV_ITEMS = [
   { label: "Societario", active: false },
 ] as const;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="es">
       <body className="flex min-h-screen flex-col antialiased">
@@ -25,15 +30,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               ⚖
             </span>
             <div>
-              <h1 className="text-lg font-semibold leading-tight text-white">lex-agents</h1>
-              <p className="text-xs text-brand-200">Consulta jurídica asistida</p>
+              <h1 className="text-lg font-semibold leading-tight text-white">
+                lex-agents
+              </h1>
+              <p className="text-xs text-brand-200">
+                Consulta jurídica asistida
+              </p>
             </div>
           </div>
         </header>
 
         <div className="flex flex-1">
           {/* Sidebar */}
-          <nav className="w-64 border-r border-border bg-brand-50 p-4" aria-label="Ramas jurídicas">
+          <nav
+            className="w-64 border-r border-border bg-brand-50 p-4"
+            aria-label="Ramas jurídicas"
+          >
             <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Ramas jurídicas
             </p>

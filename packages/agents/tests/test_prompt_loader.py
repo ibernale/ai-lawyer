@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import pytest
-
-from lex_agents_agents.prompt_loader import PromptConfig, _CACHE, load_prompt
+from lex_agents_agents.prompt_loader import _CACHE, PromptConfig, load_prompt
 
 
 class TestLoadRouterPrompt:

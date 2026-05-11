@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock
 
 from lex_agents_evals_advanced.lemaj.decomposer import LDPDecomposer, _heuristic_decompose
 from lex_agents_evals_advanced.types import LegalDataPoint

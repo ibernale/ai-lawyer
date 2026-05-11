@@ -46,7 +46,7 @@ dmypy.json
 .venv/
 venv/
 .uv/
-uv.lock
+# uv.lock is committed for reproducible CI builds
 
 # ─── Node / pnpm ──────────────────────────────────────────────────────────────
 node_modules/
@@ -61,7 +61,7 @@ out/
 dist/
 *.tsbuildinfo
 next-env.d.ts
-pnpm-lock.yaml
+# pnpm-lock.yaml is committed for reproducible CI builds
 
 # ─── Docker ───────────────────────────────────────────────────────────────────
 .docker/

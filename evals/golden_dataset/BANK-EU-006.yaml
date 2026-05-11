@@ -6,7 +6,7 @@ expert_reviewed: false
 query: "¿Cuál es el límite aplicable a grandes exposiciones frente a un mismo cliente o grupo de clientes vinculados según el CRR?"
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32013R0575", articles: ["395", "396", "397"]}
+    - { type: regulation, celex: "32013R0575", articles: ["395", "396", "397"] }
   must_mention_concepts:
     - "grandes exposiciones"
     - "25 por ciento"

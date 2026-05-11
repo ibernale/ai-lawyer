@@ -6,7 +6,7 @@ expert_reviewed: false
 query: "¿Qué es el colchón de conservación de capital y cuál es su cuantía mínima según la CRD IV?"
 expected:
   must_cite_any_of:
-    - {type: regulation, celex: "32013L0036", articles: ["129"]}
+    - { type: regulation, celex: "32013L0036", articles: ["129"] }
   must_mention_concepts:
     - "colchón de conservación de capital"
     - "capital conservation buffer"

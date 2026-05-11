@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
-
-from lex_agents_rag.retriever import HybridRetriever, RankedChunk
+from lex_agents_rag.retriever import HybridRetriever
 
 
 def _make_hit(chunk_id: str, text: str = "text") -> MagicMock:

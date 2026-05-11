@@ -12,7 +12,7 @@ query: >
   corresponde y cómo se coordinan los planos societario y laboral?
 expected:
   must_cite_any_of:
-    - {type: law, boe_id: "BOE-A-2015-11430", articles: ["54", "55"]}
+    - { type: law, boe_id: "BOE-A-2015-11430", articles: ["54", "55"] }
   must_mention_concepts:
     - "relación de alta dirección"
     - "consejero delegado"

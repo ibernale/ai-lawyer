@@ -24,7 +24,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from dagster import DefaultScheduleStatus, RunRequest, ScheduleDefinition, ScheduleEvaluationContext
+from dagster import DefaultScheduleStatus, ScheduleDefinition
 
 logger = logging.getLogger(__name__)
 
@@ -33,17 +33,17 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-def _load_job(name: str) -> Any:  # noqa: ANN401
+def _load_job(name: str) -> Any:
     """Return the named job from ingest_jobs, or None if unavailable."""
     try:
-        import importlib  # noqa: PLC0415
+        import importlib
         module = importlib.import_module("lex_agents_pipeline.jobs.ingest_jobs")
         return getattr(module, name, None)
     except ImportError:
         return None
 
 
-def _job_or_stub(name: str) -> Any:  # noqa: ANN401
+def _job_or_stub(name: str) -> Any:
     """Return job by name; fall back to a trivial no-op job stub."""
     job = _load_job(name)
     if job is not None:

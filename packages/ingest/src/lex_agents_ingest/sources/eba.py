@@ -76,7 +76,7 @@ class EbaSource(Source):
                         if key in data and isinstance(data[key], list):
                             logger.info("eba.json_api_ok", url=url, key=key, count=len(data[key]))
                             return data[key]
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.debug("eba.json_api_miss", url=url, error=str(exc))
 
         return None
@@ -91,7 +91,7 @@ class EbaSource(Source):
         try:
             resp = await self._client.get(_HTML_LISTING)
             resp.raise_for_status()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("eba.html_listing_failed", error=str(exc))
             return []
 
@@ -151,7 +151,7 @@ class EbaSource(Source):
         try:
             resp = await self._client.get(url)
             resp.raise_for_status()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("eba.fetch_failed", doc_id=doc_id, error=str(exc))
             raise
 

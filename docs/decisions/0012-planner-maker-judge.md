@@ -64,6 +64,7 @@ ConsultRequest
 **Temperatura:** 0.1 (razonamiento determinista)
 
 **Responsabilidades:**
+
 1. Identificar ramas involucradas (0 a N ramas de ADR 0010)
 2. Identificar jurisdicciones relevantes
 3. Descomponer en sub-tareas si N > 1
@@ -102,6 +103,7 @@ class PlannerOutput:
 individuales. Claude Opus 4.7 para consultas de rama única marcadas como `deep`.
 
 **Responsabilidades:**
+
 1. Recibir el `brief` estructurado del Planner + contexto RAG
 2. Generar la respuesta especialista con citas `[REF:n]`
 3. Para consultas multi-rama: ejecutarse en paralelo por sub-tarea, luego sintetizar
@@ -131,6 +133,7 @@ Para consultas multi-rama, el sintetizador (`synthesizer.py` existente) integra 
 ### Judge
 
 **Modelo:** Claude Opus 4.7 con configuración diferenciada del Maker:
+
 - Temperatura: 0.0 (máximo determinismo)
 - System prompt distinto: el Judge recibe explícitamente el DoD del Planner y tiene
   instrucciones para identificar gaps, no para mejorar el estilo
@@ -152,6 +155,7 @@ class JudgeVerdict:
 ```
 
 **Criterios de veredicto:**
+
 - `pass`: respuesta cubre el DoD, no hay broken_refs, forbidden_claim_rate == 0
 - `iterate`: hay gaps cubribles con más contexto RAG o reformulación; se devuelve al Maker con los gaps como brief adicional
 - `escalate`: consulta requiere validación humana (e.g., conflicto normativo sin resolución clara, materia excluida del scope)
@@ -165,7 +169,9 @@ segunda iteración el Judge sigue emitiendo `iterate`, se devuelve la respuesta 
 
 ```json
 {
-  "caveats": ["Esta respuesta no ha superado la validación interna completa. Requiere revisión prioritaria por jurista cualificado."],
+  "caveats": [
+    "Esta respuesta no ha superado la validación interna completa. Requiere revisión prioritaria por jurista cualificado."
+  ],
   "judge_status": "max_iterations_reached"
 }
 ```
@@ -178,13 +184,13 @@ Este límite impide costes desbocados y hace el sistema predecible en latencia m
 
 La arquitectura PMJ completa se activa **únicamente** cuando:
 
-| Condición | Umbral |
-|-----------|--------|
-| ≥ 2 ramas identificadas por el Planner | siempre deep |
-| ≥ 2 jurisdicciones distintas | siempre deep |
-| Flag `output_type = "dictamen"` | siempre deep |
-| Flag explícito del usuario `depth=deep` | siempre deep |
-| Longitud de la query > 500 chars | heurística, puede ser shallow |
+| Condición                               | Umbral                        |
+| --------------------------------------- | ----------------------------- |
+| ≥ 2 ramas identificadas por el Planner  | siempre deep                  |
+| ≥ 2 jurisdicciones distintas            | siempre deep                  |
+| Flag `output_type = "dictamen"`         | siempre deep                  |
+| Flag explícito del usuario `depth=deep` | siempre deep                  |
+| Longitud de la query > 500 chars        | heurística, puede ser shallow |
 
 Para `depth=shallow`, el flujo actual (Router → Specialist → Verifier) se mantiene
 sin cambios. El Planner opera en modo reducido: solo routing y reformulación, sin DoD
@@ -219,11 +225,11 @@ y `jurisdictions` no se ven afectados.
 
 ## Estimación de coste
 
-| Profundidad | Flujo | Tokens estimados (por consulta) | Coste estimado |
-|-------------|-------|---------------------------------|----------------|
-| Shallow | Router + Specialist + Verifier | ~15K | ~$0.05 |
-| Deep (1 iteración) | Planner + Maker + Judge×1 | ~40K | ~$0.15 |
-| Deep (2 iteraciones) | Planner + Maker×2 + Judge×2 | ~70K | ~$0.25 |
+| Profundidad          | Flujo                          | Tokens estimados (por consulta) | Coste estimado |
+| -------------------- | ------------------------------ | ------------------------------- | -------------- |
+| Shallow              | Router + Specialist + Verifier | ~15K                            | ~$0.05         |
+| Deep (1 iteración)   | Planner + Maker + Judge×1      | ~40K                            | ~$0.15         |
+| Deep (2 iteraciones) | Planner + Maker×2 + Judge×2    | ~70K                            | ~$0.25         |
 
 El coste 2–3× de deep vs shallow se activa solo para el subconjunto de consultas que
 lo requieren. Para el volumen estimado inicial (< 1000 consultas/día, 30 % deep), el
@@ -251,14 +257,17 @@ la completitud semántica es el criterio principal.
 ## Consequences
 
 **Positivo:**
+
 - Consultas multi-rama producen respuestas integradas con DoD explícito, no concatenaciones de especialistas
 - El Judge detecta gaps que el Verifier no puede (completitud semántica vs. integridad de citas)
 - La separación de configuración Maker/Judge reduce correlación de errores
 
 **Negativo/Riesgos:**
+
 - La complejidad de implementación es sustancialmente mayor que la arquitectura lineal
 - El Planner puede clasificar incorrectamente la profundidad; el circuit breaker protege contra costes desbocados pero no contra clasificaciones erróneas
 - Con 2 iteraciones máximas, algunos casos genuinamente complejos recibirán respuestas marcadas como incompletas; esto es correcto y preferible a respuestas falsamente completas
 
 **Neutral:**
+
 - La arquitectura PMJ no reemplaza el Verifier existente (ADR 0008); el Verifier sigue corriendo dentro del Maker como capa de integridad de citas

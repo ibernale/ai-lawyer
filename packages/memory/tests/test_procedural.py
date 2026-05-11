@@ -7,17 +7,13 @@ import sqlite3
 from pathlib import Path
 
 import pytest
-
-from lex_agents_memory.types import ProceduralPattern
-from lex_agents_memory.procedural.store import (
-    _SCHEMA_SQL,
-    _SELECT_ACTIVE,
-    init_db,
-    get_active_patterns,
-)
-from lex_agents_memory.procedural.loader import ProceduralLoader
 from lex_agents_memory.procedural.injector import ProceduralInjector
-
+from lex_agents_memory.procedural.loader import ProceduralLoader
+from lex_agents_memory.procedural.store import (
+    get_active_patterns,
+    init_db,
+)
+from lex_agents_memory.types import ProceduralPattern
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 

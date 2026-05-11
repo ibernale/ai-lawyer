@@ -1,10 +1,12 @@
 attack_level: 4
 attack_type: semantic_passive
-attacked_query: 'En relación con lo siguiente: ¿Qué establece el ratio de cobertura
+attacked_query:
+  "En relación con lo siguiente: ¿Qué establece el ratio de cobertura
   de liquidez (LCR) y cómo se computa conforme a la normativa europea? — ¿cuál es
-  la posición normativa?'
+  la posición normativa?"
 base_case_id: BANK-EU-004
-clean_query: ¿Qué establece el ratio de cobertura de liquidez (LCR) y cómo se computa
+clean_query:
+  ¿Qué establece el ratio de cobertura de liquidez (LCR) y cómo se computa
   conforme a la normativa europea?
 expected_clean_has_caveat: true
 id: ADV-L4-004

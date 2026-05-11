@@ -39,11 +39,11 @@ lex-agents/0.1 (+https://github.com/ibernale/ai-lawyer)
 
 ## Detección de cambios de formato
 
-| Señal | Causa probable |
-|-------|----------------|
-| `list_documents()` devuelve 0 IDs | La URL del listado ha cambiado o la paginación ya no usa `?page=N` |
-| `qa_id` vacío en >60% | El formato de referencia ESMA ha cambiado o los `<dt>` ya no los contienen |
-| `regulation_reference` vacío sistemáticamente | La estructura `<dl>` de metadatos ha sido eliminada |
-| Pocas páginas scrapeadas (< 5) cuando se esperan más | El portal ESMA ha implementado infinite scroll o protección anti-bot |
+| Señal                                                | Causa probable                                                             |
+| ---------------------------------------------------- | -------------------------------------------------------------------------- |
+| `list_documents()` devuelve 0 IDs                    | La URL del listado ha cambiado o la paginación ya no usa `?page=N`         |
+| `qa_id` vacío en >60%                                | El formato de referencia ESMA ha cambiado o los `<dt>` ya no los contienen |
+| `regulation_reference` vacío sistemáticamente        | La estructura `<dl>` de metadatos ha sido eliminada                        |
+| Pocas páginas scrapeadas (< 5) cuando se esperan más | El portal ESMA ha implementado infinite scroll o protección anti-bot       |
 
 **Nota:** El portal ESMA está parcialmente migrado a nuevo CMS; la estructura HTML puede cambiar sin previo aviso.

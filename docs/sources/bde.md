@@ -39,11 +39,11 @@ lex-agents/0.1 (+https://github.com/ibernale/ai-lawyer)
 
 ## Detección de cambios de formato
 
-| Señal | Causa probable |
-|-------|----------------|
-| `_try_rss()` devuelve 0 items pero la fuente era funcional | El BdE ha eliminado o movido el endpoint RSS |
-| `_list_from_html()` devuelve 0 items | La URL del listado HTML o la estructura de links ha cambiado |
-| `circular_number` vacío en >30% | El patrón regex `Circular \d+/\d{4}` ya no coincide con los títulos del BdE |
-| `normas_modificadas` vacío sistemáticamente | El patrón de texto ha cambiado (poco probable, texto jurídico estable) |
+| Señal                                                      | Causa probable                                                              |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `_try_rss()` devuelve 0 items pero la fuente era funcional | El BdE ha eliminado o movido el endpoint RSS                                |
+| `_list_from_html()` devuelve 0 items                       | La URL del listado HTML o la estructura de links ha cambiado                |
+| `circular_number` vacío en >30%                            | El patrón regex `Circular \d+/\d{4}` ya no coincide con los títulos del BdE |
+| `normas_modificadas` vacío sistemáticamente                | El patrón de texto ha cambiado (poco probable, texto jurídico estable)      |
 
 **Nota:** El BdE no confirma la existencia de un RSS público para circulares normativas; se intentan dos candidatos de URL antes de caer al HTML.

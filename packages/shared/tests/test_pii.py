@@ -1,6 +1,5 @@
 """Unit tests for PII detection and redaction."""
 
-import pytest
 
 from lex_agents_shared.pii import contains_pii, redact_pii
 

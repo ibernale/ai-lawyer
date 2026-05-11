@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import structlog
+from lex_agents_shared.types import CitationMapping
 from pydantic import BaseModel
 
 from lex_agents_rag.retriever import RankedChunk
-from lex_agents_shared.types import CitationMapping
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 

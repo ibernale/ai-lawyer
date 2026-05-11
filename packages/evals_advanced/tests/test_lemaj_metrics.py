@@ -4,14 +4,12 @@ from __future__ import annotations
 
 import math
 
-import pytest
-
 from lex_agents_evals_advanced.lemaj.metrics import (
-    cohen_kappa_pair,
-    fleiss_kappa_all,
-    compute_ldp_rates,
-    compute_coverage,
     build_lemaj_metrics,
+    cohen_kappa_pair,
+    compute_coverage,
+    compute_ldp_rates,
+    fleiss_kappa_all,
     render_report,
 )
 from lex_agents_evals_advanced.types import (

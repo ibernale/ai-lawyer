@@ -6,7 +6,9 @@ from lex_agents_agents.core.orchestrator_v2 import (
     ConsultRequest,
     ConsultResponse,
     OrchestratorDeps,
+)
+from lex_agents_agents.core.orchestrator_v2 import (
     OrchestratorV2 as Orchestrator,
 )
 
-__all__ = ["Orchestrator", "ConsultRequest", "ConsultResponse", "OrchestratorDeps"]
+__all__ = ["ConsultRequest", "ConsultResponse", "Orchestrator", "OrchestratorDeps"]

@@ -10,6 +10,9 @@ COPY packages/agents/pyproject.toml packages/agents/
 COPY packages/rag/pyproject.toml packages/rag/
 COPY packages/verifier/pyproject.toml packages/verifier/
 COPY packages/ingest/pyproject.toml packages/ingest/
+COPY packages/pipeline/pyproject.toml packages/pipeline/
+COPY packages/memory/pyproject.toml packages/memory/
+COPY packages/evals_advanced/pyproject.toml packages/evals_advanced/
 COPY apps/api/pyproject.toml apps/api/
 COPY evals/pyproject.toml evals/
 RUN uv sync --frozen --no-dev --package lex-agents-api
@@ -23,6 +26,7 @@ CMD ["uvicorn", "lex_agents_api.main:app", "--host", "0.0.0.0", "--port", "8000"
 
 FROM python:3.12-slim AS runner
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=deps /app/.venv .venv
 ENV PATH="/app/.venv/bin:$PATH"

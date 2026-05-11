@@ -8,8 +8,8 @@ from typing import Any
 import structlog
 import yaml
 
-from lex_agents_memory.types import SemanticEntry
 from lex_agents_memory.semantic.validator import validate_all
+from lex_agents_memory.types import SemanticEntry
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 

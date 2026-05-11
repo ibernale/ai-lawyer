@@ -5,12 +5,12 @@ regulation, sources BOE and EUR-Lex.
 
 ## Prerequisites
 
-| Tool | Version |
-|------|---------|
-| Docker + Docker Compose | ≥ 27 |
-| [uv](https://github.com/astral-sh/uv) | ≥ 0.4 |
-| Node.js | ≥ 20 |
-| pnpm | ≥ 9 |
+| Tool                                  | Version |
+| ------------------------------------- | ------- |
+| Docker + Docker Compose               | ≥ 27    |
+| [uv](https://github.com/astral-sh/uv) | ≥ 0.4   |
+| Node.js                               | ≥ 20    |
+| pnpm                                  | ≥ 9     |
 
 ## Arrancar en local
 
@@ -61,12 +61,12 @@ The API will be available at `http://localhost:8000` and the web UI at
 
 ## Key commands
 
-| Command | Description |
-|---------|-------------|
-| `make dev` | Start all services (foreground) |
-| `make test` | Run pytest + vitest |
-| `make eval-quick` | Run smoke eval set |
-| `make lint` | Lint Python + TS |
+| Command           | Description                      |
+| ----------------- | -------------------------------- |
+| `make dev`        | Start all services (foreground)  |
+| `make test`       | Run pytest + vitest              |
+| `make eval-quick` | Run smoke eval set               |
+| `make lint`       | Lint Python + TS                 |
 | `make type-check` | mypy --strict on Python packages |
 
 Full list: `make help`.

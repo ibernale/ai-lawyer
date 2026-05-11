@@ -84,7 +84,7 @@ class FcaSource(Source):
             try:
                 resp = await self._client.get(toc_url)
                 resp.raise_for_status()
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning("fca.toc_fetch_failed", section=section_code, error=str(exc))
                 continue
 
@@ -116,7 +116,7 @@ class FcaSource(Source):
         try:
             resp = await self._client.get(url)
             resp.raise_for_status()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("fca.fetch_failed", doc_id=doc_id, url=url, error=str(exc))
             raise
 

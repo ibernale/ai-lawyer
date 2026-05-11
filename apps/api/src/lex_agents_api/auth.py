@@ -10,7 +10,7 @@ Generate a password hash:
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 
 import bcrypt as _bcrypt
@@ -62,7 +62,7 @@ def _load_users(settings: Settings) -> list[UserConfig]:
 
 
 def _create_token(username: str, role: str, settings: Settings) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload: dict[str, Any] = {
         "sub": username,
         "role": role,
