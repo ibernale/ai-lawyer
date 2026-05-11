@@ -13,6 +13,7 @@ dependencies = [
     "opentelemetry-api>=1.25.0",
     "lex-agents-shared",
     "lex-agents-rag",
+    "lex-agents-memory",
 ]
 
 [project.optional-dependencies]

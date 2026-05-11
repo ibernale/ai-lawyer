@@ -12,7 +12,8 @@ PYTHON  := $(UV) run python
 .PHONY: help install lint format type-check test test-cov test-watch \
         eval eval-quick dev dev-detached down logs \
         build-images ingest-sample ingest-real ingest-all dagster-ui \
-        qdrant-shell db-reset db-show grafana
+        qdrant-shell db-reset db-show grafana \
+        validate-knowledge procedural-edit
 
 # ─── Help ─────────────────────────────────────────────────────────────────────
 help: ## Show this help
@@ -56,6 +57,14 @@ test-cov: ## Run pytest with coverage report (target ≥ 80%)
 test-watch: ## Run tests in watch mode
 	$(UV) run --extra dev --package lex-agents-agents pytest -f &
 	$(PNPM) exec vitest
+
+# ─── Memory ───────────────────────────────────────────────────────────────────
+validate-knowledge: ## Validate docs/knowledge/ YAML schemas
+	$(UV) run --package lex-agents-memory python -m lex_agents_memory.semantic.validator
+
+procedural-edit: ## Open procedural seed SQL for editing (opens editor, then commit + PR)
+	@echo "Edit packages/memory/seed/procedural_patterns_seed.sql then: git add, git commit, gh pr create"
+	$(EDITOR) packages/memory/seed/procedural_patterns_seed.sql
 
 # ─── Evals ────────────────────────────────────────────────────────────────────
 eval: ## Run full evaluation suite (30 cases)
