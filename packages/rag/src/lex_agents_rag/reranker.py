@@ -43,7 +43,7 @@ class CrossEncoderReranker(BaseReranker):
 
     def _load_model(self) -> Any:
         if self._model is None:
-            from sentence_transformers import CrossEncoder  # noqa: PLC0415
+            from sentence_transformers import CrossEncoder
 
             logger.info("reranker_loading", model=self._model_name)
             self._model = CrossEncoder(self._model_name, trust_remote_code=True)
