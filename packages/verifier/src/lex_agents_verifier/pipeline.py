@@ -18,8 +18,11 @@ from .citation_parser import CitationParser
 from .claim_extractor import Claim, ClaimExtractor
 from .heuristic_verifier import HeuristicVerifier
 from .llm_verifier import LLMVerifier
+from .strict_verifier import StrictCitationVerifier
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
+
+_strict_verifier = StrictCitationVerifier()
 
 
 class VerifierPipeline:
@@ -61,6 +64,22 @@ class VerifierPipeline:
                 continue
 
             chunk_text = chunk_store.get(citation.chunk_id, citation.fragment_text)
+
+            # Strict verifier for jurisprudential citations (ADR 0024) — fail fast
+            if citation.citation_type == "jurisprudencia":
+                cv = _strict_verifier.verify(claim.text, chunk_text, citation, {})
+                cv = ClaimVerification(
+                    ref_index=claim.ref_index,
+                    verdict=cv.verdict,
+                    method=cv.method,
+                    confidence=cv.confidence,
+                    failure_reason=cv.failure_reason,
+                )
+                verifications.append(cv)
+                if cv.verdict == "UNCERTAIN":
+                    uncertain_with_meta.append((claim, chunk_text, cv))
+                continue
+
             cv = heuristic.verify(claim, chunk_text)
             # Ensure ref_index is set correctly
             cv = ClaimVerification(
