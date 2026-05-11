@@ -4,7 +4,7 @@ Users are defined in AUTH_USERS_JSON env var (bcrypt-hashed passwords).
 All /api/v1/* routes require a valid Bearer token unless auth_enabled=False.
 
 Generate a password hash:
-    python -c "from passlib.hash import bcrypt; print(bcrypt.hash('mypassword'))"
+    python -c "import bcrypt; print(bcrypt.hashpw(b'mypassword', bcrypt.gensalt()).decode())"
 """
 
 from __future__ import annotations
@@ -13,11 +13,11 @@ import json
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
+import bcrypt as _bcrypt
 import structlog
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
-from passlib.hash import bcrypt
 from pydantic import BaseModel
 
 from lex_agents_api.settings import Settings, get_settings
@@ -129,7 +129,7 @@ def issue_token(username: str, password: str, settings: Settings) -> TokenRespon
     users = _load_users(settings)
     user = next((u for u in users if u.username == username), None)
 
-    if user is None or not bcrypt.verify(password, user.password_hash):
+    if user is None or not _bcrypt.checkpw(password.encode(), user.password_hash.encode()):
         logger.warning("auth_login_failed", username=username)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

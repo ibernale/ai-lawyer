@@ -31,17 +31,74 @@ export type VersionResponse = {
 };
 
 // ---------------------------------------------------------------------------
+// Token management (browser only)
+// ---------------------------------------------------------------------------
+
+const TOKEN_KEY = "lex_agents_token";
+
+function getStoredToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return sessionStorage.getItem(TOKEN_KEY);
+}
+
+function setStoredToken(token: string): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(TOKEN_KEY, token);
+}
+
+async function fetchToken(): Promise<string | null> {
+  try {
+    const body = new URLSearchParams({ username: "demo", password: "demo1234" });
+    const res = await fetch(`${API_BASE}/auth/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString(),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { access_token: string };
+    setStoredToken(data.access_token);
+    return data.access_token;
+  } catch {
+    return null;
+  }
+}
+
+async function getToken(): Promise<string | null> {
+  const stored = getStoredToken();
+  if (stored) return stored;
+  return fetchToken();
+}
+
+// ---------------------------------------------------------------------------
 // Fetch helpers
 // ---------------------------------------------------------------------------
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
-  });
-  if (!res.ok) {
-    throw new Error(`API error ${res.status}: ${res.statusText}`);
+  const isAuthEndpoint = path.startsWith("/health") || path.startsWith("/version");
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(init?.headers as Record<string, string>),
+  };
+
+  if (!isAuthEndpoint && typeof window !== "undefined") {
+    const token = await getToken();
+    if (token) headers["Authorization"] = `Bearer ${token}`;
   }
+
+  const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+
+  if (res.status === 401 && typeof window !== "undefined") {
+    // Token expired — re-fetch and retry once
+    const token = await fetchToken();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+      const retry = await fetch(`${API_BASE}${path}`, { ...init, headers });
+      if (!retry.ok) throw new Error(`API error ${retry.status}: ${retry.statusText}`);
+      return retry.json() as Promise<T>;
+    }
+  }
+
+  if (!res.ok) throw new Error(`API error ${res.status}: ${res.statusText}`);
   return res.json() as Promise<T>;
 }
 

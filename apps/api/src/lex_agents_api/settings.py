@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     )
     auth_enabled: bool = True  # set False only for local dev without auth
 
+    # CORS — comma-separated origins allowed to call the API from a browser
+    cors_allowed_origins: str = ""
+
     # Consultation history
     consultation_db_path: str = "data/consultations.db"
     agents_package_enabled: bool = True

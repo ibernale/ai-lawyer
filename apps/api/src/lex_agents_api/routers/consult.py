@@ -13,6 +13,7 @@ import re
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
+import anthropic as _anthropic
 from qdrant_client import QdrantClient
 
 from lex_agents_agents.orchestrator import ConsultRequest, ConsultResponse, Orchestrator, OrchestratorDeps
@@ -93,7 +94,7 @@ def _get_orchestrator(
         collection=collection,
     )
     reranker = make_reranker(RerankerConfig(model=reranker_model, top_k=rag_top_k, enabled=reranker_enabled))
-    query_rewriter = LegalQueryRewriter(anthropic_api_key=anthropic_key)
+    query_rewriter = LegalQueryRewriter(anthropic_client=_anthropic.Anthropic(api_key=anthropic_key))
     assembler = ContextAssembler()
     client = AnthropicClientWrapper(api_key=anthropic_key)
     verifier = VerifierPipeline(anthropic_client=client)
