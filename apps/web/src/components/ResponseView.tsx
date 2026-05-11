@@ -165,7 +165,7 @@ function VerificationBanner({ report }: { report: VerificationReport }) {
 }
 
 // ---------------------------------------------------------------------------
-// [REF:n] inline chip renderer
+// [REF:n] inline chip (blue) and [DOC:s] inline chip (purple)
 // ---------------------------------------------------------------------------
 
 function RefChip({
@@ -188,18 +188,37 @@ function RefChip({
   );
 }
 
+function DocChip({
+  idx,
+  onDocChipClick,
+}: {
+  idx: number;
+  onDocChipClick?: (idx: number) => void;
+}) {
+  return (
+    <button
+      onClick={() => onDocChipClick?.(idx)}
+      className="inline-flex items-center rounded bg-purple-100 px-1.5 py-0.5 text-xs font-mono font-medium text-purple-700 hover:bg-purple-200 transition-colors mx-0.5"
+      title={`Segmento DOC:${idx}`}
+    >
+      §{idx}
+    </button>
+  );
+}
+
 function renderAnswerWithChips(
   text: string,
   citations: CitationMapping[],
   onChipClick: (citation: CitationMapping) => void,
+  onDocChipClick?: (idx: number) => void,
 ) {
-  // Split on [REF:n] markers, keeping the delimiters
-  const parts = text.split(/(\[REF:\d+\])/g);
+  // Split on both [REF:n] and [DOC:s] markers, keeping the delimiters
+  const parts = text.split(/(\[REF:\d+\]|\[DOC:\d+\])/g);
 
   const nodes: React.ReactNode[] = parts.map((part, i) => {
-    const match = part.match(/^\[REF:(\d+)\]$/);
-    if (match) {
-      const idx = parseInt(match[1]!, 10);
+    const refMatch = part.match(/^\[REF:(\d+)\]$/);
+    if (refMatch) {
+      const idx = parseInt(refMatch[1]!, 10);
       return (
         <RefChip
           key={i}
@@ -208,6 +227,11 @@ function renderAnswerWithChips(
           onChipClick={onChipClick}
         />
       );
+    }
+    const docMatch = part.match(/^\[DOC:(\d+)\]$/);
+    if (docMatch) {
+      const idx = parseInt(docMatch[1]!, 10);
+      return <DocChip key={i} idx={idx} onDocChipClick={onDocChipClick} />;
     }
     // Render each text segment as markdown so headers, bold, and lists are styled
     return (
@@ -576,6 +600,7 @@ function CrossJurisdictionView({
                 branchAnswers[branch] ?? "",
                 citations,
                 onChipClick,
+                undefined,
               )}
             </div>
           )}

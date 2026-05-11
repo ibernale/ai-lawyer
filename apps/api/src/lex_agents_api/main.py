@@ -27,6 +27,7 @@ from lex_agents_api.logging_config import configure_logging
 from lex_agents_api.middleware import CorrelationIdMiddleware, SecurityHeadersMiddleware
 from lex_agents_api.routers import auth as auth_router
 from lex_agents_api.routers import consult as consult_router
+from lex_agents_api.routers import documents as documents_router
 from lex_agents_api.routers import export as export_router
 from lex_agents_api.routers import health as health_router
 from lex_agents_api.routers import rag as rag_router
@@ -139,11 +140,12 @@ def create_app() -> FastAPI:
     app.add_exception_handler(Exception, unhandled_exception_handler)  # type: ignore[arg-type,unused-ignore]
 
     # Routers
-    app.include_router(auth_router.router)    # POST /auth/token — public
-    app.include_router(health_router.router)  # GET /health, /version — public
-    app.include_router(rag_router.router)     # /api/v1/rag/* — auth required
-    app.include_router(consult_router.router) # /api/v1/consult/* — auth required
-    app.include_router(export_router.router)  # /api/v1/consult/{id}/export, /feedback
+    app.include_router(auth_router.router)       # POST /auth/token — public
+    app.include_router(health_router.router)     # GET /health, /version — public
+    app.include_router(rag_router.router)        # /api/v1/rag/* — auth required
+    app.include_router(consult_router.router)    # /api/v1/consult/* — auth required
+    app.include_router(export_router.router)     # /api/v1/consult/{id}/export, /feedback
+    app.include_router(documents_router.router)  # /api/v1/documents/* — auth required
 
     # Prometheus metrics — /metrics (no auth, internal scrape only)
     Instrumentator(
