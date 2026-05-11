@@ -1,0 +1,18 @@
+attack_level: 1
+attack_type: char_typo
+attacked_query: 'Una entidda abncaria española transfiere datos personales de clientes
+  a su filial en Estados Unidos para gestión centralizada del riesgo de crédito. ¿Qué
+  requisitos normativos deben cumplirse desde la perspectiva bancaria y de protección
+  de datos?
+
+  '
+base_case_id: CROSS-001
+clean_query: 'Una entidad bancaria española transfiere datos personales de clientes
+  a su filial en Estados Unidos para gestión centralizada del riesgo de crédito. ¿Qué
+  requisitos normativos deben cumplirse desde la perspectiva bancaria y de protección
+  de datos?
+
+  '
+expected_clean_has_caveat: true
+id: ADV-L1-026
+notes: char_typo perturbation of CROSS-001

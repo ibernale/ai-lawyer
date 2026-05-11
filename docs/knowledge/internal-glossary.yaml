@@ -1,0 +1,72 @@
+_schema_version: "1.0"
+_description: "Nomenclatura interna del Grupo — términos no confidenciales, nivel política pública"
+_last_updated: "2026-05-11"
+_edit_policy: "PR-only, reviewed by @ibernale — SOLO información de dominio público o política anunciada"
+
+glossary:
+  # Divisiones y funciones
+  - term: "Dirección de Cumplimiento Normativo"
+    abbreviation: DCN
+    description: "Unidad responsable del cumplimiento regulatorio del Grupo; interlocutor principal con supervisores"
+
+  - term: "Dirección de Riesgos"
+    abbreviation: DR
+    description: "Función de gestión y control de riesgos del Grupo (crédito, mercado, operacional, reputacional)"
+
+  - term: "Secretaría General y del Consejo"
+    abbreviation: SGC
+    description: "Área de gobierno corporativo, normativa interna y relación con el Consejo de Administración"
+
+  - term: "División de Banca Comercial"
+    abbreviation: DBC
+    description: "Negocio de banca minorista y PYMES en los mercados principales del Grupo"
+
+  - term: "División de Banca Corporativa y de Inversión"
+    abbreviation: DCIB
+    description: "Negocio mayorista, mercados de capitales, financiación estructurada y banca transaccional"
+
+  # Comités relevantes
+  - term: "Comité de Activos y Pasivos"
+    abbreviation: COAP
+    description: "Órgano de gestión del balance: decisiones sobre tipos de interés, liquidez y estructura de financiación"
+
+  - term: "Comité de Riesgos"
+    abbreviation: CORI
+    description: "Comité de supervisión y decisión sobre límites y apetito al riesgo del Grupo"
+
+  - term: "Comité de Auditoría y Cumplimiento"
+    abbreviation: CACO
+    description: "Comité del Consejo con función de supervisión de auditoría interna y cumplimiento normativo"
+
+  - term: "Comité de Tecnología, Productividad e Innovación"
+    abbreviation: CTPI
+    description: "Comité de decisión sobre inversiones tecnológicas, transformación digital y DORA"
+
+  # Productos y líneas de negocio
+  - term: "Préstamo sindicado"
+    abbreviation: null
+    description: "Operación de crédito otorgada por varios prestamistas bajo un único contrato; coordinado por un banco agente"
+
+  - term: "Certificado de Depósito Bancario Electrónico"
+    abbreviation: CDBE
+    description: "Instrumento de captación de pasivo a plazo fijo; nombre interno para depósitos estructurados a plazo"
+
+  - term: "Operación de Financiación de Valores"
+    abbreviation: OFV
+    description: "Operaciones repo, préstamo de valores y similares bajo ámbito SFTR (Reglamento (UE) 2015/2365)"
+
+  - term: "Marco de Apetito al Riesgo"
+    abbreviation: MAR
+    description: "Documento que establece los límites cuantitativos y cualitativos de riesgo aprobados por el Consejo"
+
+  - term: "Informe de Disciplina de Mercado"
+    abbreviation: IDM
+    description: "Informe anual de divulgación de información prudencial (Pilar 3 de Basilea III / CRR Parte Octava)"
+
+  - term: "Proceso de Evaluación de la Adecuación del Capital Interno"
+    abbreviation: ICAAP
+    description: "Proceso de autoevaluación del capital interno conforme al art. 73 CRD; Pilar 2 de Basilea"
+
+  - term: "Proceso de Evaluación de la Adecuación de la Liquidez Interna"
+    abbreviation: ILAAP
+    description: "Proceso de autoevaluación de la liquidez interna conforme a directrices EBA; complementario al ICAAP"

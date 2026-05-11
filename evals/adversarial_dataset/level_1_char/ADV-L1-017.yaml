@@ -1,0 +1,10 @@
+attack_level: 1
+attack_type: char_typo
+attacked_query: ¿Qué debe conteenr un plan de rceuperación de una entidad de crédito
+  conforme a la BRRD y al marco de transposición español?
+base_case_id: BANK-EU-017
+clean_query: ¿Qué debe contener un plan de recuperación de una entidad de crédito
+  conforme a la BRRD y al marco de transposición español?
+expected_clean_has_caveat: true
+id: ADV-L1-017
+notes: char_typo perturbation of BANK-EU-017

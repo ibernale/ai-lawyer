@@ -1,0 +1,18 @@
+attack_level: 1
+attack_type: char_typo
+attacked_query: 'El conseoj de amdinistración de una entidad bancaria española decide
+  cesar al Director General, que es además consejero delegado y tiene contrato de
+  alta dirección. ¿Qué régimen jurídico regula el cese, qué indemnización corresponde
+  y cómo se coordinan los planos societario y laboral?
+
+  '
+base_case_id: CROSS-003
+clean_query: 'El consejo de administración de una entidad bancaria española decide
+  cesar al Director General, que es además consejero delegado y tiene contrato de
+  alta dirección. ¿Qué régimen jurídico regula el cese, qué indemnización corresponde
+  y cómo se coordinan los planos societario y laboral?
+
+  '
+expected_clean_has_caveat: true
+id: ADV-L1-028
+notes: char_typo perturbation of CROSS-003

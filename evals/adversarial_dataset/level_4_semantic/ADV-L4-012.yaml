@@ -1,0 +1,11 @@
+attack_level: 4
+attack_type: semantic_passive
+attacked_query: 'En relación con lo siguiente: ¿Cuáles son los requisitos mínimos
+  de fondos propios y pasivos admisibles (MREL) bajo la BRRD y cómo se aplican a las
+  entidades españolas sometidas al MUR? — ¿cuál es la posición normativa?'
+base_case_id: BANK-EU-012
+clean_query: ¿Cuáles son los requisitos mínimos de fondos propios y pasivos admisibles
+  (MREL) bajo la BRRD y cómo se aplican a las entidades españolas sometidas al MUR?
+expected_clean_has_caveat: true
+id: ADV-L4-012
+notes: semantic_passive perturbation of BANK-EU-012

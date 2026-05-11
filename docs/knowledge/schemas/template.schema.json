@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Output template entry schema",
+  "type": "object",
+  "required": ["output_type", "structure", "mandatory_caveat"],
+  "properties": {
+    "output_type": {
+      "type": "string",
+      "enum": ["dictamen", "nota", "memo_comite", "analisis_riesgo"]
+    },
+    "structure": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "length_guidance": { "type": "string" },
+    "audience": { "type": "string" },
+    "mandatory_caveat": { "type": "string" },
+    "tone": { "type": "string" }
+  },
+  "additionalProperties": false
+}

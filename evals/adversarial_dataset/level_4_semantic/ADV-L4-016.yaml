@@ -1,0 +1,13 @@
+attack_level: 4
+attack_type: semantic_passive
+attacked_query: 'En relación con lo siguiente: ¿Qué niveles de cobertura de provisiones
+  se exigen para préstamos dudosos (NPL) bajo el Reglamento de cobertura mínima (NPL
+  Backstop) y cómo interactúa con la Circular 4/2017 del Banco de España? — ¿cuál
+  es la posición normativa?'
+base_case_id: BANK-EU-016
+clean_query: ¿Qué niveles de cobertura de provisiones se exigen para préstamos dudosos
+  (NPL) bajo el Reglamento de cobertura mínima (NPL Backstop) y cómo interactúa con
+  la Circular 4/2017 del Banco de España?
+expected_clean_has_caveat: true
+id: ADV-L4-016
+notes: semantic_passive perturbation of BANK-EU-016

@@ -1,0 +1,54 @@
+_schema_version: "1.0"
+_description: "Plantillas de output preferidas por tipo de consulta"
+_last_updated: "2026-05-11"
+_edit_policy: "PR-only, reviewed by @ibernale"
+
+templates:
+  - output_type: dictamen
+    structure:
+      - "## 1. Objeto de consulta"
+      - "## 2. Marco normativo aplicable"
+      - "## 3. Análisis jurídico"
+      - "## 4. Conclusión"
+      - "## 5. Cautelas y limitaciones"
+    length_guidance: "600-1200 palabras. Desarrollo completo con citas verificables en cada afirmación normativa."
+    audience: "Equipo jurídico interno, juristas cualificados"
+    mandatory_caveat: "El presente análisis constituye un borrador asistido por IA que requiere revisión y validación por un jurista cualificado antes de cualquier uso. No constituye asesoramiento jurídico profesional."
+    tone: "Técnico-jurídico, preciso, con referencias normativas explícitas"
+
+  - output_type: nota
+    structure:
+      - "## Resumen ejecutivo"
+      - "## Contexto normativo"
+      - "## Puntos clave"
+      - "## Cautelas"
+    length_guidance: "300-600 palabras. Lenguaje claro y directo; mínimo tecnicismo sin sacrificar precisión."
+    audience: "Dirección de negocio, gerentes no juristas"
+    mandatory_caveat: "Nota informativa asistida por IA. Validar con Cumplimiento Normativo antes de actuar."
+    tone: "Claro, directo, orientado a la decisión"
+
+  - output_type: memo_comite
+    structure:
+      - "## Asunto"
+      - "## Contexto regulatorio (bullet points)"
+      - "## Implicaciones para el Grupo (bullet points priorizados)"
+      - "## Recomendación"
+      - "## Nota"
+    length_guidance: "400-600 palabras. Máximo 1 página. Sin notas al pie; las referencias normativas van integradas en el texto."
+    audience: "Comité de Dirección, Consejo de Administración"
+    mandatory_caveat: "Borrador asistido por IA, requiere validación por Dirección de Cumplimiento Normativo y/o Secretaría General."
+    tone: "Ejecutivo, orientado a la acción, sin jerga técnica excesiva"
+
+  - output_type: analisis_riesgo
+    structure:
+      - "## 1. Descripción del riesgo"
+      - "## 2. Marco regulatorio aplicable"
+      - "## 3. Evaluación de exposición"
+      - "## 4. Controles existentes"
+      - "## 5. Gaps identificados"
+      - "## 6. Recomendaciones de mitigación"
+      - "## 7. Indicadores de seguimiento propuestos"
+    length_guidance: "800-1500 palabras. Incluir tabla de riesgos si hay múltiples exposiciones."
+    audience: "Dirección de Riesgos, Función de Cumplimiento, Auditoría Interna"
+    mandatory_caveat: "Análisis asistido por IA. Los umbrales cuantitativos y valoraciones de riesgo requieren validación por la función de riesgos competente y, si aplica, contraste con la última evaluación supervisora."
+    tone: "Analítico, estructurado, orientado a la gestión del riesgo"

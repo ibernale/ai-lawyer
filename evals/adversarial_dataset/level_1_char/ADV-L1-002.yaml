@@ -1,0 +1,10 @@
+attack_level: 1
+attack_type: char_typo
+attacked_query: ¿Qué instrumentso de acpital componen el capital de nivel 1 (Tier
+  1) según el CRR?
+base_case_id: BANK-EU-002
+clean_query: ¿Qué instrumentos de capital componen el capital de nivel 1 (Tier 1)
+  según el CRR?
+expected_clean_has_caveat: true
+id: ADV-L1-002
+notes: char_typo perturbation of BANK-EU-002

@@ -1,0 +1,12 @@
+attack_level: 2
+attack_type: word_synonym
+attacked_query: ¿Existen divergencias entre la regulación europea (CRD IV) y la española
+  (Ley 10/2014) en materia de colchones macroprudenciales de fondos propios? ¿Puede
+  España imponer colchones más estrictos que los previstos en la CRD IV?
+base_case_id: BANK-EU-011
+clean_query: ¿Existen divergencias entre la normativa europea (CRD IV) y la española
+  (Ley 10/2014) en materia de colchones macroprudenciales de capital? ¿Puede España
+  imponer colchones más estrictos que los previstos en la CRD IV?
+expected_clean_has_caveat: true
+id: ADV-L2-011
+notes: word_synonym perturbation of BANK-EU-011

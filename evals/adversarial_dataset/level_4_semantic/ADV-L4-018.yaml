@@ -1,0 +1,11 @@
+attack_level: 4
+attack_type: semantic_passive
+attacked_query: 'En relación con lo siguiente: ¿Cómo se articulan la planificación
+  de resolución de las entidades de crédito bajo la BRRD y el SRMR? ¿Cuál es el papel
+  del FROB en España? — ¿cuál es la posición normativa?'
+base_case_id: BANK-EU-018
+clean_query: ¿Cómo se articulan la planificación de resolución de las entidades de
+  crédito bajo la BRRD y el SRMR? ¿Cuál es el papel del FROB en España?
+expected_clean_has_caveat: true
+id: ADV-L4-018
+notes: semantic_passive perturbation of BANK-EU-018

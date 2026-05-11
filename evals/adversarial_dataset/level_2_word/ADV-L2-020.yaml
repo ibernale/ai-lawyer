@@ -1,0 +1,12 @@
+attack_level: 2
+attack_type: word_synonym
+attacked_query: ¿Qué obligaciones en materia de prevención del blanqueo de fondos
+  propioses y financiación del terrorismo (PBC/FT) incumben a las entidades de crédito
+  españolas bajo la AMLD5 y la Ley 10/2010?
+base_case_id: BANK-EU-020
+clean_query: ¿Qué obligaciones en materia de prevención del blanqueo de capitales
+  y financiación del terrorismo (PBC/FT) incumben a las entidades de crédito españolas
+  bajo la AMLD5 y la Ley 10/2010?
+expected_clean_has_caveat: true
+id: ADV-L2-020
+notes: word_synonym perturbation of BANK-EU-020

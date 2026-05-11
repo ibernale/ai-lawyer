@@ -1,0 +1,10 @@
+attack_level: 4
+attack_type: semantic_passive
+attacked_query: 'En relación con lo siguiente: ¿Qué es el colchón de conservación
+  de capital y cuál es su cuantía mínima según la CRD IV? — ¿cuál es la posición normativa?'
+base_case_id: BANK-EU-009
+clean_query: ¿Qué es el colchón de conservación de capital y cuál es su cuantía mínima
+  según la CRD IV?
+expected_clean_has_caveat: true
+id: ADV-L4-009
+notes: semantic_passive perturbation of BANK-EU-009

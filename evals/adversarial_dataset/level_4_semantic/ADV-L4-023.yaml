@@ -1,0 +1,13 @@
+attack_level: 4
+attack_type: semantic_passive
+attacked_query: 'En relación con lo siguiente: ¿Cómo deben tratar prudencialmente
+  las entidades de crédito sus exposiciones en criptoactivos bajo el CRR3 (artículo
+  501c) antes de que MiCA esté plenamente implementado? ¿Qué incertidumbres normativas
+  persisten? — ¿cuál es la posición normativa?'
+base_case_id: BANK-EU-023
+clean_query: ¿Cómo deben tratar prudencialmente las entidades de crédito sus exposiciones
+  en criptoactivos bajo el CRR3 (artículo 501c) antes de que MiCA esté plenamente
+  implementado? ¿Qué incertidumbres normativas persisten?
+expected_clean_has_caveat: true
+id: ADV-L4-023
+notes: semantic_passive perturbation of BANK-EU-023

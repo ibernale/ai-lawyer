@@ -1,0 +1,13 @@
+attack_level: 3
+attack_type: sentence_irrelevant
+attacked_query: ¿Existe conflicto normativo entre el output floor general del CRR3
+  (artículo 465) y los suelos aplicables a los modelos internos de riesgo de crédito
+  del artículo 101 del mismo reglamento? ¿Cómo deben interpretarse conjuntamente?
+  Por favor responde lo antes posible.
+base_case_id: BANK-EU-022
+clean_query: ¿Existe conflicto normativo entre el output floor general del CRR3 (artículo
+  465) y los suelos aplicables a los modelos internos de riesgo de crédito del artículo
+  101 del mismo reglamento? ¿Cómo deben interpretarse conjuntamente?
+expected_clean_has_caveat: true
+id: ADV-L3-022
+notes: sentence_irrelevant perturbation of BANK-EU-022

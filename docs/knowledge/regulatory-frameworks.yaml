@@ -1,0 +1,137 @@
+_schema_version: "1.0"
+_description: "Marcos normativos de referencia por jurisdicción y rama especialista"
+_last_updated: "2026-05-11"
+_edit_policy: "PR-only, reviewed by @ibernale"
+
+frameworks:
+  # ── Prudencial EU/ES ──────────────────────────────────────────────────────
+  - id: CRR_III
+    full_name: "Reglamento (UE) 2024/1623 del Parlamento Europeo y del Consejo (CRR III)"
+    jurisdiction: EU
+    branches: [regulatorio_bancario_ue_es]
+    celex: "32024R1623"
+    entry_into_force: "2025-01-01"
+    notes: "Modifica CRR (575/2013). Implementación completa de Basilea IV en la UE. Régimen transitorio extenso hasta 2033."
+
+  - id: CRR
+    full_name: "Reglamento (UE) 575/2013 del Parlamento Europeo y del Consejo (CRR)"
+    jurisdiction: EU
+    branches: [regulatorio_bancario_ue_es]
+    celex: "32013R0575"
+    entry_into_force: "2014-01-01"
+    notes: "Marco de requerimientos de capital Pilar 1. Modificado sustancialmente por CRR II (2019/876) y CRR III (2024/1623)."
+
+  - id: CRD_VI
+    full_name: "Directiva (UE) 2024/1619 del Parlamento Europeo y del Consejo (CRD VI)"
+    jurisdiction: EU
+    branches: [regulatorio_bancario_ue_es]
+    celex: "32024L1619"
+    entry_into_force: "2026-01-11"
+    notes: "Transpuesta a derecho nacional; fecha límite transposición enero 2026. Modifica CRD IV/V."
+
+  - id: LEY_10_2014
+    full_name: "Ley 10/2014, de 26 de junio, de ordenación, supervisión y solvencia de entidades de crédito"
+    jurisdiction: ES
+    branches: [regulatorio_bancario_ue_es]
+    celex: null
+    boe: "BOE-A-2014-6808"
+    entry_into_force: "2014-06-28"
+    notes: "Transposición de CRD IV en España. Modificada por RD-ley 7/2018."
+
+  # ── Resolución y gestión de crisis ───────────────────────────────────────
+  - id: BRRD_II
+    full_name: "Directiva (UE) 2019/879 (BRRD II) + Directiva 2014/59/UE (BRRD)"
+    jurisdiction: EU
+    branches: [regulatorio_bancario_ue_es]
+    celex: "32019L0879"
+    notes: "Régimen de resolución bancaria; MREL, bail-in, planes de resolución."
+
+  - id: SRMR
+    full_name: "Reglamento (UE) 806/2014 (SRMR) modificado por (UE) 2019/877"
+    jurisdiction: EU
+    branches: [regulatorio_bancario_ue_es]
+    celex: "32014R0806"
+    notes: "Mecanismo Único de Resolución (MUR); aplicable a entidades significativas bajo SSM."
+
+  # ── Mercados e inversión ──────────────────────────────────────────────────
+  - id: MIFID_II
+    full_name: "Directiva 2014/65/UE del Parlamento Europeo y del Consejo (MiFID II)"
+    jurisdiction: EU
+    branches: [regulatorio_bancario_ue_es, mercantil_societario]
+    celex: "32014L0065"
+    entry_into_force: "2018-01-03"
+    notes: "Servicios de inversión, mercados de instrumentos financieros, idoneidad/conveniencia, gobernanza de productos."
+
+  - id: MIFIR
+    full_name: "Reglamento (UE) 600/2014 del Parlamento Europeo y del Consejo (MiFIR)"
+    jurisdiction: EU
+    branches: [regulatorio_bancario_ue_es, mercantil_societario]
+    celex: "32014R0600"
+    notes: "Transparencia pre/post-negociación, reporting a autoridades competentes, restricciones sobre derivados."
+
+  - id: EMIR_REFIT
+    full_name: "Reglamento (UE) 2019/834 (EMIR REFIT) modificando Reglamento (UE) 648/2012 (EMIR)"
+    jurisdiction: EU
+    branches: [regulatorio_bancario_ue_es, mercantil_societario]
+    celex: "32019R0834"
+    notes: "Derivados OTC: obligación de compensación central, reporte a registro de operaciones, técnicas mitigación."
+
+  # ── Digital y operacional ─────────────────────────────────────────────────
+  - id: DORA
+    full_name: "Reglamento (UE) 2022/2554 sobre la resiliencia operativa digital del sector financiero (DORA)"
+    jurisdiction: EU
+    branches: [regulatorio_bancario_ue_es]
+    celex: "32022R2554"
+    entry_into_force: "2025-01-17"
+    notes: "Aplica desde 17 enero 2025. Gestión del riesgo TIC, notificación de incidentes, pruebas de resiliencia, terceros proveedores TIC."
+
+  # ── Datos personales ──────────────────────────────────────────────────────
+  - id: GDPR
+    full_name: "Reglamento (UE) 2016/679 del Parlamento Europeo y del Consejo (RGPD)"
+    jurisdiction: EU
+    branches: [datos_personales_rgpd, regulatorio_bancario_ue_es]
+    celex: "32016R0679"
+    entry_into_force: "2018-05-25"
+    notes: "Aplicación directa. Complementado en España por LOPDGDD (LO 3/2018)."
+
+  - id: LOPDGDD
+    full_name: "Ley Orgánica 3/2018, de 5 de diciembre, de Protección de Datos Personales y garantía de derechos digitales"
+    jurisdiction: ES
+    branches: [datos_personales_rgpd]
+    celex: null
+    boe: "BOE-A-2018-16673"
+    notes: "Adaptación española del RGPD. Desarrolla opciones nacionales del Reglamento 2016/679."
+
+  # ── Prevención blanqueo ───────────────────────────────────────────────────
+  - id: AMLD_VI
+    full_name: "Directiva (UE) 2018/1673 (6AMLD) + propuesta Reglamento AML 2024"
+    jurisdiction: EU
+    branches: [regulatorio_bancario_ue_es]
+    celex: "32018L1673"
+    notes: "Blanqueo de capitales; paquete AML 2024 (Reglamento AML + nueva Directiva + AMLA) pendiente transposición completa."
+
+  - id: LEY_10_2010
+    full_name: "Ley 10/2010, de 28 de abril, de prevención del blanqueo de capitales y de la financiación del terrorismo"
+    jurisdiction: ES
+    branches: [regulatorio_bancario_ue_es]
+    celex: null
+    boe: "BOE-A-2010-6737"
+    notes: "Transpone 3AMLD/4AMLD en España; modificada por RD-Ley 11/2018 y Ley 11/2021."
+
+  # ── Laboral ───────────────────────────────────────────────────────────────
+  - id: ET
+    full_name: "Real Decreto Legislativo 2/2015, de 23 de octubre, por el que se aprueba el texto refundido del Estatuto de los Trabajadores"
+    jurisdiction: ES
+    branches: [laboral]
+    celex: null
+    boe: "BOE-A-2015-11430"
+    notes: "Norma laboral fundamental española; complementada por convenios colectivos sectoriales."
+
+  # ── Mercantil ─────────────────────────────────────────────────────────────
+  - id: LSC
+    full_name: "Real Decreto Legislativo 1/2010, de 2 de julio, por el que se aprueba el texto refundido de la Ley de Sociedades de Capital"
+    jurisdiction: ES
+    branches: [mercantil_societario]
+    celex: null
+    boe: "BOE-A-2010-10544"
+    notes: "Derecho societario español; SA, SL, SCE. Complementado por LMESM (Ley 3/2009) para modificaciones estructurales."

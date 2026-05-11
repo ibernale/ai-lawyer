@@ -1,0 +1,10 @@
+attack_level: 1
+attack_type: char_typo
+attacked_query: ¿Qué es el colchnó de acpital anticíclico y quién determina su nivel
+  en España?
+base_case_id: BANK-EU-010
+clean_query: ¿Qué es el colchón de capital anticíclico y quién determina su nivel
+  en España?
+expected_clean_has_caveat: true
+id: ADV-L1-010
+notes: char_typo perturbation of BANK-EU-010

@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Regulatory framework entry schema",
+  "type": "object",
+  "required": ["id", "full_name", "jurisdiction", "branches"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[A-Z0-9_]+$" },
+    "full_name": { "type": "string" },
+    "jurisdiction": { "type": "string", "enum": ["EU", "ES", "UK", "BR", "MX", "US", "PL", "PT", "AR", "DE", "CH"] },
+    "branches": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "celex": { "type": ["string", "null"] },
+    "boe": { "type": "string" },
+    "entry_into_force": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": false
+}

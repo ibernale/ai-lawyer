@@ -1,0 +1,10 @@
+attack_level: 1
+attack_type: char_typo
+attacked_query: ¿uCáles son los erquisitos de capital CET1 que establece el CRR para
+  las entidades de crédito?
+base_case_id: BANK-EU-001
+clean_query: ¿Cuáles son los requisitos de capital CET1 que establece el CRR para
+  las entidades de crédito?
+expected_clean_has_caveat: true
+id: ADV-L1-001
+notes: char_typo perturbation of BANK-EU-001

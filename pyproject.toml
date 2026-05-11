@@ -8,6 +8,7 @@ members = [
     "packages/shared",
     "packages/pipeline",
     "packages/evals_advanced",
+    "packages/memory",
     "evals",
 ]
 
@@ -20,6 +21,7 @@ lex-agents-verifier = { workspace = true }
 lex-agents-evals = { workspace = true }
 lex-agents-pipeline = { workspace = true }
 lex-agents-evals-advanced = { workspace = true }
+lex-agents-memory = { workspace = true }
 
 # ─── Shared ruff config (inherited by all packages) ───────────────────────────
 [tool.ruff]

@@ -1,0 +1,10 @@
+attack_level: 3
+attack_type: sentence_irrelevant
+attacked_query: ¿Qué es el colchón de conservación de capital y cuál es su cuantía
+  mínima según la CRD IV? Por favor responde lo antes posible.
+base_case_id: BANK-EU-009
+clean_query: ¿Qué es el colchón de conservación de capital y cuál es su cuantía mínima
+  según la CRD IV?
+expected_clean_has_caveat: true
+id: ADV-L3-009
+notes: sentence_irrelevant perturbation of BANK-EU-009

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import time
+from typing import TYPE_CHECKING
 
 import structlog
 from opentelemetry import trace
@@ -16,6 +17,9 @@ from lex_agents_agents.shared.definition_of_done import (
     DefinitionOfDone,
     PlannerOutput,
 )
+
+if TYPE_CHECKING:
+    from lex_agents_memory import MemoryInjector
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -100,13 +104,16 @@ class LegalPlanner:
         self,
         client: AnthropicClientWrapper,
         prompt_version: int = 1,
+        memory_injector: "MemoryInjector | None" = None,
     ) -> None:
         self._client = client
         self._cfg = load_prompt("planner", version=prompt_version)
+        self._memory_injector = memory_injector
         logger.info(
             "planner_prompt_loaded",
             version=self._cfg.version,
             hash=self._cfg.content_hash[:12],
+            memory_enabled=memory_injector is not None,
         )
 
     def plan(
@@ -127,6 +134,20 @@ class LegalPlanner:
                 user_msg += f"\nTipo de output preferido: {output_type}"
             if depth_hint:
                 user_msg += f"\nProfundidad de análisis requerida: {depth_hint}"
+
+            if self._memory_injector is not None:
+                jurisdictions = [jurisdiction_hint] if jurisdiction_hint else []
+                memory_ctx = self._memory_injector.build_context(
+                    query=query,
+                    jurisdictions=jurisdictions,
+                    output_type=output_type,
+                )
+                if memory_ctx:
+                    user_msg = memory_ctx + "\n\n---\n\n" + user_msg
+                    span.set_attribute("memory.injected", True)
+                    span.set_attribute("memory.context_len", len(memory_ctx))
+                else:
+                    span.set_attribute("memory.injected", False)
 
             t0 = time.monotonic()
             try:

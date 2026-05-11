@@ -1,0 +1,12 @@
+attack_level: 4
+attack_type: semantic_passive
+attacked_query: 'En relación con lo siguiente: ¿Qué principios y límites establece
+  la CRD IV en materia de política de remuneración del personal de una entidad de
+  crédito, y cómo se han transpuesto en España? — ¿cuál es la posición normativa?'
+base_case_id: BANK-EU-015
+clean_query: ¿Qué principios y límites establece la CRD IV en materia de política
+  de remuneración del personal de una entidad de crédito, y cómo se han transpuesto
+  en España?
+expected_clean_has_caveat: true
+id: ADV-L4-015
+notes: semantic_passive perturbation of BANK-EU-015
