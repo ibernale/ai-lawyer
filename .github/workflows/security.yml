@@ -104,25 +104,27 @@ jobs:
           load: true
           tags: lex-agents/api:scan
           cache-from: type=gha
-      - name: Trivy scan (table — visible in log)
-        uses: aquasecurity/trivy-action@master
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.2
         with:
-          image-ref: "lex-agents/api:scan"
-          format: "table"
-          severity: "CRITICAL,HIGH"
-          exit-code: "0"
-          ignore-unfixed: true
-          skip-setup-trivy: true
-      - name: Trivy scan (SARIF — uploaded to Security tab)
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: "lex-agents/api:scan"
-          format: "sarif"
-          output: "trivy-results.sarif"
-          severity: "CRITICAL,HIGH"
-          exit-code: "1"
-          ignore-unfixed: true
-          skip-setup-trivy: true
+          version: v0.70.0
+      - name: Trivy scan (table — CVE names visible in log)
+        run: |
+          trivy image \
+            --severity CRITICAL,HIGH \
+            --ignore-unfixed \
+            --exit-code 0 \
+            --format table \
+            lex-agents/api:scan
+      - name: Trivy scan (SARIF — gate + Security tab)
+        run: |
+          trivy image \
+            --severity CRITICAL,HIGH \
+            --ignore-unfixed \
+            --exit-code 1 \
+            --format sarif \
+            --output trivy-results.sarif \
+            lex-agents/api:scan
       - uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
