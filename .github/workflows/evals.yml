@@ -47,9 +47,9 @@ jobs:
       QDRANT_URL: http://localhost:6333
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.12"
 
@@ -63,7 +63,7 @@ jobs:
         run: uv run python -m evals run --dataset evals/golden_dataset_smoke --output reports/smoke/
 
       - name: Download baseline artifact
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v21
         with:
           name: eval-baseline
           path: baseline/
@@ -96,7 +96,7 @@ jobs:
           "
 
       - name: Upload smoke results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: eval-smoke-results
           path: reports/smoke/
@@ -125,9 +125,9 @@ jobs:
       QDRANT_URL: http://localhost:6333
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.12"
 
@@ -141,7 +141,7 @@ jobs:
         run: uv run python -m evals run --dataset evals/golden_dataset --output reports/full/
 
       - name: Download baseline artifact
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v21
         with:
           name: eval-baseline
           path: baseline/
@@ -178,14 +178,14 @@ jobs:
           "
 
       - name: Upload full results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: eval-full-results
           path: reports/full/
           retention-days: 30
 
       - name: Upload as new baseline
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: eval-baseline
           path: reports/full/
