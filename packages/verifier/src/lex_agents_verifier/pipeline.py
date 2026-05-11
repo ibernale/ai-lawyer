@@ -7,7 +7,12 @@ from datetime import datetime, timezone
 import structlog
 
 from lex_agents_shared.anthropic_client import AnthropicClientWrapper
-from lex_agents_shared.types import CitationMapping, ClaimVerification, VerificationReport
+from lex_agents_shared.types import (
+    AggregateVerificationReport,
+    CitationMapping,
+    ClaimVerification,
+    VerificationReport,
+)
 
 from .citation_parser import CitationParser
 from .claim_extractor import Claim, ClaimExtractor
@@ -29,6 +34,7 @@ class VerifierPipeline:
         answer_text: str,
         citations: list[CitationMapping],
         chunk_store: dict[str, str],
+        branch: str = "",
     ) -> VerificationReport:
         """Run the full verification pipeline and return a VerificationReport."""
 
@@ -131,4 +137,76 @@ class VerifierPipeline:
             uncited_claims=uncited_claims,
             broken_refs=broken_refs,
             status=status,
+            branch=branch,
+        )
+
+    async def run_aggregate(
+        self,
+        branch_responses: list[tuple[str, str, list[CitationMapping], dict[str, str]]],
+        response_id: str,
+    ) -> AggregateVerificationReport:
+        """Run verification across multiple specialist branches and aggregate results.
+
+        Args:
+            branch_responses: List of (branch_name, answer_text, citations, chunk_store) tuples.
+            response_id: Shared response ID for the aggregate report.
+
+        Returns:
+            AggregateVerificationReport with per-branch reports and rolled-up totals.
+        """
+        branch_reports: list[VerificationReport] = []
+        for branch_name, answer_text, citations, chunk_store in branch_responses:
+            report = await self.run(
+                response_id=response_id,
+                answer_text=answer_text,
+                citations=citations,
+                chunk_store=chunk_store,
+                branch=branch_name,
+            )
+            branch_reports.append(report)
+
+        # Aggregate totals
+        overall_claims_total = sum(r.claims_total for r in branch_reports)
+        overall_claims_passed = sum(r.claims_passed for r in branch_reports)
+        overall_claims_failed = sum(r.claims_failed for r in branch_reports)
+        overall_claims_uncertain = sum(r.claims_uncertain for r in branch_reports)
+        overall_broken_refs: list[int] = [
+            ref for r in branch_reports for ref in r.broken_refs
+        ]
+        overall_uncited_claims: list[str] = [
+            claim for r in branch_reports for claim in r.uncited_claims
+        ]
+
+        # Overall status: red if any red, amber if any amber + no red, green if all green
+        statuses = {r.status for r in branch_reports}
+        if "red" in statuses:
+            overall_status: str = "red"
+        elif "amber" in statuses:
+            overall_status = "amber"
+        else:
+            overall_status = "green"
+
+        logger.info(
+            "verifier_pipeline.aggregate_complete",
+            response_id=response_id,
+            branch_count=len(branch_reports),
+            overall_claims_total=overall_claims_total,
+            overall_claims_passed=overall_claims_passed,
+            overall_claims_failed=overall_claims_failed,
+            overall_claims_uncertain=overall_claims_uncertain,
+            overall_broken_refs_count=len(overall_broken_refs),
+            overall_uncited_claims_count=len(overall_uncited_claims),
+            overall_status=overall_status,
+        )
+
+        return AggregateVerificationReport(
+            response_id=response_id,
+            branch_reports=branch_reports,
+            overall_status=overall_status,  # type: ignore[arg-type]
+            overall_claims_total=overall_claims_total,
+            overall_claims_passed=overall_claims_passed,
+            overall_claims_failed=overall_claims_failed,
+            overall_claims_uncertain=overall_claims_uncertain,
+            overall_broken_refs=overall_broken_refs,
+            overall_uncited_claims=overall_uncited_claims,
         )
