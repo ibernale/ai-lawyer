@@ -10,6 +10,8 @@ services:
     environment:
       - LOG_LEVEL=DEBUG
       - RELOAD=true
+      - QDRANT_URL=http://qdrant:6333
+      - PYTHONPATH=/app/apps/api/src:/app/packages/shared/src:/app/packages/agents/src:/app/packages/rag/src:/app/packages/verifier/src:/app/packages/ingest/src
     command:
       [
         "uvicorn",
