@@ -18,3 +18,15 @@ evals/golden_dataset/     @ibernale
 # Infrastructure and CI
 infra/                    @ibernale
 .github/workflows/        @ibernale
+
+# Prompt files require human review before merge
+# This prevents auto-merge of prompt-evolution PRs
+docs/prompts/especialistas/**  @ibernale
+docs/prompts/router/**         @ibernale
+docs/prompts/planner/**        @ibernale
+docs/prompts/judge/**          @ibernale
+docs/prompts/lemaj/**          @ibernale
+docs/prompts/sintesis/**       @ibernale
+
+# ADRs and decisions
+docs/decisions/**              @ibernale
