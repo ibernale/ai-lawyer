@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import type { CitationMapping, ConsultResponse, VerificationReport } from "@/lib/api";
+
+const API_BASE =
+  typeof window === "undefined"
+    ? (process.env["API_BASE_URL"] ?? "http://localhost:8000")
+    : (process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:8000");
 
 // ---------------------------------------------------------------------------
 // Citation panel
@@ -121,7 +124,6 @@ function VerificationBanner({ report }: { report: VerificationReport }) {
           </button>
         )}
       </div>
-
       {expanded && hasDetails && (
         <div className={`mt-3 space-y-2 text-xs ${config.text}`}>
           {report.broken_refs.length > 0 && (
@@ -181,13 +183,121 @@ function renderAnswerWithChips(
 }
 
 // ---------------------------------------------------------------------------
+// Feedback modal
+// ---------------------------------------------------------------------------
+
+const ISSUE_TYPES = [
+  { value: "error_factual", label: "Error factual" },
+  { value: "cita_incorrecta", label: "Cita incorrecta o incompleta" },
+  { value: "fuera_de_alcance", label: "Fuera de alcance del sistema" },
+  { value: "otro", label: "Otro" },
+];
+
+function FeedbackModal({
+  traceId,
+  answerExcerpt,
+  onClose,
+}: {
+  traceId: string;
+  answerExcerpt: string;
+  onClose: () => void;
+}) {
+  const [issueType, setIssueType] = useState("error_factual");
+  const [description, setDescription] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/consult/${traceId}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ issue_type: issueType, description, answer_excerpt: answerExcerpt }),
+      });
+      if (!res.ok) throw new Error(`${res.status}`);
+      setDone(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-background rounded-lg shadow-xl border border-border w-full max-w-md p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-sm">Reportar problema</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-lg">×</button>
+        </div>
+        {done ? (
+          <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-3">
+            Gracias. Feedback guardado (Trace: <span className="font-mono">{traceId.slice(0, 8)}</span>).
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground block mb-1">Tipo de problema</label>
+              <select
+                value={issueType}
+                onChange={(e) => setIssueType(e.target.value)}
+                className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm"
+              >
+                {ISSUE_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground block mb-1">Descripción</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+                placeholder="Describa el problema observado…"
+                className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm resize-none"
+                required
+              />
+            </div>
+            {error && <p className="text-xs text-red-600">{error}</p>}
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm rounded border border-input hover:bg-muted">
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={submitting || !description.trim()}
+                className="px-3 py-1.5 text-sm rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {submitting ? "Enviando…" : "Enviar"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main ResponseView
 // ---------------------------------------------------------------------------
 
 export function ResponseView({ response }: { response: ConsultResponse }) {
   const [activeCitation, setActiveCitation] = useState<CitationMapping | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [metaExpanded, setMetaExpanded] = useState(false);
 
   const uncitedClaims = response.verification?.uncited_claims ?? [];
+  const meta = response.metadata;
+
+  function handleExport() {
+    window.open(`${API_BASE}/api/v1/consult/${response.trace_id}/export`, "_blank");
+  }
 
   return (
     <div className="space-y-4">
@@ -201,7 +311,7 @@ export function ResponseView({ response }: { response: ConsultResponse }) {
         {renderAnswerWithChips(response.answer, response.citations, setActiveCitation)}
       </article>
 
-      {/* Uncited claims section */}
+      {/* Uncited claims */}
       {uncitedClaims.length > 0 && (
         <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
           <p className="text-xs font-semibold text-amber-800 mb-2">
@@ -215,20 +325,67 @@ export function ResponseView({ response }: { response: ConsultResponse }) {
         </div>
       )}
 
-      {/* Legal disclaimer footer */}
-      <div className="text-center text-xs text-muted-foreground pt-2">
-        Trace ID:{" "}
-        <span className="font-mono">{response.trace_id}</span>
-        {response.metadata.latency_ms != null && (
-          <> · {response.metadata.latency_ms as number}ms</>
-        )}
+      {/* Action bar */}
+      <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+        <div className="text-xs text-muted-foreground font-mono">
+          {response.trace_id.slice(0, 8)}…
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setMetaExpanded(!metaExpanded)}
+            className="text-xs text-muted-foreground underline hover:text-foreground"
+          >
+            {metaExpanded ? "Ocultar metadatos" : "Metadatos técnicos"}
+          </button>
+          <button
+            onClick={handleExport}
+            className="inline-flex items-center gap-1 rounded border border-input px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
+          >
+            ↓ Exportar Word
+          </button>
+          <button
+            onClick={() => setShowFeedback(true)}
+            className="inline-flex items-center gap-1 rounded border border-input px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
+          >
+            ⚑ Reportar problema
+          </button>
+        </div>
       </div>
+
+      {/* Metadata panel */}
+      {metaExpanded && (
+        <div className="rounded-md border border-border bg-muted/30 px-4 py-3 text-xs space-y-1 font-mono">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+            <span className="text-muted-foreground">Trace ID</span>
+            <span>{response.trace_id}</span>
+            <span className="text-muted-foreground">Modelo</span>
+            <span>{String(meta.model ?? "—")}</span>
+            <span className="text-muted-foreground">Prompt version</span>
+            <span>{String(meta.prompt_version ?? "—")}</span>
+            <span className="text-muted-foreground">Latencia</span>
+            <span>{meta.latency_ms != null ? `${String(meta.latency_ms)} ms` : "—"}</span>
+            <span className="text-muted-foreground">Coste estimado</span>
+            <span>{meta.cost_estimate_usd != null ? `$${(meta.cost_estimate_usd as number).toFixed(4)}` : "—"}</span>
+            <span className="text-muted-foreground">Consulta reescrita</span>
+            <span className="truncate">{response.query_rewritten || "—"}</span>
+          </div>
+        </div>
+      )}
 
       {/* Citation side panel */}
       {activeCitation && (
         <CitationPanel
           citation={activeCitation}
           onClose={() => setActiveCitation(null)}
+        />
+      )}
+
+      {/* Feedback modal */}
+      {showFeedback && (
+        <FeedbackModal
+          traceId={response.trace_id}
+          answerExcerpt={response.answer.slice(0, 200)}
+          onClose={() => setShowFeedback(false)}
         />
       )}
     </div>

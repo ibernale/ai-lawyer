@@ -21,6 +21,7 @@ from lex_agents_rag.retriever import HybridRetriever, SearchFilters
 from lex_agents_shared.anthropic_client import MODEL_OPUS
 from lex_agents_shared.types import CitationMapping
 
+from lex_agents_api.auth import CurrentUser, require_auth
 from lex_agents_api.settings import Settings, get_settings
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
@@ -71,7 +72,7 @@ def _get_query_rewriter(settings: Settings = Depends(get_settings)) -> LegalQuer
 def _load_rag_prompt() -> str:
     try:
         path = importlib.resources.files("lex_agents_api") / "prompts" / "rag_plain_v1.txt"
-        return path.read_text(encoding="utf-8")  # type: ignore[union-attr]
+        return path.read_text(encoding="utf-8")  # type: ignore[union-attr,unused-ignore]
     except Exception:
         return _FALLBACK_PROMPT
 
@@ -133,6 +134,7 @@ class AnswerResponse(BaseModel):
 @router.post("/search", response_model=SearchResponse)
 def search(
     req: SearchRequest,
+    _user: CurrentUser = Depends(require_auth),
     retriever: HybridRetriever = Depends(_get_retriever),
     reranker: Any = Depends(_get_reranker),
     query_rewriter: LegalQueryRewriter = Depends(_get_query_rewriter),
@@ -162,6 +164,7 @@ def search(
 @router.post("/answer", response_model=AnswerResponse)
 def answer(
     req: AnswerRequest,
+    _user: CurrentUser = Depends(require_auth),
     retriever: HybridRetriever = Depends(_get_retriever),
     reranker: Any = Depends(_get_reranker),
     query_rewriter: LegalQueryRewriter = Depends(_get_query_rewriter),
@@ -187,7 +190,7 @@ def answer(
         response = anthropic.messages.create(
             model=MODEL_OPUS,
             max_tokens=2048,
-            temperature=0.1,  # type: ignore[arg-type]
+            temperature=0.1,  # type: ignore[arg-type,unused-ignore]
             system=system_prompt,
             messages=[{"role": "user", "content": user_message}],
         )

@@ -8,9 +8,11 @@ from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Any
 
+import re
+
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from qdrant_client import QdrantClient
 
 from lex_agents_agents.orchestrator import ConsultRequest, ConsultResponse, Orchestrator, OrchestratorDeps
@@ -20,7 +22,9 @@ from lex_agents_rag.query_rewriter import LegalQueryRewriter
 from lex_agents_rag.reranker import RerankerConfig, make_reranker
 from lex_agents_rag.retriever import HybridRetriever
 from lex_agents_shared.anthropic_client import AnthropicClientWrapper
+from lex_agents_verifier.pipeline import VerifierPipeline
 
+from lex_agents_api.auth import CurrentUser, require_auth
 from lex_agents_api.db import ConsultationRecord, ConsultationStore
 from lex_agents_api.middleware import get_correlation_id
 from lex_agents_api.settings import Settings, get_settings
@@ -34,10 +38,21 @@ router = APIRouter(prefix="/api/v1/consult", tags=["consult"])
 # Request / response models
 # ---------------------------------------------------------------------------
 
+_CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
 class ConsultRequestBody(BaseModel):
-    query: str
+    query: str = Field(min_length=10, max_length=4000)
     jurisdiction_hint: str | None = None
     output_type: str | None = None
+
+    @field_validator("query")
+    @classmethod
+    def sanitize_query(cls, v: str) -> str:
+        sanitized = _CONTROL_RE.sub("", v)
+        if len(sanitized) < 10:
+            raise ValueError("query too short after sanitization")
+        return sanitized
 
 
 # ---------------------------------------------------------------------------
@@ -81,13 +96,14 @@ def _get_orchestrator(
     query_rewriter = LegalQueryRewriter(anthropic_api_key=anthropic_key)
     assembler = ContextAssembler()
     client = AnthropicClientWrapper(api_key=anthropic_key)
+    verifier = VerifierPipeline(anthropic_client=client)
     deps = OrchestratorDeps(
         retriever=retriever,
         reranker=reranker,
         query_rewriter=query_rewriter,
         assembler=assembler,
         client=client,
-        verifier=None,  # wired in after verifier package is importable
+        verifier=verifier,
         rag_top_k=rag_top_k,
     )
     return Orchestrator(deps)
@@ -125,16 +141,24 @@ async def _persist(
         if resp.verification is not None:
             verification_json = resp.verification.model_dump_json()
 
+        pv = resp.metadata.get("prompt_version")
+        prompt_versions: dict[str, int] | None = (
+            {"specialist": int(pv)} if pv is not None else None
+        )
+        model_val = resp.metadata.get("model")
+        models: list[str] | None = [str(model_val)] if model_val is not None else None
+        lat = resp.metadata.get("latency_ms")
+        cost = resp.metadata.get("cost_estimate_usd")
         record = ConsultationRecord(
             trace_id=trace_id,
             created_at=datetime.now(timezone.utc),
             query=query,
             response_json=resp.model_dump_json(),
             verification_json=verification_json,
-            prompt_versions={"specialist": resp.metadata.get("prompt_version")},  # type: ignore[arg-type]
-            models=[resp.metadata.get("model", "")],  # type: ignore[list-item]
-            latency_ms=resp.metadata.get("latency_ms"),  # type: ignore[arg-type]
-            cost_estimate_usd=resp.metadata.get("cost_estimate_usd"),  # type: ignore[arg-type]
+            prompt_versions=prompt_versions,
+            models=models,
+            latency_ms=int(lat) if lat is not None else None,
+            cost_estimate_usd=float(cost) if cost is not None else None,
         )
         await store.save(record)
     except Exception:
@@ -149,6 +173,7 @@ async def _persist(
 async def consult(
     body: ConsultRequestBody,
     background_tasks: BackgroundTasks,
+    current_user: CurrentUser = Depends(require_auth),
     orchestrator: Orchestrator = Depends(get_orchestrator),
     store: ConsultationStore = Depends(get_store),
     settings: Settings = Depends(get_settings),
@@ -183,6 +208,7 @@ async def consult(
 @router.get("/{trace_id}", response_model=ConsultResponse)
 async def get_consultation(
     trace_id: str,
+    _user: CurrentUser = Depends(require_auth),
     store: ConsultationStore = Depends(get_store),
 ) -> ConsultResponse:
     record = await store.get(trace_id)
@@ -196,6 +222,7 @@ async def get_consultation(
 @router.get("", response_model=list[dict[str, Any]])
 async def list_consultations(
     limit: int = 20,
+    _user: CurrentUser = Depends(require_auth),
     store: ConsultationStore = Depends(get_store),
 ) -> list[dict[str, Any]]:
     records = await store.list_recent(limit=limit)
@@ -215,7 +242,7 @@ def _extract_status(verification_json: str | None) -> str:
     if not verification_json:
         return "pending"
     try:
-        data = json.loads(verification_json)
-        return data.get("status", "unknown")
+        data: dict[str, object] = json.loads(verification_json)
+        return str(data.get("status", "unknown"))
     except Exception:
         return "unknown"

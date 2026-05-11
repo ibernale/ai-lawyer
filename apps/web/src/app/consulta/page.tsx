@@ -53,6 +53,18 @@ export default function ConsultaPage({
 
   return (
     <div className="flex min-h-screen flex-col">
+      {/* Permanent disclaimer banner — not dismissable */}
+      <div className="sticky top-0 z-40 bg-amber-50 border-b border-amber-200 px-4 py-2">
+        <p className="text-xs text-amber-800 text-center">
+          <strong>Borrador asistido por IA.</strong> Requiere validación por jurista cualificado
+          antes de cualquier uso. No constituye asesoramiento legal. Sistema en fase MVP, dataset
+          y prompts no validados por experto humano.{" "}
+          <a href="/legal" className="underline font-medium hover:text-amber-900">
+            Más información
+          </a>
+        </p>
+      </div>
+
       <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-8 space-y-6">
         <header>
           <h1 className="text-2xl font-bold tracking-tight">Consulta jurídica</h1>

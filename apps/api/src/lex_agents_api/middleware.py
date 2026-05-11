@@ -37,3 +37,22 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         finally:
             _correlation_id_var.reset(token)
             structlog.contextvars.unbind_contextvars("correlation_id")
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        response = await call_next(request)
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "strict-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        # CSP: allow self + inline styles for FastAPI docs in dev
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data:; "
+            "frame-ancestors 'none'"
+        )
+        return response

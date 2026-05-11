@@ -9,9 +9,10 @@ DC_FILE := -f infra/docker-compose.yml
 DC_DEV  := $(DC_FILE) -f infra/docker-compose.dev.yml
 PYTHON  := $(UV) run python
 
-.PHONY: help install lint format type-check test test-watch \
+.PHONY: help install lint format type-check test test-cov test-watch \
         eval eval-quick dev dev-detached down logs \
-        build-images ingest-sample ingest-real qdrant-shell db-reset db-show
+        build-images ingest-sample ingest-real qdrant-shell db-reset db-show \
+        grafana
 
 # ─── Help ─────────────────────────────────────────────────────────────────────
 help: ## Show this help
@@ -41,6 +42,16 @@ type-check: ## Run mypy --strict on all Python packages
 test: ## Run full test suite (pytest + vitest)
 	$(UV) run pytest -x -q
 	$(PNPM) exec vitest run
+
+test-cov: ## Run pytest with coverage report (target ≥ 80%)
+	$(UV) run pytest \
+		--cov=packages/agents/src \
+		--cov=packages/verifier/src \
+		--cov=packages/rag/src \
+		--cov=packages/shared/src \
+		--cov-report=term-missing \
+		--cov-fail-under=80 \
+		-q
 
 test-watch: ## Run tests in watch mode
 	$(UV) run pytest -f &
@@ -93,3 +104,6 @@ db-reset: ## Destroy and recreate Qdrant volumes (DESTRUCTIVE)
 
 db-show: ## Show recent consultations from SQLite history
 	sqlite3 data/consultations.db "SELECT trace_id, substr(query,1,60), latency_ms FROM consultations ORDER BY created_at DESC LIMIT 10;"
+
+grafana: ## Open Grafana dashboard in browser
+	open http://localhost:3001
