@@ -7,6 +7,7 @@ members = [
     "packages/ingest",
     "packages/shared",
     "packages/pipeline",
+    "packages/evals_advanced",
     "evals",
 ]
 
@@ -18,6 +19,7 @@ lex-agents-agents = { workspace = true }
 lex-agents-verifier = { workspace = true }
 lex-agents-evals = { workspace = true }
 lex-agents-pipeline = { workspace = true }
+lex-agents-evals-advanced = { workspace = true }
 
 # ─── Shared ruff config (inherited by all packages) ───────────────────────────
 [tool.ruff]
