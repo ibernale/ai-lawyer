@@ -164,7 +164,7 @@ class HybridRetriever:
             conditions.append(
                 FieldCondition(
                     key="entry_into_force",
-                    range=Range(lte=filters.in_force_at.isoformat()),
+                    range=Range(lte=filters.in_force_at.isoformat()),  # type: ignore[arg-type]
                 )
             )
         if filters.document_type:
@@ -174,7 +174,7 @@ class HybridRetriever:
                 )
             )
 
-        return Filter(must=conditions) if conditions else Filter()
+        return Filter(must=conditions) if conditions else Filter()  # type: ignore[arg-type]
 
     @staticmethod
     def _format_source_label(payload: dict[str, Any]) -> str:
