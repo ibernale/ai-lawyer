@@ -1,0 +1,23 @@
+# Test cases for especialistas/regulatorio_bancario_ue_es/v1 prompt
+
+cases:
+  - id: crr_capital_requirements
+    query: "¿Qué ratio mínimo de capital ordinario de nivel 1 (CET1) establece el CRR?"
+    expected_contains:
+      - "[REF:"
+      - "CET1"
+      - "4,5"
+    expected_sections:
+      - "Cuestión planteada"
+      - "Marco normativo aplicable"
+      - "Análisis"
+      - "Conclusión preliminar"
+      - "Lagunas y cautelas"
+      - "Referencias citadas"
+
+  - id: sin_base_normativa
+    query: "¿Cuál es el procedimiento para constituir una sociedad anónima en España?"
+    expected_contains:
+      - "no contienen base"
+    expected_sections:
+      - "Lagunas y cautelas"

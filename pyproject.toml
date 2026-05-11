@@ -12,6 +12,8 @@ members = [
 lex-agents-shared = { workspace = true }
 lex-agents-ingest = { workspace = true }
 lex-agents-rag = { workspace = true }
+lex-agents-agents = { workspace = true }
+lex-agents-verifier = { workspace = true }
 
 # ─── Shared ruff config (inherited by all packages) ───────────────────────────
 [tool.ruff]

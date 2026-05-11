@@ -1,0 +1,14 @@
+# Test cases for verificador/v1 prompt
+
+cases:
+  - id: afirmacion_soportada
+    claim: "El artículo 92 del CRR establece un ratio mínimo de capital ordinario de nivel 1 del 4,5%."
+    chunk_text: "Artículo 92 — Requisitos de fondos propios. Las entidades cumplirán en todo momento los siguientes requisitos de fondos propios: a) una ratio de capital ordinario de nivel 1 del 4,5%."
+    expected:
+      verdict: supported
+
+  - id: afirmacion_no_soportada
+    claim: "La Directiva 2013/36/UE prohíbe expresamente los bonos variables superiores al 50% del salario fijo."
+    chunk_text: "Artículo 1 — Objeto. La presente Directiva establece normas sobre el acceso a la actividad de las entidades de crédito y empresas de inversión."
+    expected:
+      verdict: not_supported
