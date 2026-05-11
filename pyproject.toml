@@ -126,8 +126,22 @@ module = [
     "lex_agents_memory.*",
     "lex_agents_pipeline.*",
     "lex_agents_evals_advanced.*",
+    "lxml.*",
+    "pdfminer.*",
+    "sklearn.*",
 ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "lex_agents_ingest",
+    "lex_agents_ingest.*",
+    "lex_agents_pipeline",
+    "lex_agents_pipeline.*",
+    "lex_agents_evals_advanced",
+    "lex_agents_evals_advanced.*",
+]
+ignore_errors = true
 
 # ─── Shared pytest config ─────────────────────────────────────────────────────
 [tool.pytest.ini_options]

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
+from typing import Any
 
 import structlog
 
@@ -42,7 +43,7 @@ ORDER BY id;
 """
 
 
-def _row_to_pattern(row: tuple) -> ProceduralPattern:
+def _row_to_pattern(row: tuple[Any, ...]) -> ProceduralPattern:
     id_, key, version, content, source, active = row
     return ProceduralPattern(
         id=id_,

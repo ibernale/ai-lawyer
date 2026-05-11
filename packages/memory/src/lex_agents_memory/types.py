@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 
 @dataclass
@@ -38,7 +38,7 @@ class ProceduralPattern:
         import json
         try:
             data = json.loads(self.content)
-            return data.get("applies_when", {})
+            return cast(dict[str, Any], data.get("applies_when", {}))
         except Exception:
             return {}
 
@@ -48,6 +48,6 @@ class ProceduralPattern:
         import json
         try:
             data = json.loads(self.content)
-            return data.get("instructions", self.content)
+            return str(data.get("instructions", self.content))
         except Exception:
             return self.content

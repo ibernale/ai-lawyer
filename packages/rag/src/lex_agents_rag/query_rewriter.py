@@ -54,7 +54,7 @@ class LegalQueryRewriter:
         response = self._client.messages.create(
             model=MODEL_HAIKU,
             max_tokens=512,
-            temperature=0,  # type: ignore[arg-type]
+            temperature=0,
             system=_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": query}],
         )
