@@ -79,8 +79,8 @@ ignore_missing_imports = true
 
 # ─── Shared pytest config ─────────────────────────────────────────────────────
 [tool.pytest.ini_options]
-testpaths = ["apps", "packages", "evals"]
-pythonpath = ["apps/api/src", "packages/agents/src", "packages/rag/src", "packages/verifier/src", "packages/ingest/src", "packages/shared/src", "evals/src"]
+testpaths = ["apps", "packages", "evals", "tests"]
+pythonpath = ["apps/api/src", "packages/agents/src", "packages/rag/src", "packages/verifier/src", "packages/ingest/src", "packages/shared/src", "packages/memory/src", "packages/evals_advanced/src", "evals/src"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
@@ -90,4 +90,6 @@ markers = [
     "integration: requires running services (qdrant, etc.)",
     "eval: evaluation suite cases",
     "slow: tests taking >5s",
+    "e2e: end-to-end pipeline tests (mocked API, real logic)",
 ]
+asyncio_mode = "auto"
