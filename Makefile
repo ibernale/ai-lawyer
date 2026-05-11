@@ -47,11 +47,15 @@ test-watch: ## Run tests in watch mode
 	$(PNPM) exec vitest
 
 # ─── Evals ────────────────────────────────────────────────────────────────────
-eval: ## Run full evaluation suite
-	$(UV) run python -m evals.runners.main --dataset evals/golden_dataset/
+eval: ## Run full evaluation suite (30 cases)
+	$(UV) run python -m evals run \
+		--dataset evals/golden_dataset \
+		--output evals/reports/$(shell date +%Y%m%dT%H%M%S)/
 
-eval-quick: ## Run smoke eval set (≤5 cases, fast)
-	$(UV) run python -m evals.runners.main --smoke
+eval-quick: ## Run smoke eval set (~5 cases, ~30s)
+	$(UV) run python -m evals run \
+		--dataset evals/golden_dataset_smoke \
+		--output evals/reports/smoke_$(shell date +%Y%m%dT%H%M%S)/
 
 # ─── Development ──────────────────────────────────────────────────────────────
 dev: ## Start all services in foreground (dev mode)
