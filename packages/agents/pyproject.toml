@@ -8,7 +8,11 @@ dependencies = [
     "pydantic>=2.8.0",
     "structlog>=24.4.0",
     "tenacity>=8.5.0",
+    "pyyaml>=6.0",
+    "aiosqlite>=0.20",
+    "opentelemetry-api>=1.25.0",
     "lex-agents-shared",
+    "lex-agents-rag",
 ]
 
 [project.optional-dependencies]

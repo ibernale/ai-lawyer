@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     # Security (placeholder until Fase 5)
     jwt_secret: SecretStr = SecretStr("changeme")
 
+    # Consultation history
+    consultation_db_path: str = "data/consultations.db"
+    agents_package_enabled: bool = True
+
     # Build metadata (injected by Dockerfile ARG → ENV)
     commit_sha: str = "unknown"
     build_time: str = "unknown"

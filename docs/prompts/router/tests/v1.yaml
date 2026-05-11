@@ -1,0 +1,22 @@
+# Test cases for router/v1 prompt
+# Each case: input query → expected routing decision
+
+cases:
+  - id: bancario_ue_capital
+    query: "¿Cuáles son los requisitos mínimos de capital CET1 bajo el CRR para entidades de crédito significativas?"
+    expected:
+      branch: regulatorio_bancario_ue_es
+      jurisdictions: [EU]
+      depth: standard
+
+  - id: bancario_es_circular
+    query: "¿Qué obligaciones impone la Circular 2/2016 del Banco de España en materia de supervisión y solvencia?"
+    expected:
+      branch: regulatorio_bancario_ue_es
+      jurisdictions: [ES]
+      depth: standard
+
+  - id: fuera_de_alcance_laboral
+    query: "¿Cuáles son los derechos de un trabajador ante un despido improcedente en España?"
+    expected:
+      branch: fuera_de_alcance

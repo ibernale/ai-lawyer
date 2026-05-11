@@ -18,6 +18,8 @@ from lex_agents_api.logging_config import configure_logging
 from lex_agents_api.middleware import CorrelationIdMiddleware
 from lex_agents_api.routers import health as health_router
 from lex_agents_api.routers import rag as rag_router
+from lex_agents_api.routers import consult as consult_router
+from lex_agents_api.db import ConsultationStore
 from lex_agents_api.settings import get_settings
 from lex_agents_api.tracing import configure_tracing
 
@@ -47,6 +49,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         qdrant_url=settings.qdrant_url,
     )
 
+    store = ConsultationStore(settings.consultation_db_path)
+    await store.init()
+
     yield
 
     logger.info("shutdown")
@@ -75,6 +80,7 @@ def create_app() -> FastAPI:
     # Routers
     app.include_router(health_router.router)
     app.include_router(rag_router.router)
+    app.include_router(consult_router.router)
 
     # OTel auto-instrumentation
     FastAPIInstrumentor.instrument_app(app)

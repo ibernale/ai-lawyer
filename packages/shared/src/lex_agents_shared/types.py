@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -66,4 +66,20 @@ class VerificationReport(BaseModel):
     claims_uncertain: int = 0
     verifications: list[ClaimVerification] = Field(default_factory=list)
     llm_calls_made: int = 0
-    verified_at: datetime = Field(default_factory=datetime.utcnow)
+    verified_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    uncited_claims: list[str] = Field(
+        default_factory=list,
+        description="Normative claims with no [REF:n] annotation",
+    )
+    broken_refs: list[int] = Field(
+        default_factory=list,
+        description="[REF:n] indices that do not resolve to any chunk",
+    )
+    status: Literal["green", "amber", "red"] = Field(
+        default="green",
+        description=(
+            "red: broken_refs>0 or any FAILED; "
+            "amber: uncited_claims or UNCERTAIN; "
+            "green: all PASSED, no uncited"
+        ),
+    )

@@ -52,3 +52,78 @@ export async function getHealth(): Promise<HealthResponse> {
 export async function getVersion(): Promise<VersionResponse> {
   return apiFetch<VersionResponse>("/version");
 }
+
+// ---------------------------------------------------------------------------
+// Consult types
+// ---------------------------------------------------------------------------
+
+export type CitationMapping = {
+  index: number;
+  chunk_id: string;
+  source_id: string;
+  hierarchy_path: string;
+  fragment_text: string;
+  fragment_offset?: number;
+};
+
+export type VerificationReport = {
+  response_id: string;
+  claims_total: number;
+  claims_passed: number;
+  claims_failed: number;
+  claims_uncertain: number;
+  llm_calls_made: number;
+  uncited_claims: string[];
+  broken_refs: number[];
+  status: "green" | "amber" | "red";
+};
+
+export type ConsultResponse = {
+  trace_id: string;
+  answer: string;
+  citations: CitationMapping[];
+  verification: VerificationReport | null;
+  query_rewritten: string;
+  routing: {
+    branch: string;
+    jurisdictions?: string[];
+    output_type?: string;
+    depth?: string;
+  };
+  metadata: Record<string, unknown>;
+};
+
+export type ConsultationSummary = {
+  trace_id: string;
+  created_at: string;
+  query: string;
+  latency_ms: number | null;
+  verification_status: string;
+};
+
+// ---------------------------------------------------------------------------
+// Consult API functions
+// ---------------------------------------------------------------------------
+
+export async function consultQuery(
+  query: string,
+  outputType?: string,
+  jurisdictionHint?: string,
+): Promise<ConsultResponse> {
+  return apiFetch<ConsultResponse>("/api/v1/consult", {
+    method: "POST",
+    body: JSON.stringify({
+      query,
+      output_type: outputType ?? null,
+      jurisdiction_hint: jurisdictionHint ?? null,
+    }),
+  });
+}
+
+export async function getConsultation(traceId: string): Promise<ConsultResponse> {
+  return apiFetch<ConsultResponse>(`/api/v1/consult/${traceId}`);
+}
+
+export async function listConsultations(limit = 20): Promise<ConsultationSummary[]> {
+  return apiFetch<ConsultationSummary[]>(`/api/v1/consult?limit=${limit}`);
+}
