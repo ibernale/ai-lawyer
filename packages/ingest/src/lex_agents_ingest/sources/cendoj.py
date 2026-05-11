@@ -1,197 +1,285 @@
-"""CENDOJ (Centro de Documentación Judicial) source stubs.
+"""CENDOJ source — dev mode with rate limiting. ADR 0025.
 
-Status: ADR 0011 AMBER — blocked until CGPJ authorisation.
-See docs/legal/cendoj-status.md for the unlock process.
-
-Two classes are provided:
-
-  CendojSource — full implementation stub (always raises NotImplementedError).
-  CendojPuntualSource — DEV ONLY, enabled via CENDOJ_DEV_MODE=true environment
-      variable.  Rate limited to ≤50 requests / day, with asyncio.sleep(5) between
-      requests.  Never activates in production.
+Reference: docs/decisions/0025-cendoj-dev-mode.md
 """
 
 from __future__ import annotations
 
-import asyncio
-import json
 import os
-from datetime import datetime
+import re
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import structlog
 
 from lex_agents_ingest.base import Source
-from lex_agents_ingest.canonical import CanonicalDocument, RawDocument
+from lex_agents_ingest.canonical import CanonicalCaseLaw, RawDocument
+from lex_agents_ingest.quota import QuotaTracker
+from lex_agents_shared.exceptions import CendojSuspendedError
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
-_AMBER_MSG = (
-    "CENDOJ: ADR 0011 AMBER — pendiente autorización CGPJ. "
-    "Ver docs/legal/cendoj-status.md"
+_ECLI_RE = re.compile(r"ECLI:[A-Z]{2}:[A-Z]+:\d{4}:\d+")
+_CASE_NUM_RE = re.compile(r"\b\d+/\d{4}\b")
+_NORM_RE = re.compile(
+    r"\b(?:Ley|Real Decreto(?:-[Ll]ey)?|Reglamento|Directiva|Decreto)\s[\d/\w-]+(?:/\d{4})?\b"
 )
-_DEV_COUNTER_FILE = Path("/tmp/cendoj_puntual_counter.json")
-_MAX_DAILY_REQUESTS = 50
+_FJ_RE = re.compile(
+    r"FUNDAMENTO[S]?\s+JUR[IÍ]DICO[S]?\s+(?:N[ÚU]MERO\s+)?\w+",
+    re.IGNORECASE,
+)
 
 
 class CendojSource(Source):
-    """CENDOJ bulk source — AMBER stub, always raises NotImplementedError.
+    """CENDOJ public search source with quota tracking. ADR 0025.
 
-    Do not use in production until authorisation from CGPJ has been obtained.
-    See docs/legal/cendoj-status.md.
+    In fixture mode (*fixture_path* is set), no network calls are made and quota
+    is never consumed. In real mode the ``CENDOJ_CONTACT_EMAIL`` env var must be
+    set; a ``QuotaTracker`` enforces the 50 req/day limit.
     """
 
     source_id = "cendoj"
-    rate_limit_rps: float = 0.5
+    rate_limit_rps: float = 0.2  # 1 req / 5s
 
-    async def list_documents(self) -> list[str]:
-        raise NotImplementedError(_AMBER_MSG)
+    BASE_URL = "https://www.poderjudicial.es/search/AN/"
 
-    async def fetch(self, doc_id: str) -> RawDocument:
-        raise NotImplementedError(_AMBER_MSG)
-
-    def parse_to_canonical(self, raw: RawDocument) -> CanonicalDocument:
-        raise NotImplementedError(_AMBER_MSG)
-
-
-# ---------------------------------------------------------------------------
-# Dev-mode point query (≤50 req/day)
-# ---------------------------------------------------------------------------
-
-def _load_counter() -> dict:
-    if _DEV_COUNTER_FILE.exists():
-        try:
-            return json.loads(_DEV_COUNTER_FILE.read_text())
-        except Exception:
-            pass
-    return {"date": "", "count": 0}
-
-
-def _save_counter(data: dict) -> None:
-    try:
-        _DEV_COUNTER_FILE.write_text(json.dumps(data))
-    except Exception as exc:
-        logger.warning("cendoj_puntual.counter_save_failed", error=str(exc))
-
-
-def _check_and_increment() -> None:
-    """Raise RuntimeError if daily limit exceeded; otherwise increment counter."""
-    today = datetime.utcnow().date().isoformat()
-    data = _load_counter()
-    if data.get("date") != today:
-        data = {"date": today, "count": 0}
-    if data["count"] >= _MAX_DAILY_REQUESTS:
-        raise RuntimeError(
-            f"CENDOJ_DEV_MODE: daily limit of {_MAX_DAILY_REQUESTS} requests reached. "
-            "Reset at midnight UTC."
-        )
-    data["count"] += 1
-    _save_counter(data)
-
-
-class CendojPuntualSource(Source):
-    """CENDOJ point-query source for DEVELOPMENT ONLY.
-
-    Enabled only when the environment variable CENDOJ_DEV_MODE is set to "true".
-    Hard rate limit: ≤50 requests / day (persisted in /tmp/cendoj_puntual_counter.json).
-    asyncio.sleep(5) between every request.
-
-    NEVER activate in production without CGPJ authorisation.
-    See docs/legal/cendoj-status.md.
-    """
-
-    source_id = "cendoj_puntual"
-    # asyncio.sleep(5) is applied explicitly in each method; RateLimiter also active.
-    rate_limit_rps: float = 0.2  # 1 req / 5 s via RateLimiter
-
-    _BASE_SEARCH = "https://www.poderjudicial.es/search/AN/openCriteria/"
-    _BASE_DOC = "https://www.poderjudicial.es/search/AN/openDocument/"
-
-    def __init__(self) -> None:
-        if os.environ.get("CENDOJ_DEV_MODE") != "true":
-            raise RuntimeError("CENDOJ_DEV_MODE disabled")
-        import httpx
+    def __init__(
+        self,
+        quota_tracker: QuotaTracker | None = None,
+        fixture_path: Path | None = None,
+        contact_email: str | None = None,
+    ) -> None:
         super().__init__()
-        self._client = httpx.AsyncClient(
-            headers={"User-Agent": "lex-agents/0.1 (+https://github.com/ibernale/ai-lawyer)"},
-            follow_redirects=True,
-            timeout=30.0,
-        )
-        logger.warning(
-            "cendoj_puntual.dev_mode_active",
-            warning="CENDOJ_DEV_MODE is active. Max 50 req/day. Never use in production.",
-        )
+        self._fixture_path = fixture_path
 
-    async def list_documents(self) -> list[str]:
-        """Return a short sample of recent CENDOJ document IDs (dev only)."""
-        _check_and_increment()
-        await asyncio.sleep(5)
+        if fixture_path is None:
+            # Real mode — contact email required for polite User-Agent
+            email = contact_email or os.environ.get("CENDOJ_CONTACT_EMAIL")
+            if not email:
+                raise RuntimeError(
+                    "CENDOJ_CONTACT_EMAIL env var is required for real mode. "
+                    "Set it to your institutional contact address. See ADR 0025."
+                )
+            self._headers = {
+                "User-Agent": f"lex-agents/0.1 (legal-research-bot; +{email})",
+                "X-Purpose": "legal-research-non-commercial",
+            }
+        else:
+            self._headers = {}
 
-        # The CENDOJ public search has changed over time; we use a basic GET
-        # against the open-data endpoint with a generic recent-date filter.
-        url = f"{self._BASE_SEARCH}?offset=0&nres=10"
-        try:
-            resp = await self._client.get(url)
-            resp.raise_for_status()
-        except Exception as exc:
-            logger.warning("cendoj_puntual.list_failed", error=str(exc))
-            return []
+        self._quota_tracker: QuotaTracker = quota_tracker or QuotaTracker()
 
+    # ------------------------------------------------------------------
+    # list_documents
+    # ------------------------------------------------------------------
+
+    async def list_documents(self, filters: dict | None = None) -> list[str]:  # type: ignore[override]
+        """Return a list of document IDs.
+
+        In fixture mode returns filenames from *fixture_path*. In real mode
+        performs a paginated GET against the CENDOJ search endpoint.
+        """
+        if self._fixture_path is not None:
+            return [p.stem for p in sorted(self._fixture_path.glob("*.html"))]
+
+        # Real mode
+        if self._quota_tracker.is_suspended():
+            raise CendojSuspendedError("CENDOJ access suspended — manual reset required")
+        self._quota_tracker.consume()
+
+        import httpx
         from bs4 import BeautifulSoup
+
+        params: dict[str, str] = {}
+        if filters:
+            params.update({k: str(v) for k, v in filters.items()})
+
+        await self._rate_limiter.acquire()
+        async with httpx.AsyncClient(headers=self._headers, timeout=30.0) as client:
+            resp = await client.get(self.BASE_URL, params=params)
+            resp.raise_for_status()
 
         soup = BeautifulSoup(resp.content, "lxml")
         doc_ids: list[str] = []
         for a_tag in soup.find_all("a", href=True):
             href: str = a_tag["href"]
-            if "openDocument" in href:
+            if "openDocument" in href or "AN/" in href:
                 slug = href.rstrip("/").split("/")[-1]
                 if slug:
-                    doc_ids.append(f"CENDOJ-{slug}")
-        return doc_ids[:10]
+                    doc_ids.append(slug)
+        return doc_ids
+
+    # ------------------------------------------------------------------
+    # fetch
+    # ------------------------------------------------------------------
 
     async def fetch(self, doc_id: str) -> RawDocument:
-        """Download a CENDOJ document by ID (dev only)."""
-        _check_and_increment()
-        await asyncio.sleep(5)
+        """Return a RawDocument for *doc_id*.
 
-        slug = doc_id.replace("CENDOJ-", "")
-        url = f"{self._BASE_DOC}{slug}"
-        resp = await self._client.get(url)
-        resp.raise_for_status()
+        In fixture mode reads from *fixture_path*. In real mode fetches via HTTP
+        and checks for captcha/rate-limit signals.
+        """
+        if self._fixture_path is not None:
+            fixture_file = self._fixture_path / f"{doc_id}.html"
+            raw_bytes = fixture_file.read_bytes()
+            return RawDocument(
+                source="cendoj",
+                source_id=doc_id,
+                raw_url=f"file://{fixture_file}",
+                content_type="html",
+                raw_bytes=raw_bytes,
+                fetched_at=datetime.now(tz=timezone.utc),
+            )
+
+        # Real mode
+        if self._quota_tracker.is_suspended():
+            raise CendojSuspendedError("CENDOJ access suspended")
+        self._quota_tracker.consume()
+
+        import httpx
+
+        url = f"{self.BASE_URL}{doc_id}"
+        await self._rate_limiter.acquire()
+        async with httpx.AsyncClient(headers=self._headers, timeout=30.0) as client:
+            resp = await client.get(url)
+
+        # Detect blocks / captcha
+        if resp.status_code in (429, 403):
+            reason = f"HTTP {resp.status_code}"
+            self._quota_tracker.set_suspended(reason=reason)
+            raise CendojSuspendedError(reason=reason)
+
+        if resp.status_code >= 500:
+            resp.raise_for_status()  # Let caller handle retry
+
+        body_lower = resp.text.lower()
+        if "captcha" in body_lower or "robot" in body_lower:
+            reason = "captcha-detected"
+            self._quota_tracker.set_suspended(reason=reason)
+            raise CendojSuspendedError(reason=reason)
 
         return RawDocument(
-            source=self.source_id,
+            source="cendoj",
             source_id=doc_id,
             raw_url=str(resp.url),
             content_type="html",
             raw_bytes=resp.content,
-            fetched_at=datetime.utcnow(),
+            fetched_at=datetime.now(tz=timezone.utc),
         )
 
-    def parse_to_canonical(self, raw: RawDocument) -> CanonicalDocument:  # type: ignore[override]
-        """Minimal parse of a CENDOJ HTML page (dev only)."""
+    # ------------------------------------------------------------------
+    # parse_to_canonical
+    # ------------------------------------------------------------------
+
+    def parse_to_canonical(self, raw: RawDocument) -> CanonicalCaseLaw:  # type: ignore[override]
+        """Parse a CENDOJ HTML document into a CanonicalCaseLaw."""
         from bs4 import BeautifulSoup
 
         soup = BeautifulSoup(raw.raw_bytes, "lxml")
-        title = ""
-        h1 = soup.find("h1")
-        if h1:
-            title = h1.get_text(" ", strip=True)
         full_text = soup.get_text("\n", strip=True)
 
-        # CanonicalDocument does not currently list "cendoj_puntual" as a valid source.
-        # We store under a placeholder source while in dev mode.
-        # This will be updated when AMBER → GREEN.
-        # NOTE: this bypasses the strict Literal validation; mypy will flag it.
-        return CanonicalDocument.model_construct(  # type: ignore[call-arg]
-            source="cendoj_puntual",
+        # --- ECLI ---
+        ecli_match = _ECLI_RE.search(full_text)
+        ecli = ecli_match.group(0) if ecli_match else None
+
+        # --- Court & chamber ---
+        court = ""
+        chamber = None
+        header_tag = soup.find(["h1", "h2", "header"])
+        if header_tag:
+            header_text = header_tag.get_text(" ", strip=True)
+            court = header_text
+            # Try to detect sala/sección from header
+            sala_match = re.search(r"(Sala\s+\w+(?:\s+de\s+lo\s+\w+)?)", header_text, re.I)
+            if sala_match:
+                chamber = sala_match.group(1)
+
+        if not court:
+            # Fallback: first meaningful paragraph
+            for tag in soup.find_all(["p", "div"], limit=5):
+                txt = tag.get_text(" ", strip=True)
+                if txt and len(txt) > 10:
+                    court = txt[:120]
+                    break
+
+        # --- Judges ---
+        judges: list[str] = []
+        ponente_match = re.search(
+            r"(?:Ponente|Magistrado ponente)[:\s]+([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s,]+)",
+            full_text,
+        )
+        if ponente_match:
+            judges = [ponente_match.group(1).strip()]
+
+        # --- Case number ---
+        case_number = ""
+        cn_match = _CASE_NUM_RE.search(full_text)
+        if cn_match:
+            case_number = cn_match.group(0)
+
+        # --- Decision date ---
+        decision_date: date = raw.fetched_at.date()
+        date_match = re.search(r"\b(\d{1,2})\s+de\s+(\w+)\s+de\s+(\d{4})\b", full_text)
+        if date_match:
+            _months = {
+                "enero": 1, "febrero": 2, "marzo": 3, "abril": 4,
+                "mayo": 5, "junio": 6, "julio": 7, "agosto": 8,
+                "septiembre": 9, "octubre": 10, "noviembre": 11, "diciembre": 12,
+            }
+            day_str, month_str, year_str = date_match.groups()
+            month_num = _months.get(month_str.lower())
+            if month_num:
+                try:
+                    decision_date = date(int(year_str), month_num, int(day_str))
+                except ValueError:
+                    pass
+
+        # --- Operative part (fallo) ---
+        operative_part = ""
+        fallo_match = re.search(
+            r"(?:FALLO|Fallo)[:\s]+(.*?)(?=\n{2,}|FUNDAMENTO|$)",
+            full_text,
+            re.DOTALL,
+        )
+        if fallo_match:
+            operative_part = fallo_match.group(1).strip()[:2000]
+
+        # --- Grounds (Fundamentos Jurídicos) ---
+        grounds: list[str] = []
+        fj_parts = re.split(
+            r"FUNDAMENTO[S]?\s+JURI[DÍ]ICO[S]?\s*(?:N[ÚU]MERO\s+)?\w*\.?\s*",
+            full_text,
+            flags=re.IGNORECASE,
+        )
+        for part in fj_parts[1:]:
+            ground = part.strip()[:1000]
+            if ground:
+                grounds.append(ground)
+
+        # --- Related norms ---
+        related_norms = list(dict.fromkeys(_NORM_RE.findall(full_text)))
+
+        # --- Title ---
+        title = ecli or raw.source_id
+
+        return CanonicalCaseLaw(
+            source="cendoj",
             source_id=raw.source_id,
             jurisdiction="ES",
-            type="other",
+            type="sentencia",
             title=title,
+            publication_date=decision_date,
             full_text=full_text,
             raw_url=raw.raw_url,
             fetched_at=raw.fetched_at,
-            status="unknown",
-            domain="jurisprudencia_es",
+            ecli=ecli,
+            court=court,
+            chamber=chamber,
+            judges=judges,
+            case_number=case_number,
+            decision_date=decision_date,
+            operative_part=operative_part,
+            grounds=grounds,
+            related_norms=related_norms,
+            anonymized=True,
         )
