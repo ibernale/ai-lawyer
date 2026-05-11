@@ -27,6 +27,7 @@ from lex_agents_verifier.pipeline import VerifierPipeline
 
 from lex_agents_api.auth import CurrentUser, require_auth
 from lex_agents_api.db import ConsultationRecord, ConsultationStore
+from lex_agents_api.metrics import record_query
 from lex_agents_api.middleware import get_correlation_id
 from lex_agents_api.settings import Settings, get_settings
 
@@ -42,9 +43,13 @@ router = APIRouter(prefix="/api/v1/consult", tags=["consult"])
 _CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 
+_VALID_JURISDICTIONS = {"ES", "EU", "UK", "BR", "MX", "US", "PL", "PT", "AR", "DE", "CH"}
+
+
 class ConsultRequestBody(BaseModel):
     query: str = Field(min_length=10, max_length=4000)
     jurisdiction_hint: str | None = None
+    jurisdictions: list[str] | None = None
     output_type: str | None = None
     depth: str | None = None  # "shallow" | "standard" | "deep"
 
@@ -62,6 +67,18 @@ class ConsultRequestBody(BaseModel):
         if v is not None and v not in ("shallow", "standard", "deep"):
             raise ValueError("depth must be 'shallow', 'standard', or 'deep'")
         return v
+
+    @field_validator("jurisdictions")
+    @classmethod
+    def validate_jurisdictions(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return v
+        if len(v) > 5:
+            raise ValueError("jurisdictions may contain at most 5 entries")
+        unknown = [j for j in v if j.upper() not in _VALID_JURISDICTIONS]
+        if unknown:
+            raise ValueError(f"unknown jurisdiction codes: {unknown}")
+        return [j.upper() for j in v]
 
 
 # ---------------------------------------------------------------------------
@@ -191,9 +208,12 @@ async def consult(
         raise HTTPException(status_code=503, detail="Agents package disabled")
 
     correlation_id = get_correlation_id()
+    jurisdiction_hint = body.jurisdiction_hint
+    if body.jurisdictions:
+        jurisdiction_hint = ",".join(body.jurisdictions)
     req = ConsultRequest(
         query=body.query,
-        jurisdiction_hint=body.jurisdiction_hint,
+        jurisdiction_hint=jurisdiction_hint,
         output_type=body.output_type,
         depth=body.depth,  # type: ignore[arg-type]
     )
@@ -214,8 +234,14 @@ async def consult(
         planner_output=resp.planner_output,
         judge_verdict=resp.judge_verdict,
         cost_breakdown_by_agent=resp.cost_breakdown_by_agent,
+        branch_answers=resp.branch_answers,
     )
 
+    record_query(
+        depth=resp_with_cid.depth_used,
+        branch=resp_with_cid.routing.get("branch", "unknown"),
+        cost_usd=float(resp_with_cid.metadata.get("cost_estimate_usd") or 0.0),
+    )
     background_tasks.add_task(_persist, store, resp_with_cid.trace_id, body.query, resp_with_cid)
     return resp_with_cid
 

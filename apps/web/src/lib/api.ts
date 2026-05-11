@@ -166,6 +166,7 @@ export type ConsultResponse = {
     iteration: number;
   } | null;
   cost_breakdown_by_agent?: Record<string, number>;
+  branch_answers?: Record<string, string>;
 };
 
 export type ConsultationSummary = {
@@ -185,6 +186,7 @@ export async function consultQuery(
   outputType?: string,
   jurisdictionHint?: string,
   depth?: "shallow" | "standard" | "deep",
+  jurisdictions?: string[],
 ): Promise<ConsultResponse> {
   return apiFetch<ConsultResponse>("/api/v1/consult", {
     method: "POST",
@@ -193,6 +195,7 @@ export async function consultQuery(
       output_type: outputType ?? null,
       jurisdiction_hint: jurisdictionHint ?? null,
       depth: depth ?? null,
+      jurisdictions: jurisdictions && jurisdictions.length > 0 ? jurisdictions : null,
     }),
   });
 }

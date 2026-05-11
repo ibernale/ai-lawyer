@@ -6,6 +6,20 @@ import { ResponseView } from "@/components/ResponseView";
 import { consultQuery, getConsultation } from "@/lib/api";
 import type { ConsultResponse } from "@/lib/api";
 
+const JURISDICTIONS = [
+  { code: "ES", label: "España" },
+  { code: "EU", label: "UE" },
+  { code: "UK", label: "Reino Unido" },
+  { code: "BR", label: "Brasil" },
+  { code: "MX", label: "México" },
+  { code: "US", label: "EE.UU." },
+  { code: "PL", label: "Polonia" },
+  { code: "PT", label: "Portugal" },
+  { code: "AR", label: "Argentina" },
+  { code: "DE", label: "Alemania" },
+  { code: "CH", label: "Suiza" },
+];
+
 const OUTPUT_TYPES = [
   { value: "dictamen", label: "Dictamen" },
   { value: "nota", label: "Nota informativa" },
@@ -45,6 +59,7 @@ export default function ConsultaPage({
   const [query, setQuery] = useState("");
   const [outputType, setOutputType] = useState("dictamen");
   const [depth, setDepth] = useState<"shallow" | "standard" | "deep">("standard");
+  const [selectedJurisdictions, setSelectedJurisdictions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<ConsultResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +82,7 @@ export default function ConsultaPage({
     setError(null);
     setResponse(null);
     try {
-      const resp = await consultQuery(query.trim(), outputType, undefined, depth);
+      const resp = await consultQuery(query.trim(), outputType, undefined, depth, selectedJurisdictions);
       setResponse(resp);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error desconocido");
@@ -131,6 +146,51 @@ export default function ConsultaPage({
             ))}
           </div>
 
+          {/* Jurisdiction multi-select chips */}
+          <div className="space-y-1">
+            <span className="text-sm font-medium text-muted-foreground">
+              Jurisdicciones{" "}
+              <span className="text-xs font-normal">(vacío = autodetectar)</span>:
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {JURISDICTIONS.map((j) => {
+                const active = selectedJurisdictions.includes(j.code);
+                return (
+                  <button
+                    key={j.code}
+                    type="button"
+                    disabled={loading}
+                    onClick={() =>
+                      setSelectedJurisdictions((prev) =>
+                        active ? prev.filter((c) => c !== j.code) : [...prev, j.code],
+                      )
+                    }
+                    className={[
+                      "px-2.5 py-1 text-xs font-medium rounded-full border transition-colors",
+                      active
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-input hover:bg-accent hover:text-accent-foreground",
+                      "disabled:opacity-50 disabled:cursor-not-allowed",
+                    ].join(" ")}
+                  >
+                    {j.code}
+                    <span className="ml-1 hidden sm:inline text-[10px] opacity-70">{j.label}</span>
+                  </button>
+                );
+              })}
+              {selectedJurisdictions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedJurisdictions([])}
+                  disabled={loading}
+                  className="px-2 py-1 text-xs text-muted-foreground hover:text-foreground underline"
+                >
+                  Limpiar
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <label htmlFor="output-type" className="text-sm font-medium whitespace-nowrap">
@@ -174,7 +234,12 @@ export default function ConsultaPage({
           </div>
         )}
 
-        {response && <ResponseView response={response} />}
+        {response && (
+          <ResponseView
+            response={response}
+            selectedJurisdictions={selectedJurisdictions}
+          />
+        )}
       </main>
 
       <LegalDisclaimer />

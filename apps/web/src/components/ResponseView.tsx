@@ -287,6 +287,35 @@ function FeedbackModal({
 // Razonamiento del sistema panel (PMJ metadata)
 // ---------------------------------------------------------------------------
 
+function BranchDetectionBanner({
+  response,
+  userSelectedJurisdictions,
+}: {
+  response: ConsultResponse;
+  userSelectedJurisdictions?: string[];
+}) {
+  const po = response.planner_output;
+  if (!po || po.branches.length === 0) return null;
+
+  const branchNames = po.branches.map((b) => b.name);
+  const isManual = userSelectedJurisdictions && userSelectedJurisdictions.length > 0;
+
+  return (
+    <div className="rounded-md border border-blue-100 bg-blue-50/40 px-3 py-2 text-xs text-blue-800 flex items-start gap-2">
+      <span className="mt-0.5">🔍</span>
+      <span>
+        {isManual
+          ? "Ramas seleccionadas manualmente + detección automática: "
+          : "Ramas detectadas automáticamente: "}
+        <strong>{branchNames.join(", ")}</strong>
+        {po.jurisdictions.length > 0 && (
+          <> · jurisdicciones: <strong>{po.jurisdictions.join(", ")}</strong></>
+        )}
+      </span>
+    </div>
+  );
+}
+
 function RazonamientoPanel({ response }: { response: ConsultResponse }) {
   const [open, setOpen] = useState(false);
   const hasData = response.planner_output || response.judge_verdict;
@@ -416,16 +445,74 @@ function RazonamientoPanel({ response }: { response: ConsultResponse }) {
 }
 
 // ---------------------------------------------------------------------------
+// Cross-jurisdiction collapsible sections
+// ---------------------------------------------------------------------------
+
+function CrossJurisdictionView({
+  branchAnswers,
+  citations,
+  onChipClick,
+}: {
+  branchAnswers: Record<string, string>;
+  citations: CitationMapping[];
+  onChipClick: (citation: CitationMapping) => void;
+}) {
+  const branches = Object.keys(branchAnswers);
+  const [openBranches, setOpenBranches] = useState<Record<string, boolean>>({});
+
+  if (branches.length === 0) return null;
+
+  function toggleBranch(branch: string) {
+    setOpenBranches((prev) => ({ ...prev, [branch]: !prev[branch] }));
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+        Respuestas por rama especializada
+      </p>
+      {branches.map((branch) => (
+        <div key={branch} className="rounded-md border border-border">
+          <button
+            type="button"
+            onClick={() => toggleBranch(branch)}
+            className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-medium text-foreground hover:bg-muted/50 transition-colors"
+          >
+            <span className="font-mono">{branch}</span>
+            <span className="text-muted-foreground text-[10px]">
+              {openBranches[branch] ? "▲ Ocultar" : "▼ Ver análisis"}
+            </span>
+          </button>
+          {openBranches[branch] && (
+            <div className="border-t border-border px-4 py-3 text-sm leading-relaxed prose prose-sm max-w-none">
+              {renderAnswerWithChips(branchAnswers[branch], citations, onChipClick)}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main ResponseView
 // ---------------------------------------------------------------------------
 
-export function ResponseView({ response }: { response: ConsultResponse }) {
+export function ResponseView({
+  response,
+  selectedJurisdictions,
+}: {
+  response: ConsultResponse;
+  selectedJurisdictions?: string[];
+}) {
   const [activeCitation, setActiveCitation] = useState<CitationMapping | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [metaExpanded, setMetaExpanded] = useState(false);
 
   const uncitedClaims = response.verification?.uncited_claims ?? [];
   const meta = response.metadata;
+  const hasBranchAnswers =
+    response.branch_answers && Object.keys(response.branch_answers).length > 1;
 
   function handleExport() {
     window.open(`${API_BASE}/api/v1/consult/${response.trace_id}/export`, "_blank");
@@ -438,8 +525,23 @@ export function ResponseView({ response }: { response: ConsultResponse }) {
         <VerificationBanner report={response.verification} />
       )}
 
+      {/* Branch detection banner */}
+      <BranchDetectionBanner
+        response={response}
+        userSelectedJurisdictions={selectedJurisdictions}
+      />
+
       {/* PMJ reasoning panel */}
       <RazonamientoPanel response={response} />
+
+      {/* Cross-jurisdiction per-branch collapsible sections */}
+      {hasBranchAnswers && (
+        <CrossJurisdictionView
+          branchAnswers={response.branch_answers!}
+          citations={response.citations}
+          onChipClick={setActiveCitation}
+        />
+      )}
 
       {/* Answer text with clickable [REF:n] chips */}
       <article className="prose prose-sm max-w-none rounded-lg border border-border bg-background p-5 leading-relaxed text-sm">
