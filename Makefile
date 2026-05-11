@@ -11,7 +11,7 @@ PYTHON  := $(UV) run python
 
 .PHONY: help install lint format type-check test test-watch \
         eval eval-quick dev dev-detached down logs \
-        build-images ingest-sample ingest-real qdrant-shell db-reset
+        build-images ingest-sample ingest-real qdrant-shell db-reset db-show
 
 # ─── Help ─────────────────────────────────────────────────────────────────────
 help: ## Show this help
@@ -86,3 +86,6 @@ db-reset: ## Destroy and recreate Qdrant volumes (DESTRUCTIVE)
 	$(DOCKER) $(DC_FILE) down -v
 	$(DOCKER) $(DC_DEV) up -d qdrant
 	@echo "Qdrant volumes reset."
+
+db-show: ## Show recent consultations from SQLite history
+	sqlite3 data/consultations.db "SELECT trace_id, substr(query,1,60), latency_ms FROM consultations ORDER BY created_at DESC LIMIT 10;"
