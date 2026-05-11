@@ -43,6 +43,7 @@ class CitationMapping(BaseModel):
     hierarchy_path: str
     fragment_text: str
     fragment_offset: int = 0
+    citation_type: Literal["normativa", "jurisprudencia"] = "normativa"
 
 
 # ---------------------------------------------------------------------------
