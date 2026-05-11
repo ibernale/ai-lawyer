@@ -22,7 +22,8 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml', 'uv.lock') }}
+      - run: uv sync --all-packages --dev --dev
       - run: uv run ruff check .
 
   typecheck-py:
@@ -39,7 +40,7 @@ jobs:
         with:
           path: ~/.cache/uv
           key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
-      - run: uv sync --all-packages
+      - run: uv sync --all-packages --dev
       - run: uv run mypy --strict packages/ apps/api/src/
 
   test-py:
@@ -56,7 +57,7 @@ jobs:
         with:
           path: ~/.cache/uv
           key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
-      - run: uv sync --all-packages
+      - run: uv sync --all-packages --dev
       - run: uv run pytest -x -q -m "not integration"
       - uses: actions/upload-artifact@v4
         if: always()
@@ -72,8 +73,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -90,8 +89,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -107,8 +104,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
