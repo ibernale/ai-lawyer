@@ -8,7 +8,9 @@ dependencies = [
     "pydantic>=2.8.0",
     "structlog>=24.4.0",
     "tenacity>=8.5.0",
+    "regex>=2024.0",
     "lex-agents-shared",
+    "lex-agents-rag",
 ]
 
 [project.optional-dependencies]
