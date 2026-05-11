@@ -1,0 +1,29 @@
+id: BANK-EU-012
+jurisdiction: [ES, EU]
+branch: regulatorio_bancario_ue_es
+difficulty: medium
+expert_reviewed: false
+query: "¿Cuáles son los requisitos mínimos de fondos propios y pasivos admisibles (MREL) bajo la BRRD y cómo se aplican a las entidades españolas sometidas al MUR?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32014L0059", articles: ["45", "45a", "45b", "45c", "45d", "45e"]}
+    - {type: regulation, celex: "32014R0806", articles: ["12"]}
+  must_mention_concepts:
+    - "MREL"
+    - "pasivos admisibles"
+    - "capacidad de absorción de pérdidas"
+    - "recapitalización"
+    - "resolución"
+    - "Junta Única de Resolución"
+    - "FROB"
+    - "subordinación"
+  must_not_claim:
+    - "el MREL es idéntico al TLAC"
+    - "todas las entidades de crédito españolas están sujetas al mismo nivel de MREL"
+    - "el MREL lo fija el Banco de España para todas las entidades"
+  expected_caveats:
+    - "para las entidades significativas bajo el MUS, la JUR fija el MREL; el FROB actúa como autoridad nacional de resolución para entidades menos significativas"
+    - "BRRD2 (Directiva 2019/879) modificó sustancialmente los requisitos MREL e introdujo la subordinación obligatoria para determinadas entidades"
+    - "el nivel MREL se fija caso por caso en función de la estrategia de resolución preferida"
+  output_type: analisis_riesgo
+notes: "MREL bajo BRRD art. 45 y SRMR art. 12 para entidades españolas. Generado automáticamente; pendiente validación experta."

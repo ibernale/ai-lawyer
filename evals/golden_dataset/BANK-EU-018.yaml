@@ -1,0 +1,29 @@
+id: BANK-EU-018
+jurisdiction: [ES, EU]
+branch: regulatorio_bancario_ue_es
+difficulty: medium
+expert_reviewed: false
+query: "¿Cómo se articulan la planificación de resolución de las entidades de crédito bajo la BRRD y el SRMR? ¿Cuál es el papel del FROB en España?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32014L0059", articles: ["10", "11", "12", "13", "14", "15", "16"]}
+    - {type: regulation, celex: "32014R0806", articles: ["8", "9", "10", "11", "12"]}
+    - {type: legislation, jurisdiction: "ES", reference: "Ley 11/2015", articles: ["13", "14", "15"]}
+  must_mention_concepts:
+    - "plan de resolución"
+    - "resolution plan"
+    - "Junta Única de Resolución"
+    - "FROB"
+    - "estrategia de resolución preferida"
+    - "resolvibilidad"
+    - "obstáculos a la resolución"
+    - "mecanismo único de resolución"
+  must_not_claim:
+    - "el FROB elabora los planes de resolución de todas las entidades españolas sin excepción"
+    - "el plan de resolución lo elabora la propia entidad de crédito"
+  expected_caveats:
+    - "para las entidades significativas bajo el MUS, la JUR es la autoridad de resolución; el FROB actúa como autoridad nacional de resolución bajo la dirección de la JUR"
+    - "para entidades menos significativas, el FROB actúa como autoridad de resolución, coordinándose con la JUR"
+    - "el SRMR establece el marco del MUR dentro del cual actúa el FROB"
+  output_type: analisis_riesgo
+notes: "Planificación de resolución BRRD/SRMR y papel del FROB. Generado automáticamente; pendiente validación experta."

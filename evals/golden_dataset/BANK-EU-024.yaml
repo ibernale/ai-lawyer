@@ -1,0 +1,32 @@
+id: BANK-EU-024
+jurisdiction: [ES, EU]
+branch: regulatorio_bancario_ue_es
+difficulty: hard
+expert_reviewed: false
+query: "¿De qué manera interactúan los requisitos de resiliencia operativa digital establecidos en DORA con los colchones de capital exigidos por la CRD V? ¿Puede un incumplimiento de DORA desencadenar la activación de requisitos adicionales de capital?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32022R2554", articles: ["4", "5", "6", "7", "8", "9", "10", "11", "24", "25", "26"]}
+    - {type: regulation, celex: "32019L0878", articles: ["104"]}
+    - {type: legislation, jurisdiction: "ES", reference: "Real Decreto-ley 11/2023"}
+  must_mention_concepts:
+    - "DORA"
+    - "resiliencia operativa digital"
+    - "riesgo TIC"
+    - "incidente de seguridad"
+    - "Pilar 2"
+    - "SREP"
+    - "requisitos adicionales de fondos propios"
+    - "riesgo operacional"
+    - "supervisión"
+  must_not_claim:
+    - "DORA es una norma de ciberseguridad general que no tiene impacto en los requisitos prudenciales de capital"
+    - "el incumplimiento de DORA nunca puede dar lugar a requisitos adicionales de Pilar 2"
+    - "CRD V ya regula de forma completa el riesgo TIC, haciendo DORA redundante para entidades de crédito"
+  expected_caveats:
+    - "DORA es aplicable directamente a las entidades de crédito desde enero de 2025; el Real Decreto-ley 11/2023 realiza ajustes nacionales en España"
+    - "el incumplimiento de DORA puede ser considerado por el supervisor en el SREP como evidencia de debilidades en el gobierno y control del riesgo operacional, pudiendo fundamentar la imposición de requisitos adicionales de Pilar 2 bajo CRD V art. 104"
+    - "la relación entre DORA y el marco prudencial está siendo objeto de orientación supervisora por parte de la EBA y el BCE; existen áreas de incertidumbre interpretativa"
+    - "DORA y los requisitos de capital no son regímenes mutuamente excluyentes: operan en planos normativos distintos pero con puntos de conexión en el SREP"
+  output_type: analisis_riesgo
+notes: "Interacción entre requisitos DORA y colchones CRD V. Caso hard por intersección de marcos normativos distintos y norma de reciente aplicación. Generado automáticamente; pendiente validación experta."

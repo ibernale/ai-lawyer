@@ -1,0 +1,23 @@
+id: BANK-EU-006
+jurisdiction: [EU]
+branch: regulatorio_bancario_ue_es
+difficulty: easy
+expert_reviewed: false
+query: "¿Cuál es el límite aplicable a grandes exposiciones frente a un mismo cliente o grupo de clientes vinculados según el CRR?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32013R0575", articles: ["395", "396", "397"]}
+  must_mention_concepts:
+    - "grandes exposiciones"
+    - "25 por ciento"
+    - "fondos propios admisibles"
+    - "clientes vinculados entre sí"
+    - "150 millones de euros"
+  must_not_claim:
+    - "el límite de grandes exposiciones es del 15 por ciento para todas las entidades"
+    - "las exposiciones frente a soberanos están siempre exentas del límite"
+  expected_caveats:
+    - "existe un límite específico del 15% aplicable a exposiciones entre entidades de importancia sistémica global (G-SII)"
+    - "determinadas exposiciones pueden quedar exentas conforme al artículo 400 CRR"
+  output_type: dictamen
+notes: "Límite de grandes exposiciones: 25% de fondos propios admisibles bajo CRR art. 395. Generado automáticamente; pendiente validación experta."

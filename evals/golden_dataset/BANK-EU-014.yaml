@@ -1,0 +1,29 @@
+id: BANK-EU-014
+jurisdiction: [ES, EU]
+branch: regulatorio_bancario_ue_es
+difficulty: medium
+expert_reviewed: false
+query: "¿Qué requisitos de idoneidad (fit & proper) deben cumplir los miembros del consejo de administración de una entidad de crédito española según la CRD IV y la normativa del Banco de España?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32013L0036", articles: ["91"]}
+    - {type: legislation, jurisdiction: "ES", reference: "Ley 10/2014", articles: ["24", "25", "26"]}
+    - {type: legislation, jurisdiction: "ES", reference: "Real Decreto 84/2015", articles: ["30", "31", "32", "33"]}
+  must_mention_concepts:
+    - "idoneidad"
+    - "honorabilidad comercial y profesional"
+    - "conocimientos"
+    - "experiencia"
+    - "dedicación suficiente"
+    - "gobierno corporativo"
+    - "evaluación de idoneidad"
+    - "Banco de España"
+  must_not_claim:
+    - "la evaluación de idoneidad es un trámite meramente formal sin consecuencias prácticas"
+    - "solo el presidente del consejo está sujeto a evaluación de idoneidad"
+  expected_caveats:
+    - "las directrices conjuntas EBA/ESMA sobre la evaluación de idoneidad complementan el marco normativo"
+    - "el BCE evalúa la idoneidad de los miembros del consejo de entidades significativas bajo el MUS"
+    - "la Ley 10/2014 y el Real Decreto 84/2015 transponen y desarrollan los requisitos de la CRD IV en España"
+  output_type: dictamen
+notes: "Requisitos fit & proper bajo CRD IV art. 91 y transposición española en Ley 10/2014 y RD 84/2015. Generado automáticamente; pendiente validación experta."

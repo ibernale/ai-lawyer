@@ -1,0 +1,30 @@
+id: BANK-EU-022
+jurisdiction: [EU]
+branch: regulatorio_bancario_ue_es
+difficulty: hard
+expert_reviewed: false
+query: "¿Existe conflicto normativo entre el output floor general del CRR3 (artículo 465) y los suelos aplicables a los modelos internos de riesgo de crédito del artículo 101 del mismo reglamento? ¿Cómo deben interpretarse conjuntamente?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32024R1623", articles: ["465", "101", "143", "144", "145"]}
+  must_mention_concepts:
+    - "output floor"
+    - "suelos de modelos internos"
+    - "IRB"
+    - "enfoque basado en calificaciones internas"
+    - "activos ponderados por riesgo"
+    - "doble cómputo"
+    - "jerarquía normativa"
+    - "LGD"
+    - "PD"
+    - "EAD"
+  must_not_claim:
+    - "el output floor del artículo 465 y los suelos del artículo 101 operan de forma completamente independiente sin ninguna interacción"
+    - "el artículo 101 queda derogado tácitamente por la introducción del output floor"
+    - "los bancos pueden elegir entre aplicar uno u otro suelo"
+  expected_caveats:
+    - "la interacción entre el output floor agregado (art. 465) y los suelos paramétricos de modelos IRB (art. 101) puede generar situaciones de acumulación o solapamiento cuya interpretación está siendo desarrollada mediante Q&A y directrices de la EBA"
+    - "el output floor opera a nivel agregado de RWA, mientras que los suelos IRB operan a nivel de parámetros individuales"
+    - "en ausencia de aclaración regulatoria definitiva, la consulta jurídica debe advertir de la incertidumbre interpretativa vigente"
+  output_type: analisis_riesgo
+notes: "Conflicto/interacción entre output floor general y suelos IRB en CRR3. Caso hard por conflicto normativo en norma recientemente aprobada. Generado automáticamente; pendiente validación experta."

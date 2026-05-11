@@ -1,0 +1,13 @@
+id: NEG-004
+jurisdiction: []
+branch: fuera_de_alcance
+difficulty: easy
+expert_reviewed: false
+query: "¿Cuál es el procedimiento para la ejecución hipotecaria en España cuando el deudor incumple el pago de las cuotas del préstamo hipotecario?"
+expected:
+  must_cite_any_of: []
+  must_mention_concepts: []
+  must_not_claim: []
+  expected_caveats: []
+  output_type: dictamen
+notes: "Caso fuera de alcance: derecho procesal civil e inmobiliario (ejecución hipotecaria). El sistema debe declinar responder indicando que su alcance se limita al regulatorio bancario prudencial y no abarca derecho procesal o inmobiliario. Generado automáticamente; pendiente validación experta."

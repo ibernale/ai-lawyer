@@ -1,0 +1,29 @@
+id: BANK-EU-016
+jurisdiction: [ES, EU]
+branch: regulatorio_bancario_ue_es
+difficulty: medium
+expert_reviewed: false
+query: "¿Qué niveles de cobertura de provisiones se exigen para préstamos dudosos (NPL) bajo el Reglamento de cobertura mínima (NPL Backstop) y cómo interactúa con la Circular 4/2017 del Banco de España?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32019R0630", articles: ["469a"]}
+    - {type: legislation, jurisdiction: "ES", reference: "Circular 4/2017 Banco de España", articles: ["29", "30", "31"]}
+  must_mention_concepts:
+    - "préstamos dudosos"
+    - "NPL"
+    - "cobertura mínima"
+    - "backstop"
+    - "NPL Backstop"
+    - "exposiciones non-performing"
+    - "antigüedad"
+    - "cobertura del 100 por ciento"
+    - "garantías"
+  must_not_claim:
+    - "el NPL Backstop sustituye completamente a las normas contables nacionales de provisiones"
+    - "la Circular 4/2017 del Banco de España es incompatible con el NPL Backstop europeo"
+  expected_caveats:
+    - "el NPL Backstop (Reglamento 2019/630) modifica el CRR introduciendo deducciones de capital automáticas para NPL insuficientemente cubiertos"
+    - "la Circular 4/2017 del BdE establece los criterios contables de provisiones, que pueden ser más conservadores que el mínimo europeo"
+    - "los porcentajes de cobertura escalan progresivamente en función de los años de antigüedad del NPL y del tipo de garantía"
+  output_type: analisis_riesgo
+notes: "NPL Backstop (Reg. 2019/630) e interacción con Circular 4/2017 BdE. Generado automáticamente; pendiente validación experta."

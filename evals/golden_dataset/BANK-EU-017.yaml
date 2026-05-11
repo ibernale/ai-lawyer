@@ -1,0 +1,30 @@
+id: BANK-EU-017
+jurisdiction: [ES, EU]
+branch: regulatorio_bancario_ue_es
+difficulty: medium
+expert_reviewed: false
+query: "¿Qué debe contener un plan de recuperación de una entidad de crédito conforme a la BRRD y al marco de transposición español?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32014L0059", articles: ["5", "6", "7", "8", "9"]}
+    - {type: legislation, jurisdiction: "ES", reference: "Ley 11/2015", articles: ["8", "9", "10"]}
+  must_mention_concepts:
+    - "plan de recuperación"
+    - "recovery plan"
+    - "opciones de recuperación"
+    - "indicadores"
+    - "umbrales"
+    - "escenarios de estrés"
+    - "medidas de recuperación"
+    - "Banco de España"
+    - "revisión supervisora"
+  must_not_claim:
+    - "el plan de recuperación lo elabora la autoridad de resolución"
+    - "el plan de recuperación es equivalente al plan de resolución"
+    - "las entidades de tamaño reducido no están obligadas a elaborar planes de recuperación"
+  expected_caveats:
+    - "el plan de recuperación lo elabora la propia entidad y lo revisa y aprueba la autoridad supervisora competente (BdE o BCE según la entidad)"
+    - "las entidades menos significativas pueden estar sujetas a planes de recuperación simplificados"
+    - "la Ley 11/2015 transpone la BRRD en España en materia de recuperación"
+  output_type: dictamen
+notes: "Planes de recuperación bajo BRRD arts. 5-9 y Ley 11/2015 de transposición española. Generado automáticamente; pendiente validación experta."

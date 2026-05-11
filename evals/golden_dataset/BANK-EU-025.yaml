@@ -1,0 +1,33 @@
+id: BANK-EU-025
+jurisdiction: [EU]
+branch: regulatorio_bancario_ue_es
+difficulty: hard
+expert_reviewed: false
+query: "¿Cómo se aplican los requisitos de capital europeos a las sucursales de entidades de crédito de terceros países establecidas en la UE bajo el CRR? ¿Existe un régimen de tratamiento equivalente y qué lagunas normativas presenta?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32013R0575", articles: ["47"]}
+    - {type: regulation, celex: "32013L0036", articles: ["47", "48", "49", "156"]}
+    - {type: regulation, celex: "32019R0876", articles: ["21b"]}
+  must_mention_concepts:
+    - "sucursales de terceros países"
+    - "third-country branches"
+    - "entidad filial interpuesta"
+    - "intermediate parent undertaking"
+    - "IPU"
+    - "equivalencia"
+    - "reconocimiento mutuo"
+    - "arbitraje regulatorio"
+    - "proporcionalidad"
+    - "supervisión del Estado miembro de acogida"
+  must_not_claim:
+    - "las sucursales de terceros países en la UE están sujetas al mismo régimen que las filiales de grupos de terceros países"
+    - "el CRR impone a las sucursales de terceros países los mismos requisitos de capital que a las entidades de crédito con licencia en la UE"
+    - "existe un régimen europeo armonizado y completo para las sucursales de terceros países sin lagunas"
+  expected_caveats:
+    - "el CRR art. 47 establece disposiciones específicas para sucursales de terceros países, pero la regulación dista de ser completa; la supervisión recae principalmente en el Estado miembro de acogida"
+    - "CRR2 introdujo el requisito de entidad filial interpuesta (IPU) para grupos de terceros países con activos superiores a 40.000 millones de euros en la UE, pero esto afecta a grupos no a sucursales"
+    - "la propuesta de reforma CRD6 plantea una armonización más amplia del régimen de sucursales de terceros países, reconociendo las lagunas actuales; a la fecha puede estar en tramitación o recién aprobada"
+    - "persiste un riesgo de arbitraje regulatorio entre Estados miembros que aplican regímenes nacionales divergentes a las sucursales de terceros países"
+  output_type: analisis_riesgo
+notes: "Aplicación extraterritorial de requisitos de capital a sucursales de terceros países bajo CRR art. 47. Caso hard por laguna normativa y reforma en curso (CRD6). Generado automáticamente; pendiente validación experta."

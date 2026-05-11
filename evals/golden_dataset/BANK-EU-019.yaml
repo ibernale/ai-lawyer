@@ -1,0 +1,28 @@
+id: BANK-EU-019
+jurisdiction: [ES, EU]
+branch: regulatorio_bancario_ue_es
+difficulty: medium
+expert_reviewed: false
+query: "¿Cuáles son las obligaciones de divulgación de información de Pilar 3 que impone el CRR a las entidades de crédito, y qué papel juegan las circulares del Banco de España?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32013R0575", articles: ["431", "432", "433", "434", "435", "436", "437", "438", "440", "441", "442", "443", "444", "445", "446", "447", "448", "449", "450", "451", "452", "453", "454", "455"]}
+    - {type: legislation, jurisdiction: "ES", reference: "Circular 2/2023 Banco de España"}
+  must_mention_concepts:
+    - "Pilar 3"
+    - "divulgación de información"
+    - "transparencia"
+    - "informe de relevancia prudencial"
+    - "política de divulgación"
+    - "materialidad"
+    - "información confidencial"
+    - "bases de divulgación"
+  must_not_claim:
+    - "la divulgación de Pilar 3 es voluntaria para todas las entidades"
+    - "todas las entidades deben publicar exactamente la misma información con la misma frecuencia"
+  expected_caveats:
+    - "CRR2 y las normas técnicas de aplicación de la EBA han reforzado y estandarizado las obligaciones de divulgación de Pilar 3"
+    - "el Banco de España puede emitir circulares que concreten o amplíen los requisitos de divulgación para las entidades bajo su supervisión directa"
+    - "las obligaciones de divulgación varían en función del tamaño y la importancia sistémica de la entidad"
+  output_type: resumen
+notes: "Obligaciones de divulgación Pilar 3 bajo CRR arts. 431-455 y Circular 2/2023 BdE. Generado automáticamente; pendiente validación experta."

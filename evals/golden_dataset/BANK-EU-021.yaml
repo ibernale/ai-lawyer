@@ -1,0 +1,31 @@
+id: BANK-EU-021
+jurisdiction: [EU]
+branch: regulatorio_bancario_ue_es
+difficulty: hard
+expert_reviewed: false
+query: "¿Cuál es el estado actual de implementación del output floor de Basilea IV (CRR3) en la Unión Europea? ¿Qué calendario transitorio resulta de aplicación y a partir de cuándo desplegará plenos efectos?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32024R1623", articles: ["465", "101", "461a"]}
+  must_mention_concepts:
+    - "output floor"
+    - "suelo de producción"
+    - "Basilea IV"
+    - "CRR3"
+    - "72,5 por ciento"
+    - "modelos internos"
+    - "enfoque estándar"
+    - "activos ponderados por riesgo"
+    - "período transitorio"
+    - "2025"
+    - "2030"
+  must_not_claim:
+    - "Basilea IV está plenamente en vigor en la UE desde 2023"
+    - "el output floor es del 80 por ciento"
+    - "el output floor se aplica sin período transitorio desde su entrada en vigor"
+  expected_caveats:
+    - "CRR3 fue publicado en el DOUE en 2024 y su aplicación es gradual: el output floor se introduce de forma progresiva desde 2025 hasta alcanzar el 72,5% en 2030"
+    - "existen disposiciones transitorias específicas y la norma no ha desplegado todos sus efectos a la fecha de consulta"
+    - "conviene verificar la versión más reciente del texto y las actas de la EBA para posibles ajustes técnicos pendientes"
+  output_type: analisis_riesgo
+notes: "Output floor CRR3/Basilea IV: estado de implementación y calendario transitorio. Caso hard por norma en fase de despliegue. Generado automáticamente; pendiente validación experta."

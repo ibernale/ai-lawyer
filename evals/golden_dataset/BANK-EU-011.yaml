@@ -1,0 +1,26 @@
+id: BANK-EU-011
+jurisdiction: [ES, EU]
+branch: regulatorio_bancario_ue_es
+difficulty: medium
+expert_reviewed: false
+query: "¿Existen divergencias entre la normativa europea (CRD IV) y la española (Ley 10/2014) en materia de colchones macroprudenciales de capital? ¿Puede España imponer colchones más estrictos que los previstos en la CRD IV?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32013L0036", articles: ["130", "131", "133", "134", "136", "160"]}
+    - {type: legislation, jurisdiction: "ES", reference: "Ley 10/2014", articles: ["44", "45", "46"]}
+  must_mention_concepts:
+    - "colchón para entidades de importancia sistémica mundial"
+    - "colchón para otras entidades de importancia sistémica"
+    - "colchón contra riesgos sistémicos"
+    - "medidas macroprudenciales más estrictas"
+    - "supervisión macroprudencial"
+    - "Banco de España"
+  must_not_claim:
+    - "España no puede superar los niveles máximos de colchones fijados en la CRD IV"
+    - "los colchones macroprudenciales son idénticos en todos los Estados miembros"
+  expected_caveats:
+    - "el artículo 133 CRD IV y el artículo 160 CRD IV permiten a los Estados miembros aplicar medidas más estrictas bajo ciertas condiciones y con notificación a la JERS y la EBA"
+    - "la Ley 10/2014 transpone la CRD IV pero puede introducir especificidades nacionales dentro del margen de discrecionalidad permitido"
+    - "cualquier medida nacional más estricta debe ser proporcional y no discriminatoria"
+  output_type: analisis_riesgo
+notes: "Divergencia CRD IV vs Ley 10/2014 en colchones macroprudenciales. Generado automáticamente; pendiente validación experta."

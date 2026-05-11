@@ -1,0 +1,30 @@
+id: BANK-EU-020
+jurisdiction: [ES, EU]
+branch: regulatorio_bancario_ue_es
+difficulty: medium
+expert_reviewed: false
+query: "¿Qué obligaciones en materia de prevención del blanqueo de capitales y financiación del terrorismo (PBC/FT) incumben a las entidades de crédito españolas bajo la AMLD5 y la Ley 10/2010?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32018L0843", articles: ["11", "13", "14", "18", "30", "31", "40", "45"]}
+    - {type: legislation, jurisdiction: "ES", reference: "Ley 10/2010", articles: ["2", "3", "4", "5", "6", "7", "8", "17", "18", "26"]}
+  must_mention_concepts:
+    - "blanqueo de capitales"
+    - "financiación del terrorismo"
+    - "diligencia debida"
+    - "conocimiento del cliente"
+    - "KYC"
+    - "titular real"
+    - "personas con responsabilidad pública"
+    - "PEP"
+    - "SEPBLAC"
+    - "comunicación de operaciones sospechosas"
+  must_not_claim:
+    - "la diligencia debida simplificada es aplicable por defecto a todos los clientes bancarios"
+    - "el SEPBLAC es la autoridad de supervisión prudencial de las entidades de crédito"
+  expected_caveats:
+    - "la Ley 10/2010 transpone las directivas europeas AML en España; ha sido modificada para transponer AMLD5 mediante el Real Decreto-ley 7/2021"
+    - "la AMLD6 (Directiva 2021/1239) y el nuevo paquete legislativo AML de la UE (Reglamento AML, AMLA) introducirán cambios sustanciales en los próximos años"
+    - "el SEPBLAC es la unidad de inteligencia financiera y supervisor AML en España, con funciones distintas al Banco de España como supervisor prudencial"
+  output_type: dictamen
+notes: "Obligaciones PBC/FT bajo AMLD5 y Ley 10/2010 española. Generado automáticamente; pendiente validación experta."

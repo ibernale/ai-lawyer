@@ -1,0 +1,23 @@
+id: BANK-EU-009
+jurisdiction: [EU]
+branch: regulatorio_bancario_ue_es
+difficulty: easy
+expert_reviewed: false
+query: "¿Qué es el colchón de conservación de capital y cuál es su cuantía mínima según la CRD IV?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32013L0036", articles: ["129"]}
+  must_mention_concepts:
+    - "colchón de conservación de capital"
+    - "capital conservation buffer"
+    - "2,5 por ciento"
+    - "capital ordinario de nivel 1"
+    - "restricciones a la distribución"
+  must_not_claim:
+    - "el colchón de conservación de capital es opcional para las entidades"
+    - "el colchón de conservación es del 1 por ciento"
+  expected_caveats:
+    - "el incumplimiento del colchón activa restricciones automáticas sobre distribuciones de beneficios, remuneración variable y pagos de AT1"
+    - "se combina con los demás colchones de capital aplicables"
+  output_type: dictamen
+notes: "Colchón de conservación del 2,5% de CET1 bajo CRD IV art. 129. Generado automáticamente; pendiente validación experta."

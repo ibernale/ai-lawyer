@@ -1,0 +1,24 @@
+id: BANK-EU-002
+jurisdiction: [EU]
+branch: regulatorio_bancario_ue_es
+difficulty: easy
+expert_reviewed: false
+query: "¿Qué instrumentos de capital componen el capital de nivel 1 (Tier 1) según el CRR?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32013R0575", articles: ["25", "51", "52"]}
+  must_mention_concepts:
+    - "capital ordinario de nivel 1"
+    - "capital adicional de nivel 1"
+    - "CET1"
+    - "AT1"
+    - "instrumentos de capital"
+    - "acciones ordinarias"
+  must_not_claim:
+    - "la deuda subordinada forma parte del Tier 1"
+    - "los bonos convertibles contingentes son CET1"
+  expected_caveats:
+    - "los instrumentos AT1 deben cumplir los requisitos del artículo 52 CRR"
+    - "sujeto a deducciones establecidas en los artículos 36 y 56 CRR"
+  output_type: dictamen
+notes: "Definición de componentes Tier 1 bajo CRR arts. 25, 51 y 52. Generado automáticamente; pendiente validación experta."
