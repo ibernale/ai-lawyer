@@ -1,88 +1,71 @@
 name: Release
-
 on:
   push:
-    tags:
-      - "v*"
-
-permissions: {}
-
+    tags: ['v*.*.*']
+permissions:
+  contents: write
+  packages: write
+  id-token: write   # for cosign keyless OIDC
 jobs:
-  release:
-    name: Build, push and release
+  build-and-release:
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-      packages: write
-      id-token: write # for cosign keyless signing
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: docker/setup-buildx-action@v3
-
-      - uses: docker/login-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract version
-        id: version
-        run: echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-
-      - uses: docker/build-push-action@v6
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+      - name: Install syft (SBOM)
+        uses: anchore/sbom-action/download-syft@v0
+      - name: Build and push API image
         id: build-api
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/api/Dockerfile
-          target: runner
           push: true
-          tags: |
-            ghcr.io/ibernale/ai-lawyer/api:${{ steps.version.outputs.version }}
-            ghcr.io/ibernale/ai-lawyer/api:latest
+          tags: ghcr.io/${{ github.repository }}/api:${{ github.ref_name }},ghcr.io/${{ github.repository }}/api:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            COMMIT_SHA=${{ github.sha }}
-            BUILD_TIME=${{ github.event.head_commit.timestamp }}
-
-      - uses: docker/build-push-action@v6
+      - name: Build and push Web image
         id: build-web
+        uses: docker/build-push-action@v6
         with:
-          context: .
+          context: apps/web
           file: apps/web/Dockerfile
-          target: runner
           push: true
-          tags: |
-            ghcr.io/ibernale/ai-lawyer/web:${{ steps.version.outputs.version }}
-            ghcr.io/ibernale/ai-lawyer/web:latest
+          tags: ghcr.io/${{ github.repository }}/web:${{ github.ref_name }},ghcr.io/${{ github.repository }}/web:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v3
-        continue-on-error: true # cosign optional until Fase 5 enforces it
-
-      - name: Sign images (keyless)
-        continue-on-error: true
+      - name: Sign API image with cosign
+        run: cosign sign --yes ghcr.io/${{ github.repository }}/api@${{ steps.build-api.outputs.digest }}
+      - name: Sign Web image with cosign
+        run: cosign sign --yes ghcr.io/${{ github.repository }}/web@${{ steps.build-web.outputs.digest }}
+      - name: Generate SBOM (API)
+        run: syft ghcr.io/${{ github.repository }}/api:${{ github.ref_name }} -o spdx-json > sbom-api.spdx.json
+      - name: Generate SBOM (Web)
+        run: syft ghcr.io/${{ github.repository }}/web:${{ github.ref_name }} -o spdx-json > sbom-web.spdx.json
+      - name: Extract release notes from CHANGELOG
+        id: changelog
         run: |
-          cosign sign --yes ghcr.io/ibernale/ai-lawyer/api@${{ steps.build-api.outputs.digest }}
-          cosign sign --yes ghcr.io/ibernale/ai-lawyer/web@${{ steps.build-web.outputs.digest }}
-
-      - name: Generate release notes
-        id: release-notes
-        run: |
-          # Extract notes from Conventional Commits since last tag
-          git log $(git describe --tags --abbrev=0 HEAD^)..HEAD \
-            --pretty=format:"- %s" \
-            --no-merges \
-            | grep -E "^- (feat|fix|perf|refactor|docs|ci|chore|test)" \
-            > release-notes.md || echo "- chore: initial release" > release-notes.md
-
-      - uses: softprops/action-gh-release@v2
+          VERSION="${{ github.ref_name }}"
+          # Extract section between this version header and the next
+          awk "/^## \[${VERSION#v}\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md > release_notes.md
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          cat release_notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          body_path: release-notes.md
+          body: ${{ steps.changelog.outputs.notes }}
+          files: |
+            sbom-api.spdx.json
+            sbom-web.spdx.json
           draft: false
-          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+          prerelease: false
