@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Glossary entry schema",
+  "type": "object",
+  "required": ["term", "description"],
+  "properties": {
+    "term": { "type": "string" },
+    "abbreviation": { "type": ["string", "null"] },
+    "description": { "type": "string" }
+  },
+  "additionalProperties": false
+}

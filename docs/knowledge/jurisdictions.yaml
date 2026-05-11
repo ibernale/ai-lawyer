@@ -1,0 +1,104 @@
+_schema_version: "1.0"
+_description: "Jurisdicciones operadas por el Grupo — supervisores y régimen aplicable"
+_last_updated: "2026-05-11"
+_edit_policy: "PR-only, reviewed by @ibernale — no datos confidenciales, solo información de dominio público"
+
+jurisdictions:
+  - code: ES
+    name: España
+    supervisor_prudential: BdE
+    supervisor_conduct: CNMV
+    supervisor_data: AEPD
+    currency: EUR
+    regime: "CRR/CRD V + Ley 10/2014 de ordenación, supervisión y solvencia de entidades de crédito + Circular BdE 2/2016"
+    notes: "Entidad significativa bajo supervisión directa del BCE/SSM desde 2014"
+
+  - code: EU
+    name: "Unión Europea (nivel supranacional)"
+    supervisor_prudential: "BCE/SSM"
+    supervisor_conduct: "ESMA (coordinación)"
+    supervisor_data: "EDPS + autoridades nacionales"
+    currency: EUR
+    regime: "CRR III (UE 2024/1623) + CRD VI (UE 2024/1619) + DORA (UE 2022/2554) + BRRD + MiFID II + EMIR + GDPR"
+    notes: "Nivel regulatorio supranacional; aplica directamente a entidades de crédito en todos los Estados miembro"
+
+  - code: UK
+    name: "Reino Unido"
+    supervisor_prudential: PRA
+    supervisor_conduct: FCA
+    supervisor_data: ICO
+    currency: GBP
+    regime: "UK CRR (onshored) + PRA Rulebook + FCA Handbook + UK GDPR"
+    notes: "Post-Brexit; regulación propia basada en CRR/CRD onshoreados con modificaciones locales"
+
+  - code: BR
+    name: Brasil
+    supervisor_prudential: BCB
+    supervisor_conduct: CVM
+    supervisor_data: ANPD
+    currency: BRL
+    regime: "Resolução BCB 4.193/2013 (Basileia III adaptada) + Lei 13.709/2018 (LGPD)"
+    notes: "Implementación local de Basilea III; LGPD alineada parcialmente con GDPR"
+
+  - code: MX
+    name: México
+    supervisor_prudential: CNBV
+    supervisor_conduct: CNBV
+    supervisor_data: INAI
+    currency: MXN
+    regime: "Ley de Instituciones de Crédito + Circular Única de Bancos CNBV + Disposiciones Basilea III"
+    notes: "Regulación prudencial bajo Basilea III adaptada por CNBV"
+
+  - code: US
+    name: "Estados Unidos"
+    supervisor_prudential: "FRB / OCC / FDIC (según charter)"
+    supervisor_conduct: SEC
+    supervisor_data: "FTC + legislación estatal"
+    currency: USD
+    regime: "Dodd-Frank Act + US Basel III (12 CFR 3/6/208/217/324) + BSA/AML"
+    notes: "Estructura dual federal/estatal; aplica específicamente a las entidades con presencia regulada en EEUU"
+
+  - code: PL
+    name: Polonia
+    supervisor_prudential: KNF
+    supervisor_conduct: KNF
+    supervisor_data: UODO
+    currency: PLN
+    regime: "CRR/CRD V (aplicación directa UE) + Prawo bankowe + UODO"
+    notes: "Estado miembro UE; aplica directamente la regulación prudencial europea"
+
+  - code: PT
+    name: Portugal
+    supervisor_prudential: BdP
+    supervisor_conduct: CMVM
+    supervisor_data: CNPD
+    currency: EUR
+    regime: "CRR/CRD V (aplicación directa UE) + RGICSF + Lei 67/98 (RGPD transpuesto)"
+    notes: "Estado miembro UE; bajo SSM indirecto como entidad menos significativa"
+
+  - code: AR
+    name: Argentina
+    supervisor_prudential: BCRA
+    supervisor_conduct: CNV
+    supervisor_data: "AAIP"
+    currency: ARS
+    regime: "Ley 21.526 de Entidades Financieras + Comunicaciones BCRA (Basilea III parcial) + Ley 25.326 (protección datos)"
+    notes: "Implementación parcial de estándares Basilea; régimen cambiario regulado"
+
+  - code: DE
+    name: Alemania
+    supervisor_prudential: "BaFin + Bundesbank"
+    supervisor_conduct: BaFin
+    supervisor_data: "BfDI + Datenschutzbehörden"
+    currency: EUR
+    regime: "CRR/CRD V (aplicación directa UE) + KWG + WpHG + BDSG"
+    notes: "Estado miembro UE bajo supervisión directa BCE/SSM para entidades significativas"
+
+  - code: CH
+    name: Suiza
+    supervisor_prudential: FINMA
+    supervisor_conduct: FINMA
+    supervisor_data: PFPDT
+    currency: CHF
+    regime: "BankG + ERV (Eigenmittelverordnung, Basilea III) + FIDLEG + DSG 2023"
+    notes: "No UE; equivalencia parcial con MiFID II reconocida en ciertos ámbitos"
