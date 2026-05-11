@@ -16,7 +16,7 @@ class ChunkMetadata(BaseModel):
     """Metadata attached to every indexed legal chunk. See skill legal-chunking."""
 
     chunk_id: str = Field(description="sha256(source_id + '::' + hierarchy_path)")
-    jurisdiction: Literal["ES", "EU"] = "EU"
+    jurisdiction: Literal["ES", "EU", "GB"] = "EU"
     source: str = Field(description="BOE | EURLEX | BDESPAIN")
     source_id: str = Field(description="ELI URI, CELEX number, or BOE document ID")
     document_type: str = ""

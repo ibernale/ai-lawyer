@@ -11,8 +11,8 @@ PYTHON  := $(UV) run python
 
 .PHONY: help install lint format type-check test test-cov test-watch \
         eval eval-quick dev dev-detached down logs \
-        build-images ingest-sample ingest-real qdrant-shell db-reset db-show \
-        grafana
+        build-images ingest-sample ingest-real ingest-all dagster-ui \
+        qdrant-shell db-reset db-show grafana
 
 # ─── Help ─────────────────────────────────────────────────────────────────────
 help: ## Show this help
@@ -86,11 +86,31 @@ build-images: ## Build all Docker images
 	$(DOCKER) $(DC_FILE) build
 
 # ─── Data / ingestion ─────────────────────────────────────────────────────────
-ingest-sample: ## Ingest fixture sample docs using local XML files (no network)
-	$(PYTHON) scripts/ingest_sample.py
+ingest-sample: ## Ingest fixture sample docs via Dagster (BOE + EUR-Lex fixtures)
+	$(UV) run dagster job execute \
+		-f packages/pipeline/src/lex_agents_pipeline/definitions.py \
+		-j ingest_boe_job
+	$(UV) run dagster job execute \
+		-f packages/pipeline/src/lex_agents_pipeline/definitions.py \
+		-j ingest_eurlex_job
 
-ingest-real: ## Ingest sample docs from live BOE + EUR-Lex APIs (requires network + ANTHROPIC_API_KEY)
-	$(PYTHON) scripts/ingest_real.py
+ingest-real: ## Ingest from live BOE + EUR-Lex APIs via Dagster (requires ANTHROPIC_API_KEY)
+	$(UV) run dagster job execute \
+		-f packages/pipeline/src/lex_agents_pipeline/definitions.py \
+		-j ingest_boe_job
+	$(UV) run dagster job execute \
+		-f packages/pipeline/src/lex_agents_pipeline/definitions.py \
+		-j ingest_eurlex_job
+
+ingest-all: ## Run all GREEN source ingest jobs via Dagster
+	$(UV) run dagster job execute \
+		-f packages/pipeline/src/lex_agents_pipeline/definitions.py \
+		-j ingest_all_job
+
+dagster-ui: ## Launch Dagster webserver at localhost:3002
+	$(UV) run dagster dev \
+		-f packages/pipeline/src/lex_agents_pipeline/definitions.py \
+		--port 3002
 
 # ─── Database / Qdrant ────────────────────────────────────────────────────────
 qdrant-shell: ## Open a shell inside the qdrant container
