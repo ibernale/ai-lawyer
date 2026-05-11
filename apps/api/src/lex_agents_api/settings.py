@@ -40,8 +40,15 @@ class Settings(BaseSettings):
     otel_exporter_otlp_endpoint: str = "http://localhost:4317"
     otel_service_name: str = "lex-agents-api"
 
-    # Security (placeholder until Fase 5)
-    jwt_secret: SecretStr = SecretStr("changeme")
+    # Security
+    jwt_secret: SecretStr = SecretStr("changeme-replace-in-prod")
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 480  # 8 hours
+    # JSON array of user objects: [{"username":"demo","password_hash":"bcrypt...","role":"analyst"}]
+    auth_users_json: SecretStr = SecretStr(
+        '[{"username":"demo","password_hash":"$2b$12$placeholder","role":"analyst"}]'
+    )
+    auth_enabled: bool = True  # set False only for local dev without auth
 
     # Consultation history
     consultation_db_path: str = "data/consultations.db"

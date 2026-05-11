@@ -66,6 +66,28 @@ class TestContainsPii:
         assert contains_pii("El cliente 12345678Z presentó reclamación.")
 
 
+class TestRedactNif:
+    def test_company_nif(self) -> None:
+        assert "[PII:NIF]" in redact_pii("NIF de la sociedad: A12345678")
+
+    def test_s_series_nif(self) -> None:
+        assert "[PII:NIF]" in redact_pii("S2800000H")
+
+
+class TestRedactCard:
+    def test_16_digit_card(self) -> None:
+        assert "[PII:CARD]" in redact_pii("tarjeta 4111 1111 1111 1111")
+
+    def test_card_no_spaces(self) -> None:
+        assert "[PII:CARD]" in redact_pii("4111111111111111")
+
+
+class TestRedactAccount:
+    def test_spanish_bban(self) -> None:
+        # 4+4+2+10 = 20 digits
+        assert "[PII:ACCOUNT]" in redact_pii("cuenta 2100 0418 45 0200051332")
+
+
 class TestMultiplePii:
     def test_all_types_in_one_string(self) -> None:
         text = "DNI 12345678Z email user@test.com tel 666111222"

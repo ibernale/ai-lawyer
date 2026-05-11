@@ -1,8 +1,12 @@
-name: Security
+name: Security Audit
 
 on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
   schedule:
-    - cron: "0 3 * * 1"
+    - cron: "0 6 * * 1"  # Weekly Monday
   workflow_dispatch:
 
 permissions: {}
@@ -66,6 +70,22 @@ jobs:
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --audit-level=high
+
+  secrets-scan:
+    name: TruffleHog secrets scan
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: TruffleHog scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          extra_args: --only-verified
 
   trivy-images:
     name: Trivy image scan
