@@ -165,7 +165,7 @@ function renderAnswerWithChips(
   return parts.map((part, i) => {
     const match = part.match(/^\[REF:(\d+)\]$/);
     if (match) {
-      const idx = parseInt(match[1], 10);
+      const idx = parseInt(match[1]!, 10);
       const citation = citations.find((c) => c.index === idx);
       return (
         <button
@@ -485,7 +485,7 @@ function CrossJurisdictionView({
           </button>
           {openBranches[branch] && (
             <div className="border-t border-border px-4 py-3 text-sm leading-relaxed prose prose-sm max-w-none">
-              {renderAnswerWithChips(branchAnswers[branch], citations, onChipClick)}
+              {renderAnswerWithChips(branchAnswers[branch] ?? "", citations, onChipClick)}
             </div>
           )}
         </div>

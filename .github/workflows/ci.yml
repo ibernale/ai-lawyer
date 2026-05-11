@@ -23,8 +23,8 @@ jobs:
         with:
           path: ~/.cache/uv
           key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml', 'uv.lock') }}
-      - run: uv sync --all-packages --dev --dev
-      - run: uv run ruff check .
+      - run: uv sync --all-packages
+      - run: uv run --with "ruff>=0.3" ruff check .
 
   typecheck-py:
     name: Type-check Python
@@ -40,8 +40,8 @@ jobs:
         with:
           path: ~/.cache/uv
           key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
-      - run: uv sync --all-packages --dev
-      - run: uv run mypy --strict packages/ apps/api/src/
+      - run: uv sync --all-packages
+      - run: uv run --with "mypy>=1.0" mypy --strict packages/ apps/api/src/
 
   test-py:
     name: Test Python
@@ -57,8 +57,8 @@ jobs:
         with:
           path: ~/.cache/uv
           key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
-      - run: uv sync --all-packages --dev
-      - run: uv run pytest -x -q -m "not integration"
+      - run: uv sync --all-packages
+      - run: uv run --with "pytest>=8" --with "pytest-asyncio>=0.23" pytest -x -q -m "not integration"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
