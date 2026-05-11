@@ -1,0 +1,47 @@
+groups:
+  - name: lex_pipeline_alerts
+    interval: 60s
+    rules:
+      # -----------------------------------------------------------------------
+      # SourceIngestionDown
+      # Fires when a source accumulates 2+ consecutive run failures.
+      # Uses a gauge that the pipeline increments on failure and resets on success.
+      # -----------------------------------------------------------------------
+      - alert: SourceIngestionDown
+        expr: lex_pipeline_consecutive_failures >= 2
+        for: 0m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Source ingestion down: {{ $labels.source }}"
+          description: >
+            Source '{{ $labels.source }}' has failed {{ $value }} consecutive ingestion
+            runs. Check the Dagster UI and pipeline logs for errors.
+            Runbook: https://github.com/ibernale/ai-lawyer/docs/runbooks/source-ingestion-down.md
+
+      # -----------------------------------------------------------------------
+      # HighParseErrorRate
+      # Fires when > 5% of documents fail to parse in a 1-hour window.
+      # Computed as: parse_errors / (processed + parse_errors).
+      # -----------------------------------------------------------------------
+      - alert: HighParseErrorRate
+        expr: >
+          (
+            rate(lex_pipeline_parse_errors_total[1h])
+            /
+            (
+              rate(lex_pipeline_documents_processed_total[1h])
+              + rate(lex_pipeline_parse_errors_total[1h])
+            )
+          ) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High parse error rate for source: {{ $labels.source }}"
+          description: >
+            Source '{{ $labels.source }}' parse error rate is {{ $value | humanizePercentage }}
+            over the last hour (threshold: 5%). The source HTML/JSON structure may have changed.
+            Runbook: https://github.com/ibernale/ai-lawyer/docs/runbooks/high-parse-error-rate.md

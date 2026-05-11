@@ -85,6 +85,7 @@ services:
     container_name: lex_prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/pipeline_rules.yml:/etc/prometheus/rules/pipeline_rules.yml:ro
     ports:
       - "9090:9090"
     networks:
@@ -111,6 +112,25 @@ services:
       - backend
     restart: unless-stopped
 
+  dagster:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.dagster
+    ports:
+      - "3002:3002"
+    environment:
+      - DAGSTER_HOME=/opt/dagster/dagster_home
+      - QDRANT_URL=http://qdrant:6333
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - dagster_home:/opt/dagster/dagster_home
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: unless-stopped
+
 networks:
   backend:
     driver: bridge
@@ -120,3 +140,4 @@ networks:
 volumes:
   qdrant_storage:
   grafana_data:
+  dagster_home:

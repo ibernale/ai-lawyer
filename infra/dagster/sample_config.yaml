@@ -1,0 +1,8 @@
+ops:
+  boe_raw:
+    config:
+      doc_ids:
+        - "BOE-A-2014-6732"
+        - "BOE-A-2015-1510"
+      use_fixtures: true
+      fixtures_dir: "packages/ingest/tests/fixtures/boe"

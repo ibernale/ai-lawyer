@@ -1,0 +1,43 @@
+FROM python:3.12-slim
+
+# Install system deps needed for uv and potential native extensions
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    git \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.cargo/bin:/root/.local/bin:$PATH"
+
+WORKDIR /app
+
+# Copy workspace-level config first (layer caching)
+COPY pyproject.toml uv.lock ./
+
+# Copy pipeline package pyproject (and any other workspace packages it depends on)
+COPY packages/pipeline/pyproject.toml ./packages/pipeline/pyproject.toml
+COPY packages/shared/pyproject.toml   ./packages/shared/pyproject.toml
+COPY packages/ingest/pyproject.toml   ./packages/ingest/pyproject.toml
+
+# Install only the pipeline package and its deps (including dagster)
+RUN uv sync --package lex-agents-pipeline --no-dev
+
+# Copy source after deps are cached
+COPY packages/pipeline/src ./packages/pipeline/src
+COPY packages/shared/src   ./packages/shared/src
+COPY packages/ingest/src   ./packages/ingest/src
+
+# Create dagster home directory
+RUN mkdir -p /opt/dagster/dagster_home
+
+# Copy instance config
+COPY infra/dagster/dagster.yaml /opt/dagster/dagster_home/dagster.yaml
+
+EXPOSE 3002
+
+CMD ["uv", "run", "dagster", "dev", \
+     "-f", "/app/packages/pipeline/src/lex_agents_pipeline/definitions.py", \
+     "--port", "3002", \
+     "--host", "0.0.0.0"]
