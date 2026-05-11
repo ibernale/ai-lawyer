@@ -100,5 +100,9 @@ class AggregateVerificationReport(BaseModel):
     overall_claims_uncertain: int
     overall_broken_refs: list[int]
     overall_uncited_claims: list[str]
+    doc_broken_refs: list[int] = Field(
+        default_factory=list,
+        description="[DOC:s] indices that do not resolve to any segment",
+    )
     # overall_status = "red" if any branch is red,
     # "amber" if any amber + no red, "green" if all green
