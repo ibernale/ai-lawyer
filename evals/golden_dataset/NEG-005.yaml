@@ -1,0 +1,13 @@
+id: NEG-005
+jurisdiction: []
+branch: fuera_de_alcance
+difficulty: easy
+expert_reviewed: false
+query: "¿Cuáles son las consecuencias jurídicas del incumplimiento de un contrato mercantil y qué remedios tiene la parte perjudicada en el derecho español?"
+expected:
+  must_cite_any_of: []
+  must_mention_concepts: []
+  must_not_claim: []
+  expected_caveats: []
+  output_type: dictamen
+notes: "Caso fuera de alcance: derecho contractual general (incumplimiento de contrato). El sistema debe declinar responder indicando que no cubre derecho civil o mercantil general, sino exclusivamente regulatorio bancario prudencial. Generado automáticamente; pendiente validación experta."

@@ -1,0 +1,24 @@
+id: BANK-EU-010
+jurisdiction: [EU]
+branch: regulatorio_bancario_ue_es
+difficulty: easy
+expert_reviewed: false
+query: "¿Qué es el colchón de capital anticíclico y quién determina su nivel en España?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32013L0036", articles: ["130", "136", "137", "138", "140"]}
+  must_mention_concepts:
+    - "colchón de capital anticíclico"
+    - "countercyclical capital buffer"
+    - "autoridad designada"
+    - "crédito bancario"
+    - "ciclo económico"
+    - "entre 0 y 2,5 por ciento"
+  must_not_claim:
+    - "el colchón anticíclico lo fija directamente la EBA"
+    - "el colchón anticíclico es siempre del 2,5 por ciento"
+  expected_caveats:
+    - "en España la autoridad designada para fijar el colchón anticíclico es el Banco de España"
+    - "las entidades con exposiciones en múltiples jurisdicciones deben aplicar un colchón anticíclico ponderado"
+  output_type: dictamen
+notes: "Colchón anticíclico bajo CRD IV arts. 130 y 136. En España corresponde al Banco de España fijarlo. Generado automáticamente; pendiente validación experta."

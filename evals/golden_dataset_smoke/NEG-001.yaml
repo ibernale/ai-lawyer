@@ -1,0 +1,13 @@
+id: NEG-001
+jurisdiction: []
+branch: fuera_de_alcance
+difficulty: easy
+expert_reviewed: false
+query: "¿Cuál es la indemnización por despido improcedente en España? ¿Cómo se calcula en función de los años de servicio?"
+expected:
+  must_cite_any_of: []
+  must_mention_concepts: []
+  must_not_claim: []
+  expected_caveats: []
+  output_type: dictamen
+notes: "Caso fuera de alcance: derecho laboral español. El sistema debe declinar responder y remitir al especialista competente. Generado automáticamente; pendiente validación experta."

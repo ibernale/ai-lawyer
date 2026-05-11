@@ -1,0 +1,13 @@
+id: NEG-003
+jurisdiction: []
+branch: fuera_de_alcance
+difficulty: easy
+expert_reviewed: false
+query: "¿Cuál es el tipo impositivo del Impuesto sobre Sociedades aplicable a las entidades de crédito en España y existen tipos reducidos aplicables?"
+expected:
+  must_cite_any_of: []
+  must_mention_concepts: []
+  must_not_claim: []
+  expected_caveats: []
+  output_type: dictamen
+notes: "Caso fuera de alcance: derecho tributario (Impuesto sobre Sociedades). El sistema debe declinar responder e indicar que su alcance es regulatorio bancario prudencial, no fiscal. Generado automáticamente; pendiente validación experta."

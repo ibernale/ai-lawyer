@@ -6,6 +6,7 @@ members = [
     "packages/verifier",
     "packages/ingest",
     "packages/shared",
+    "evals",
 ]
 
 [tool.uv.sources]
@@ -14,6 +15,7 @@ lex-agents-ingest = { workspace = true }
 lex-agents-rag = { workspace = true }
 lex-agents-agents = { workspace = true }
 lex-agents-verifier = { workspace = true }
+lex-agents-evals = { workspace = true }
 
 # ─── Shared ruff config (inherited by all packages) ───────────────────────────
 [tool.ruff]

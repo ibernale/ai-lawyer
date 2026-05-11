@@ -1,0 +1,25 @@
+id: BANK-EU-004
+jurisdiction: [EU]
+branch: regulatorio_bancario_ue_es
+difficulty: easy
+expert_reviewed: false
+query: "¿Qué establece el ratio de cobertura de liquidez (LCR) y cómo se computa conforme a la normativa europea?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32015R0061", articles: ["4", "7", "8"]}
+  must_mention_concepts:
+    - "ratio de cobertura de liquidez"
+    - "LCR"
+    - "activos líquidos de alta calidad"
+    - "HQLA"
+    - "salidas netas de efectivo"
+    - "100 por ciento"
+    - "horizonte de estrés de 30 días"
+  must_not_claim:
+    - "el LCR mínimo es del 80 por ciento"
+    - "todos los bonos soberanos son activos de nivel 1"
+  expected_caveats:
+    - "el Reglamento Delegado 2015/61 desarrolla el LCR previsto en el CRR"
+    - "la composición de HQLA está sujeta a límites por niveles"
+  output_type: dictamen
+notes: "LCR bajo Reglamento Delegado (UE) 2015/61. Generado automáticamente; pendiente validación experta."

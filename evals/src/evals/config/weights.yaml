@@ -1,0 +1,8 @@
+# Weights for legal_quality_score weighted average.
+# Must sum to 1.0.
+citation_recall: 0.35
+citation_precision: 0.25
+hallucination_free: 0.20   # = 1 - hallucination_rate
+concept_coverage: 0.10
+forbidden_claim_free: 0.05
+caveat_coverage: 0.05

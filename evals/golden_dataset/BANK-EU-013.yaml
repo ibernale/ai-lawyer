@@ -1,0 +1,28 @@
+id: BANK-EU-013
+jurisdiction: [ES, EU]
+branch: regulatorio_bancario_ue_es
+difficulty: medium
+expert_reviewed: false
+query: "¿Cómo se aplica el estándar internacional TLAC interno (internal TLAC) del FSB a las filiales de grupos bancarios de importancia sistémica global domiciliadas en España, y cómo lo implementa el CRR2?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32019R0876", articles: ["92a", "92b", "72a", "72b", "72c", "72d"]}
+  must_mention_concepts:
+    - "TLAC"
+    - "capacidad total de absorción de pérdidas"
+    - "G-SII"
+    - "filial material"
+    - "internal TLAC"
+    - "75 por ciento"
+    - "90 por ciento"
+    - "instrumentos admisibles"
+  must_not_claim:
+    - "el TLAC interno se aplica a todas las entidades de crédito con independencia de su tamaño"
+    - "el TLAC es equivalente al MREL en todos sus aspectos"
+    - "el FSB puede imponer directamente requisitos jurídicamente vinculantes en la UE"
+  expected_caveats:
+    - "el estándar FSB de TLAC se implementó en la UE mediante CRR2, que introdujo los requisitos de fondos propios y pasivos admisibles aplicables a G-SII"
+    - "el internal TLAC para filiales materiales en la UE equivale al 75-90% del TLAC externo aplicable"
+    - "puede existir solapamiento entre internal TLAC y MREL; la norma de la UE privilegia el MREL cuando sea más exigente"
+  output_type: analisis_riesgo
+notes: "Internal TLAC para filiales de G-SII bajo CRR2 arts. 92a y 92b. Caso medio con estándar internacional. Generado automáticamente; pendiente validación experta."

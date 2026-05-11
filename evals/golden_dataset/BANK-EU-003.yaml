@@ -1,0 +1,25 @@
+id: BANK-EU-003
+jurisdiction: [EU]
+branch: regulatorio_bancario_ue_es
+difficulty: easy
+expert_reviewed: false
+query: "¿Cómo se calcula el ratio de apalancamiento de una entidad de crédito conforme al CRR?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32013R0575", articles: ["429"]}
+    - {type: regulation, celex: "32019R0876", articles: ["429"]}
+  must_mention_concepts:
+    - "ratio de apalancamiento"
+    - "medida de la exposición"
+    - "capital de nivel 1"
+    - "3 por ciento"
+    - "exposiciones en balance"
+    - "exposiciones fuera de balance"
+  must_not_claim:
+    - "el ratio de apalancamiento mínimo es del 5 por ciento"
+    - "el ratio de apalancamiento no es un requisito vinculante"
+  expected_caveats:
+    - "CRR2 introdujo el ratio de apalancamiento como requisito vinculante mínimo del 3%"
+    - "las entidades de importancia sistémica global (G-SII) están sujetas a un colchón adicional"
+  output_type: dictamen
+notes: "Cálculo del leverage ratio bajo CRR art. 429, modificado por CRR2. Generado automáticamente; pendiente validación experta."

@@ -1,0 +1,24 @@
+id: BANK-EU-005
+jurisdiction: [EU]
+branch: regulatorio_bancario_ue_es
+difficulty: easy
+expert_reviewed: false
+query: "¿En qué consiste el ratio de financiación estable neta (NSFR) y cuál es su umbral mínimo bajo el CRR?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32019R0876", articles: ["428a", "428b", "428c"]}
+  must_mention_concepts:
+    - "financiación estable neta"
+    - "NSFR"
+    - "financiación estable disponible"
+    - "financiación estable requerida"
+    - "100 por ciento"
+    - "horizonte de un año"
+  must_not_claim:
+    - "el NSFR es un requisito de Pilar 2"
+    - "el NSFR tiene un umbral mínimo del 80 por ciento"
+  expected_caveats:
+    - "CRR2 introdujo el NSFR como requisito vinculante de Pilar 1"
+    - "existen coeficientes de financiación estable disponible y requerida específicos por tipo de pasivo y activo"
+  output_type: dictamen
+notes: "NSFR introducido en CRR2 (arts. 428a-428ax). Generado automáticamente; pendiente validación experta."

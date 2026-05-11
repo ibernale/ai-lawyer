@@ -4,27 +4,199 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "Eval mode: smoke | full"
-        required: false
+        description: "smoke | full"
         default: smoke
         type: choice
         options: [smoke, full]
+  push:
+    branches: [main]
+    paths:
+      - "packages/agents/**"
+      - "packages/rag/**"
+      - "packages/verifier/**"
+      - "docs/prompts/**"
+      - "evals/golden_dataset/**"
   schedule:
-    # Nightly full eval run
     - cron: "0 2 * * *"
 
-permissions: {}
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
-  # TODO Fase 4: ejecutar evals contra golden dataset; smoke en PR, full nightly.
-  # Este job es un placeholder. Implementar en Fase 4:
-  #   - make eval-quick para smoke set (≤5 casos por PR)
-  #   - make eval para full dataset (nightly)
-  #   - Comparar legal_quality_score contra baseline de main
-  #   - PR que regresa >5% → CI rojo
-  evals-placeholder:
-    name: "Evals (TODO Fase 4)"
-    runs-on: ubuntu-24.04
+  smoke:
+    name: "Smoke evals"
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'smoke')
+
+    services:
+      qdrant:
+        image: qdrant/qdrant:v1.11.0
+        ports:
+          - 6333:6333
+        options: >-
+          --health-cmd "curl -f http://localhost:6333/healthz"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      QDRANT_URL: http://localhost:6333
+
     steps:
       - uses: actions/checkout@v4
-      - run: echo "Evals scaffolding — to be implemented in Fase 4"
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --all-packages
+
+      - name: Ingest sample data
+        run: make ingest-sample
+
+      - name: Run smoke evals
+        run: uv run python -m evals run --dataset evals/golden_dataset_smoke --output reports/smoke/
+
+      - name: Download baseline artifact
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          name: eval-baseline
+          path: baseline/
+          if_no_artifact_found: warn
+          workflow_conclusion: success
+          branch: main
+        continue-on-error: true
+
+      - name: Compare against baseline
+        run: |
+          if [ -d baseline/ ]; then
+            uv run python -m evals compare --baseline baseline/ --candidate reports/smoke/
+          fi
+
+      - name: Check hard failure thresholds
+        run: |
+          python -c "
+          import json, sys
+          m = json.load(open('reports/smoke/metrics.json'))
+          errors = []
+          if m.get('forbidden_claim_rate', 0) > 0:
+              errors.append(f'forbidden_claim_rate={m[\"forbidden_claim_rate\"]} > 0')
+          if m.get('citation_recall', 1) < 0.7:
+              errors.append(f'citation_recall={m[\"citation_recall\"]} < 0.7')
+          if m.get('hallucination_rate', 0) > 0.1:
+              errors.append(f'hallucination_rate={m[\"hallucination_rate\"]} > 0.1')
+          if errors:
+              print('THRESHOLD VIOLATIONS:', errors)
+              sys.exit(1)
+          "
+
+      - name: Upload smoke results
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-smoke-results
+          path: reports/smoke/
+          retention-days: 7
+
+  full:
+    name: "Full evals"
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full')
+
+    services:
+      qdrant:
+        image: qdrant/qdrant:v1.11.0
+        ports:
+          - 6333:6333
+        options: >-
+          --health-cmd "curl -f http://localhost:6333/healthz"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      QDRANT_URL: http://localhost:6333
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --all-packages
+
+      - name: Ingest sample data
+        run: make ingest-sample
+
+      - name: Run full evals
+        run: uv run python -m evals run --dataset evals/golden_dataset --output reports/full/
+
+      - name: Download baseline artifact
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          name: eval-baseline
+          path: baseline/
+          if_no_artifact_found: warn
+          workflow_conclusion: success
+          branch: main
+        continue-on-error: true
+
+      - name: Compare against baseline
+        run: |
+          if [ -d baseline/ ]; then
+            uv run python -m evals compare --baseline baseline/ --candidate reports/full/
+          fi
+
+      - name: Check hard failure thresholds
+        run: |
+          python -c "
+          import json, sys
+          m = json.load(open('reports/full/metrics.json'))
+          errors = []
+          if m.get('forbidden_claim_rate', 0) > 0:
+              errors.append(f'forbidden_claim_rate={m[\"forbidden_claim_rate\"]} > 0')
+          if m.get('citation_recall', 1) < 0.7:
+              errors.append(f'citation_recall={m[\"citation_recall\"]} < 0.7')
+          if m.get('hallucination_rate', 0) > 0.1:
+              errors.append(f'hallucination_rate={m[\"hallucination_rate\"]} > 0.1')
+          if m.get('latency_p95', 0) > 30000:
+              errors.append(f'latency_p95={m[\"latency_p95\"]} > 30000 ms')
+          if m.get('cost_per_query', 0) > 0.50:
+              errors.append(f'cost_per_query={m[\"cost_per_query\"]} > 0.50 USD')
+          if errors:
+              print('THRESHOLD VIOLATIONS:', errors)
+              sys.exit(1)
+          "
+
+      - name: Upload full results
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-full-results
+          path: reports/full/
+          retention-days: 30
+
+      - name: Upload as new baseline
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-baseline
+          path: reports/full/
+          retention-days: 30
+          overwrite: true
+
+      - name: Post PR comment with summary
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f reports/full/summary.md ]; then
+            gh pr comment ${{ github.event.pull_request.number }} --body-file reports/full/summary.md || true
+          fi

@@ -1,0 +1,13 @@
+id: NEG-002
+jurisdiction: []
+branch: fuera_de_alcance
+difficulty: easy
+expert_reviewed: false
+query: "¿Cuáles son las penas previstas para el delito de estafa financiera y blanqueo de capitales en el Código Penal español?"
+expected:
+  must_cite_any_of: []
+  must_mention_concepts: []
+  must_not_claim: []
+  expected_caveats: []
+  output_type: dictamen
+notes: "Caso fuera de alcance: derecho penal. El sistema debe declinar responder e indicar que no es competente en materia de derecho penal. Generado automáticamente; pendiente validación experta."

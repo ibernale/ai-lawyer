@@ -1,0 +1,29 @@
+id: BANK-EU-015
+jurisdiction: [ES, EU]
+branch: regulatorio_bancario_ue_es
+difficulty: medium
+expert_reviewed: false
+query: "¿Qué principios y límites establece la CRD IV en materia de política de remuneración del personal de una entidad de crédito, y cómo se han transpuesto en España?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32013L0036", articles: ["92", "93", "94", "95", "96"]}
+    - {type: legislation, jurisdiction: "ES", reference: "Ley 10/2014", articles: ["32", "33", "34", "35"]}
+    - {type: legislation, jurisdiction: "ES", reference: "Real Decreto 84/2015", articles: ["34", "35", "36", "37", "38"]}
+  must_mention_concepts:
+    - "remuneración variable"
+    - "colectivo identificado"
+    - "ratio remuneración variable/fija"
+    - "diferimiento"
+    - "instrumentos"
+    - "ajuste al riesgo"
+    - "100 por ciento"
+    - "200 por ciento"
+  must_not_claim:
+    - "la remuneración variable no puede superar el 50 por ciento de la remuneración fija"
+    - "todos los empleados de una entidad de crédito forman parte del colectivo identificado"
+  expected_caveats:
+    - "la remuneración variable del colectivo identificado no puede superar el 100% de la remuneración fija, salvo aprobación de la junta de accionistas (hasta 200%)"
+    - "CRD5 (Directiva 2019/878) introdujo modificaciones en el régimen de remuneración, incluyendo exenciones para entidades pequeñas y no complejas"
+    - "las directrices de la EBA sobre política de remuneración proporcionan orientación adicional"
+  output_type: dictamen
+notes: "Política de remuneración bajo CRD IV arts. 92-96 y transposición española. Generado automáticamente; pendiente validación experta."

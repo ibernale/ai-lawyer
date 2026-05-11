@@ -1,0 +1,32 @@
+id: BANK-EU-023
+jurisdiction: [EU]
+branch: regulatorio_bancario_ue_es
+difficulty: hard
+expert_reviewed: false
+query: "¿Cómo deben tratar prudencialmente las entidades de crédito sus exposiciones en criptoactivos bajo el CRR3 (artículo 501c) antes de que MiCA esté plenamente implementado? ¿Qué incertidumbres normativas persisten?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32024R1623", articles: ["501c"]}
+    - {type: regulation, celex: "32023R1114", articles: ["1", "2", "3"]}
+  must_mention_concepts:
+    - "criptoactivos"
+    - "MiCA"
+    - "tratamiento prudencial"
+    - "activos digitales"
+    - "ponderación de riesgo"
+    - "1250 por ciento"
+    - "clase 1"
+    - "clase 2"
+    - "tokenización"
+    - "normas técnicas de regulación"
+  must_not_claim:
+    - "MiCA está plenamente en vigor y elimina toda incertidumbre sobre el tratamiento prudencial de criptoactivos"
+    - "el CRR3 proporciona un marco completo y definitivo para todos los tipos de criptoactivos"
+    - "las entidades de crédito pueden ignorar sus exposiciones en criptoactivos a efectos de solvencia"
+  expected_caveats:
+    - "el artículo 501c CRR3 establece un tratamiento transitorio muy conservador (ponderación de hasta el 1250%) para criptoactivos de clase 2 pendiente del desarrollo de normas técnicas definitivas por la EBA"
+    - "MiCA (Reglamento 2023/1114) proporciona el marco de mercado pero no sustituye al tratamiento prudencial del CRR3"
+    - "persisten incertidumbres sobre la clasificación de ciertos criptoactivos y el tratamiento de las posiciones en stablecoins y tokens referenciados a activos"
+    - "se esperan normas técnicas de regulación de la EBA que podrían modificar el tratamiento antes de la plena implementación"
+  output_type: analisis_riesgo
+notes: "Tratamiento prudencial de criptoactivos bajo CRR3 art. 501c antes de la plena implementación de MiCA. Caso hard por laguna normativa y normas en desarrollo. Generado automáticamente; pendiente validación experta."

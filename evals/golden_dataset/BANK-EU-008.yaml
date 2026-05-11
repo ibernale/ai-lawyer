@@ -1,0 +1,26 @@
+id: BANK-EU-008
+jurisdiction: [EU]
+branch: regulatorio_bancario_ue_es
+difficulty: easy
+expert_reviewed: false
+query: "¿En qué consiste el proceso de revisión y evaluación supervisora (SREP) que deben llevar a cabo las autoridades competentes según la CRD IV?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32013L0036", articles: ["97", "98", "99", "100", "101", "102"]}
+  must_mention_concepts:
+    - "proceso de revisión y evaluación supervisora"
+    - "SREP"
+    - "Pilar 2"
+    - "modelo de negocio"
+    - "gobierno interno"
+    - "riesgos para el capital"
+    - "riesgos para la liquidez"
+    - "requisitos adicionales de fondos propios"
+  must_not_claim:
+    - "el SREP es un procedimiento que realizan las propias entidades de crédito"
+    - "el resultado del SREP es siempre público"
+  expected_caveats:
+    - "el SREP lo llevan a cabo las autoridades competentes, incluido el BCE en el MUS para entidades significativas"
+    - "las directrices de la EBA sobre el SREP complementan el marco normativo"
+  output_type: dictamen
+notes: "SREP bajo CRD IV art. 97. Generado automáticamente; pendiente validación experta."

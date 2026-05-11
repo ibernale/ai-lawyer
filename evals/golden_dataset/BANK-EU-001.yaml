@@ -1,0 +1,22 @@
+id: BANK-EU-001
+jurisdiction: [EU]
+branch: regulatorio_bancario_ue_es
+difficulty: easy
+expert_reviewed: false
+query: "¿Cuáles son los requisitos de capital CET1 que establece el CRR para las entidades de crédito?"
+expected:
+  must_cite_any_of:
+    - {type: regulation, celex: "32013R0575", articles: ["92"]}
+  must_mention_concepts:
+    - "capital ordinario de nivel 1"
+    - "ratio CET1"
+    - "4,5 por ciento"
+    - "activos ponderados por riesgo"
+  must_not_claim:
+    - "Basilea IV está plenamente en vigor en la UE"
+    - "el requisito CET1 es del 6 por ciento"
+  expected_caveats:
+    - "sujeto a modificaciones por CRR3"
+    - "pueden aplicarse colchones adicionales de capital"
+  output_type: dictamen
+notes: "Caso base: requisito CET1 del 4,5% bajo CRR art. 92. Generado automáticamente; pendiente validación experta."
