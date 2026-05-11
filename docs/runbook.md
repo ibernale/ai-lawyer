@@ -81,7 +81,28 @@ See ADR `docs/decisions/0004-cicd-strategy.md` for rationale.
 
 ## Ingestion procedures
 
-_To be completed in Fase 2._
+### Fixture sample (offline, no network required)
+
+```bash
+make ingest-sample
+# Ingests docs/sources/fixtures/*.xml into Qdrant
+# Required: Qdrant running (make dev-detached)
+```
+
+### Live BOE + EUR-Lex (requires network + ANTHROPIC_API_KEY)
+
+```bash
+make ingest-real
+# Calls live APIs; generates embeddings via BGE-M3; stores in Qdrant
+# Takes ~5–15 min depending on corpus size
+```
+
+### Verify ingestion
+
+```bash
+curl http://localhost:6333/collections/lex_agents_v1/points/count
+# Returns: {"result":{"count":<N>},...}
+```
 
 ---
 
@@ -93,6 +114,44 @@ make qdrant-shell
 
 # Reset all vector data (DESTRUCTIVE — prompts for confirmation)
 make db-reset
+
+# Backup Qdrant snapshot
+docker compose -f infra/docker-compose.yml exec qdrant \
+  curl -X POST http://localhost:6333/collections/lex_agents_v1/snapshots
+
+# Restore from snapshot (replace <snapshot_name>)
+docker compose -f infra/docker-compose.yml exec qdrant \
+  curl -X PUT \
+    "http://localhost:6333/collections/lex_agents_v1/snapshots/recover" \
+    -H "Content-Type: application/json" \
+    -d '{"location":"file:///qdrant/snapshots/lex_agents_v1/<snapshot_name>"}'
+```
+
+---
+
+## Rotate API keys
+
+### Anthropic API key
+
+1. Generate a new key in the Anthropic console.
+2. Update `.env`: `ANTHROPIC_API_KEY=<new_key>`
+3. Restart the API container: `docker compose -f infra/docker-compose.yml restart api`
+4. Verify: `curl http://localhost:8000/health` → `anthropic_api: ok`
+
+### JWT secret
+
+1. Generate a strong secret: `python -c "import secrets; print(secrets.token_hex(32))"`
+2. Update `.env`: `JWT_SECRET=<new_secret>`
+3. All existing tokens are **immediately invalidated**; active sessions must re-authenticate.
+4. Restart the API container.
+
+### Internal auth users
+
+Edit `AUTH_USERS_JSON` in `.env` (JSON array of `{username, password_hash, role}`):
+
+```bash
+# Generate bcrypt hash for new user
+python -c "from passlib.hash import bcrypt; print(bcrypt.hash('your_password'))"
 ```
 
 ---
@@ -105,9 +164,38 @@ make db-reset
 | `health` returns `anthropic_api: not_configured` | `ANTHROPIC_API_KEY` empty | Set key in `.env` |
 | `otel-collector` crash-loops | Jaeger not ready | Jaeger starts slower; collector will retry — usually self-resolves in 30s |
 | Docker build fails on `uv sync` | No internet or cache miss | Run `make build-images` with `--no-cache` or ensure network access |
+| `401 Unauthorized` on `/api/v1/*` | Token expired or `auth_enabled=false` missing | Re-authenticate via `POST /auth/token`; for dev set `AUTH_ENABLED=false` in `.env` |
+| `429 Too Many Requests` | Rate limit exceeded (30 req/min on `/consult`) | Wait 60 s; adjust limit in `settings.py` if running load tests |
+| Qdrant returns empty results | Collection not indexed | Run `make ingest-sample` or `make ingest-real` |
+| Export .docx fails with 404 | Consultation not persisted yet | Background save is async; wait 1–2 s and retry |
+| Grafana shows no data | Prometheus not scraping | Check `infra/prometheus.yml` target is `api:8000`; verify `make dev` started prometheus |
+
+---
+
+## Observability
+
+```bash
+# Grafana dashboard (rate, latency, errors)
+make grafana
+# → http://localhost:3001 (admin/admin)
+
+# Prometheus raw metrics
+curl http://localhost:9090/metrics
+
+# Jaeger distributed traces
+open http://localhost:16686
+
+# Structured logs (JSON)
+docker compose -f infra/docker-compose.yml logs api | jq .
+```
 
 ---
 
 ## On-call escalation
 
-_To be defined in Fase 5 (alerting + PagerDuty integration)._
+Internal Slack: `#lex-agents-oncall`. Escalate to:
+
+1. **API errors / 5xx surge** → check `/metrics` rate_5xx panel → check `make logs`
+2. **Anthropic API unavailable** → fallback: return cached consultation if trace_id known; otherwise 503
+3. **Qdrant data loss** → restore from snapshot (see above); re-index if no snapshot available
+4. **PII in logs** → verify `enable_pii_redaction=true` in prod (`ENV=prod` in `.env`); rotate affected logs

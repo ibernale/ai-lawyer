@@ -86,6 +86,29 @@ infra/             Docker Compose, Grafana dashboards
 docs/decisions/    Architecture Decision Records (ADRs)
 ```
 
+## Estado actual (v0.1.0)
+
+### Qué hace
+
+- Recibe una consulta en lenguaje natural sobre regulación bancaria UE+ES.
+- Recupera fragmentos normativos relevantes de un índice vectorial (Qdrant) con búsqueda híbrida (BM25 + embeddings BGE-M3) y reranking.
+- Un agente specialist genera una respuesta con citas `[REF:n]` ancladas a los fragmentos recuperados.
+- Un verificador claim-level comprueba cada cita antes de devolver la respuesta.
+- La interfaz web muestra chips de cita clicables, un banner de verificación y permite exportar a Word.
+
+### Qué no hace (MVP)
+
+- No cubre jurisprudencia (CENDOJ/TJUE) — solo normativa primaria.
+- No cubre derecho laboral, mercantil general ni jurisdicciones fuera de UE/ES.
+- No es un servicio de asesoramiento jurídico. Toda respuesta es un borrador que requiere validación por un jurista cualificado.
+- El dataset de evaluación tiene `expert_reviewed: false` — no es ground truth validado.
+
+### Qué viene
+
+Ver [`docs/roadmap.md`](docs/roadmap.md): CENDOJ, multi-jurisdicción (PT/BR/MX), derecho mercantil, fine-tuned reranker, SSO corporativo.
+
+---
+
 ## Architecture & decisions
 
 See [`docs/architecture.md`](docs/architecture.md) and
