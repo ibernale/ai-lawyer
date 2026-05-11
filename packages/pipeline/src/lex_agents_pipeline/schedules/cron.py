@@ -194,6 +194,41 @@ fca_handbook_weekly_schedule = _make_schedule(
 )
 
 # ---------------------------------------------------------------------------
+# TC (Tribunal Constitucional) — weekly Monday 06:00 UTC
+# ---------------------------------------------------------------------------
+
+tc_weekly_schedule = _make_schedule(
+    name="tc_weekly_ingest",
+    job_name="tc_ingest_job",
+    cron_schedule="0 6 * * 1",
+    description="Weekly ingestion of Tribunal Constitucional jurisprudencia on Mondays at 06:00 UTC.",
+)
+
+# ---------------------------------------------------------------------------
+# INLABS DOU (Brazil) — daily 03:00 UTC (post-midnight Brazil)
+# ---------------------------------------------------------------------------
+
+inlabs_daily_schedule = _make_schedule(
+    name="inlabs_daily_ingest",
+    job_name="inlabs_ingest_job",
+    cron_schedule="0 3 * * *",
+    description="Daily ingestion of INLABS DOU (Diário Oficial da União) at 03:00 UTC, after midnight Brazil time.",
+)
+
+# ---------------------------------------------------------------------------
+# SIDOF DOF (Mexico) — daily 11:00 UTC (post-morning Mexico)
+# ---------------------------------------------------------------------------
+
+sidof_daily_schedule = _make_schedule(
+    name="sidof_daily_ingest",
+    job_name="sidof_ingest_job",
+    cron_schedule="0 11 * * *",
+    description="Daily ingestion of SIDOF DOF (Diario Oficial de la Federación) at 11:00 UTC, after morning publication in Mexico.",
+)
+
+# NOTE: NO schedule for cendoj — manual workflow_dispatch only (ADR 0025)
+
+# ---------------------------------------------------------------------------
 # Exported list — add to Definitions in definitions.py
 # ---------------------------------------------------------------------------
 
@@ -207,4 +242,10 @@ all_schedules = [
     esma_qa_weekly_schedule,
     legislation_gov_uk_weekly_schedule,
     fca_handbook_weekly_schedule,
+    tc_weekly_schedule,
+    inlabs_daily_schedule,
+    sidof_daily_schedule,
 ]
+
+# Alias used by definitions.py
+ALL_SCHEDULES = all_schedules

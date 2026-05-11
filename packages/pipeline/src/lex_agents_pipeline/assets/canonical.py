@@ -68,6 +68,26 @@ def _parse_source(source_id: str) -> dict[str, Any]:
         source_map["fca"] = FcaSource
     except ImportError:
         pass
+    try:
+        from lex_agents_ingest.sources.cendoj import CendojSource
+        source_map["cendoj"] = CendojSource
+    except ImportError:
+        pass
+    try:
+        from lex_agents_ingest.sources.tc import TribunalConstitucionalSource
+        source_map["tc"] = TribunalConstitucionalSource
+    except ImportError:
+        pass
+    try:
+        from lex_agents_ingest.sources.inlabs import InlabsDOUSource
+        source_map["inlabs"] = InlabsDOUSource
+    except ImportError:
+        pass
+    try:
+        from lex_agents_ingest.sources.sidof import SidofDOFSource
+        source_map["sidof"] = SidofDOFSource
+    except ImportError:
+        pass
 
     SourceClass = source_map.get(source_id)
     if SourceClass is None:
@@ -162,8 +182,18 @@ esma_canonical = _make_canonical_asset("esma", "esma", "esma_raw")
 legislation_uk_canonical = _make_canonical_asset("legislation_uk", "legislation_uk", "legislation_uk_raw")
 fca_canonical = _make_canonical_asset("fca", "fca", "fca_raw")
 
+# Jurisprudencia — CanonicalCaseLaw outputs
+cendoj_canonical = _make_canonical_asset("cendoj", "jurisprudencia", "cendoj_raw")
+tc_canonical = _make_canonical_asset("tc", "jurisprudencia", "tc_raw")
+
+# LATAM sources — CanonicalBulletin outputs
+inlabs_canonical = _make_canonical_asset("inlabs", "latam_sources", "inlabs_raw")
+sidof_canonical = _make_canonical_asset("sidof", "latam_sources", "sidof_raw")
+
 ALL_CANONICAL_ASSETS = [
     boe_canonical, eurlex_canonical,
     aepd_canonical, edpb_canonical, bde_canonical, eba_canonical, esma_canonical,
     legislation_uk_canonical, fca_canonical,
+    cendoj_canonical, tc_canonical,
+    inlabs_canonical, sidof_canonical,
 ]

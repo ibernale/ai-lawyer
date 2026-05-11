@@ -59,16 +59,47 @@ ingest_fca_job = define_asset_job(
     description="FCA Handbook ingestion (partial coverage)",
 )
 
+# Jurisprudencia
+ingest_tc_job = define_asset_job(
+    name="tc_ingest_job",
+    selection=AssetSelection.groups("jurisprudencia").downstream_of_assets("tc_raw"),
+    description="Tribunal Constitucional jurisprudencia ingestion",
+)
+
+# NOTE: CENDOJ has no scheduled job — manual workflow_dispatch only (ADR 0025).
+# Use ingest_cendoj_manual_job for ad-hoc runs from the Dagster UI.
+ingest_cendoj_manual_job = define_asset_job(
+    name="cendoj_ingest_job",
+    selection=AssetSelection.assets("cendoj_raw", "cendoj_canonical"),
+    description="CENDOJ jurisprudencia ingestion — manual trigger only (ADR 0025)",
+)
+
+# LATAM sources
+ingest_inlabs_job = define_asset_job(
+    name="inlabs_ingest_job",
+    selection=AssetSelection.groups("latam_sources").downstream_of_assets("inlabs_raw"),
+    description="INLABS DOU (Brazil) ingestion",
+)
+
+ingest_sidof_job = define_asset_job(
+    name="sidof_ingest_job",
+    selection=AssetSelection.groups("latam_sources").downstream_of_assets("sidof_raw"),
+    description="SIDOF DOF (Mexico) ingestion",
+)
+
 # Re-index without re-fetching (for model/prompt changes)
 reindex_all_job = define_asset_job(
     name="reindex_all_job",
     selection=AssetSelection.groups(
-        "boe", "eurlex", "aepd", "edpb", "bde", "eba", "esma", "legislation_uk", "fca"
+        "boe", "eurlex", "aepd", "edpb", "bde", "eba", "esma", "legislation_uk", "fca",
+        "jurisprudencia", "latam_sources",
     ).downstream_of_assets(
         "boe_contextualized", "eurlex_contextualized",
         "aepd_contextualized", "edpb_contextualized", "bde_contextualized",
         "eba_contextualized", "esma_contextualized",
         "legislation_uk_contextualized", "fca_contextualized",
+        "cendoj_contextualized", "tc_contextualized",
+        "inlabs_contextualized", "sidof_contextualized",
     ),
     description="Re-embed and re-index all documents without re-fetching raw (for model changes)",
 )
@@ -77,9 +108,10 @@ reindex_all_job = define_asset_job(
 ingest_all_job = define_asset_job(
     name="ingest_all_job",
     selection=AssetSelection.groups(
-        "boe", "eurlex", "aepd", "edpb", "bde", "eba", "esma", "legislation_uk", "fca"
+        "boe", "eurlex", "aepd", "edpb", "bde", "eba", "esma", "legislation_uk", "fca",
+        "jurisprudencia", "latam_sources",
     ),
-    description="Run all GREEN source ingestion pipelines",
+    description="Run all source ingestion pipelines",
 )
 
 ALL_JOBS = [
@@ -87,5 +119,7 @@ ALL_JOBS = [
     ingest_aepd_job, ingest_edpb_job, ingest_bde_job,
     ingest_eba_job, ingest_esma_job,
     ingest_legislation_uk_job, ingest_fca_job,
+    ingest_tc_job, ingest_cendoj_manual_job,
+    ingest_inlabs_job, ingest_sidof_job,
     ingest_all_job, reindex_all_job,
 ]
