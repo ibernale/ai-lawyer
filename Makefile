@@ -40,11 +40,11 @@ type-check: ## Run mypy --strict on all Python packages
 
 # ─── Test ─────────────────────────────────────────────────────────────────────
 test: ## Run full test suite (pytest + vitest)
-	$(UV) run pytest -x -q
+	$(UV) run --extra dev --package lex-agents-agents pytest -x -q
 	$(PNPM) exec vitest run
 
 test-cov: ## Run pytest with coverage report (target ≥ 80%)
-	$(UV) run pytest \
+	$(UV) run --extra dev --package lex-agents-agents pytest \
 		--cov=packages/agents/src \
 		--cov=packages/verifier/src \
 		--cov=packages/rag/src \
@@ -54,7 +54,7 @@ test-cov: ## Run pytest with coverage report (target ≥ 80%)
 		-q
 
 test-watch: ## Run tests in watch mode
-	$(UV) run pytest -f &
+	$(UV) run --extra dev --package lex-agents-agents pytest -f &
 	$(PNPM) exec vitest
 
 # ─── Evals ────────────────────────────────────────────────────────────────────

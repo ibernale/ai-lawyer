@@ -46,6 +46,7 @@ class ConsultRequestBody(BaseModel):
     query: str = Field(min_length=10, max_length=4000)
     jurisdiction_hint: str | None = None
     output_type: str | None = None
+    depth: str | None = None  # "shallow" | "standard" | "deep"
 
     @field_validator("query")
     @classmethod
@@ -54,6 +55,13 @@ class ConsultRequestBody(BaseModel):
         if len(sanitized) < 10:
             raise ValueError("query too short after sanitization")
         return sanitized
+
+    @field_validator("depth")
+    @classmethod
+    def validate_depth(cls, v: str | None) -> str | None:
+        if v is not None and v not in ("shallow", "standard", "deep"):
+            raise ValueError("depth must be 'shallow', 'standard', or 'deep'")
+        return v
 
 
 # ---------------------------------------------------------------------------
@@ -187,6 +195,7 @@ async def consult(
         query=body.query,
         jurisdiction_hint=body.jurisdiction_hint,
         output_type=body.output_type,
+        depth=body.depth,  # type: ignore[arg-type]
     )
 
     resp = await orchestrator.run(req)
@@ -200,6 +209,11 @@ async def consult(
         query_rewritten=resp.query_rewritten,
         routing=resp.routing,
         metadata=resp.metadata,
+        depth_used=resp.depth_used,
+        iterations=resp.iterations,
+        planner_output=resp.planner_output,
+        judge_verdict=resp.judge_verdict,
+        cost_breakdown_by_agent=resp.cost_breakdown_by_agent,
     )
 
     background_tasks.add_task(_persist, store, resp_with_cid.trace_id, body.query, resp_with_cid)

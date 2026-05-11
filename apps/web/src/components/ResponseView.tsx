@@ -284,6 +284,138 @@ function FeedbackModal({
 }
 
 // ---------------------------------------------------------------------------
+// Razonamiento del sistema panel (PMJ metadata)
+// ---------------------------------------------------------------------------
+
+function RazonamientoPanel({ response }: { response: ConsultResponse }) {
+  const [open, setOpen] = useState(false);
+  const hasData = response.planner_output || response.judge_verdict;
+  if (!hasData) return null;
+
+  const po = response.planner_output;
+  const jv = response.judge_verdict;
+  const costTotal = response.cost_breakdown_by_agent
+    ? Object.values(response.cost_breakdown_by_agent).reduce((a, b) => a + b, 0)
+    : null;
+
+  return (
+    <div className="rounded-md border border-blue-200 bg-blue-50/50">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-3 text-xs font-medium text-blue-800 hover:bg-blue-50 transition-colors"
+      >
+        <span>🧠 Razonamiento del sistema</span>
+        <span className="text-muted-foreground">{open ? "▲ Ocultar" : "▼ Ver"}</span>
+      </button>
+
+      {open && (
+        <div className="px-4 pb-4 space-y-3 text-xs">
+          {/* Overview row */}
+          <div className="flex flex-wrap gap-3">
+            <span className="inline-flex items-center gap-1 rounded bg-blue-100 px-2 py-0.5 font-mono text-blue-800">
+              depth: {response.depth_used ?? "—"}
+            </span>
+            {(response.iterations ?? 0) > 0 && (
+              <span className="inline-flex items-center gap-1 rounded bg-blue-100 px-2 py-0.5 font-mono text-blue-800">
+                iteraciones: {response.iterations}
+              </span>
+            )}
+            {costTotal != null && (
+              <span className="inline-flex items-center gap-1 rounded bg-blue-100 px-2 py-0.5 font-mono text-blue-800">
+                coste total: ${costTotal.toFixed(4)}
+              </span>
+            )}
+          </div>
+
+          {/* Planner output */}
+          {po && (
+            <div className="space-y-2">
+              <p className="font-semibold text-blue-900">Planner</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-blue-800">
+                <span className="text-muted-foreground">Ramas detectadas</span>
+                <span>{po.branches.map((b) => b.name).join(", ")}</span>
+                <span className="text-muted-foreground">Jurisdicciones</span>
+                <span>{po.jurisdictions.join(", ") || "—"}</span>
+                <span className="text-muted-foreground">Output type</span>
+                <span>{po.output_type}</span>
+              </div>
+              {po.sub_tasks.length > 0 && (
+                <div>
+                  <p className="text-muted-foreground mb-1">Sub-tareas:</p>
+                  <ul className="space-y-0.5">
+                    {po.sub_tasks.map((t) => (
+                      <li key={t.id} className="font-mono text-blue-800">
+                        {t.id}: {t.branch} (peso {t.weight.toFixed(2)})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Judge verdict */}
+          {jv && (
+            <div className="space-y-2">
+              <p className="font-semibold text-blue-900">
+                Judge{" "}
+                <span
+                  className={[
+                    "ml-1 rounded px-1.5 py-0.5 font-mono text-xs",
+                    jv.verdict === "publish"
+                      ? "bg-green-100 text-green-800"
+                      : jv.verdict === "reject"
+                      ? "bg-red-100 text-red-800"
+                      : "bg-amber-100 text-amber-800",
+                  ].join(" ")}
+                >
+                  {jv.verdict}
+                </span>
+              </p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-blue-800">
+                {Object.entries(jv.scores).map(([k, v]) => (
+                  <>
+                    <span key={`k-${k}`} className="text-muted-foreground">{k}</span>
+                    <span key={`v-${k}`}>{(v * 100).toFixed(0)}%</span>
+                  </>
+                ))}
+              </div>
+              {jv.gaps.length > 0 && (
+                <div>
+                  <p className="text-muted-foreground mb-1">Brechas identificadas:</p>
+                  <ul className="list-disc list-inside space-y-0.5 text-blue-800">
+                    {jv.gaps.map((g, i) => (
+                      <li key={i}>{g}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Cost breakdown */}
+          {response.cost_breakdown_by_agent &&
+            Object.keys(response.cost_breakdown_by_agent).length > 0 && (
+              <div>
+                <p className="font-semibold text-blue-900 mb-1">Coste por agente</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-blue-800">
+                  {Object.entries(response.cost_breakdown_by_agent).map(([k, v]) => (
+                    <>
+                      <span key={`k-${k}`} className="text-muted-foreground truncate">{k}</span>
+                      <span key={`v-${k}`}>${v.toFixed(4)}</span>
+                    </>
+                  ))}
+                </div>
+              </div>
+            )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main ResponseView
 // ---------------------------------------------------------------------------
 
@@ -305,6 +437,9 @@ export function ResponseView({ response }: { response: ConsultResponse }) {
       {response.verification && (
         <VerificationBanner report={response.verification} />
       )}
+
+      {/* PMJ reasoning panel */}
+      <RazonamientoPanel response={response} />
 
       {/* Answer text with clickable [REF:n] chips */}
       <article className="prose prose-sm max-w-none rounded-lg border border-border bg-background p-5 leading-relaxed text-sm">
