@@ -1,0 +1,10 @@
+attack_level: 1
+attack_type: char_typo
+attacked_query: ¿Cómo se calcualn los rqeuisitos de fondos propios por riesgo de crédito
+  bajo el enfoque estándar del CRR?
+base_case_id: BANK-EU-007
+clean_query: ¿Cómo se calculan los requisitos de fondos propios por riesgo de crédito
+  bajo el enfoque estándar del CRR?
+expected_clean_has_caveat: true
+id: ADV-L1-007
+notes: char_typo perturbation of BANK-EU-007

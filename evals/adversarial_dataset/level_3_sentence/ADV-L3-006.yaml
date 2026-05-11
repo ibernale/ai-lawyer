@@ -1,0 +1,11 @@
+attack_level: 3
+attack_type: sentence_irrelevant
+attacked_query: ¿Cuál es el límite aplicable a grandes exposiciones frente a un mismo
+  cliente o grupo de clientes vinculados según el CRR? Por favor responde lo antes
+  posible.
+base_case_id: BANK-EU-006
+clean_query: ¿Cuál es el límite aplicable a grandes exposiciones frente a un mismo
+  cliente o grupo de clientes vinculados según el CRR?
+expected_clean_has_caveat: true
+id: ADV-L3-006
+notes: sentence_irrelevant perturbation of BANK-EU-006

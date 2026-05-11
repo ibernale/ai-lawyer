@@ -1,0 +1,12 @@
+attack_level: 3
+attack_type: sentence_irrelevant
+attacked_query: ¿Cómo se aplica el estándar internacional TLAC interno (internal TLAC)
+  del FSB a las filiales de grupos bancarios de importancia sistémica global domiciliadas
+  en España, y cómo lo implementa el CRR2? Por favor responde lo antes posible.
+base_case_id: BANK-EU-013
+clean_query: ¿Cómo se aplica el estándar internacional TLAC interno (internal TLAC)
+  del FSB a las filiales de grupos bancarios de importancia sistémica global domiciliadas
+  en España, y cómo lo implementa el CRR2?
+expected_clean_has_caveat: true
+id: ADV-L3-013
+notes: sentence_irrelevant perturbation of BANK-EU-013

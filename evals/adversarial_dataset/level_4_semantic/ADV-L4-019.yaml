@@ -1,0 +1,12 @@
+attack_level: 4
+attack_type: semantic_passive
+attacked_query: 'En relación con lo siguiente: ¿Cuáles son las obligaciones de divulgación
+  de información de Pilar 3 que impone el CRR a las entidades de crédito, y qué papel
+  juegan las circulares del Banco de España? — ¿cuál es la posición normativa?'
+base_case_id: BANK-EU-019
+clean_query: ¿Cuáles son las obligaciones de divulgación de información de Pilar 3
+  que impone el CRR a las entidades de crédito, y qué papel juegan las circulares
+  del Banco de España?
+expected_clean_has_caveat: true
+id: ADV-L4-019
+notes: semantic_passive perturbation of BANK-EU-019

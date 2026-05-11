@@ -1,0 +1,20 @@
+attack_level: 1
+attack_type: char_typo
+attacked_query: 'El aBnco de sEpaña ha iniciado un expediente sancionador por infracción
+  muy grave de los requisitos de capital (art. 92 CRR) contra una entidad bancaria.
+  Simultáneamente, la Fiscalía estudia si los hechos pueden ser constitutivos de administración
+  desleal (art. 252 CP). ¿Cómo se articulan ambos procedimientos y qué principios
+  de non bis in idem aplican?
+
+  '
+base_case_id: CROSS-002
+clean_query: 'El Banco de España ha iniciado un expediente sancionador por infracción
+  muy grave de los requisitos de capital (art. 92 CRR) contra una entidad bancaria.
+  Simultáneamente, la Fiscalía estudia si los hechos pueden ser constitutivos de administración
+  desleal (art. 252 CP). ¿Cómo se articulan ambos procedimientos y qué principios
+  de non bis in idem aplican?
+
+  '
+expected_clean_has_caveat: true
+id: ADV-L1-027
+notes: char_typo perturbation of CROSS-002

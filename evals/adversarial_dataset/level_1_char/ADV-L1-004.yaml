@@ -1,0 +1,10 @@
+attack_level: 1
+attack_type: char_typo
+attacked_query: ¿Qué etsablece el artio de cobertura de liquidez (LCR) y cómo se computa
+  conforme a la normativa europea?
+base_case_id: BANK-EU-004
+clean_query: ¿Qué establece el ratio de cobertura de liquidez (LCR) y cómo se computa
+  conforme a la normativa europea?
+expected_clean_has_caveat: true
+id: ADV-L1-004
+notes: char_typo perturbation of BANK-EU-004

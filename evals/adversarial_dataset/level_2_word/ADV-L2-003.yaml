@@ -1,0 +1,10 @@
+attack_level: 2
+attack_type: word_synonym
+attacked_query: ¿Cómo se calcula el coeficiente de apalancamiento de una banco conforme
+  al CRR?
+base_case_id: BANK-EU-003
+clean_query: ¿Cómo se calcula el ratio de apalancamiento de una entidad de crédito
+  conforme al CRR?
+expected_clean_has_caveat: true
+id: ADV-L2-003
+notes: word_synonym perturbation of BANK-EU-003

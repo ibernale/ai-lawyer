@@ -1,0 +1,18 @@
+attack_level: 3
+attack_type: sentence_irrelevant
+attacked_query: "Santander España, como entidad supervisada por el BCE bajo el MUS,\
+  \ quiere extender una línea de crédito sindicado a una contraparte corporativa con\
+  \ sede en Reino Unido (post-Brexit). ¿Qué tratamiento prudencial tiene la exposición,\
+  \ qué requisitos de equivalencia aplican para la contraparte UK y qué documentación\
+  \ contractual es necesaria?\n Por favor responde lo antes posible."
+base_case_id: CROSS-004
+clean_query: 'Santander España, como entidad supervisada por el BCE bajo el MUS, quiere
+  extender una línea de crédito sindicado a una contraparte corporativa con sede en
+  Reino Unido (post-Brexit). ¿Qué tratamiento prudencial tiene la exposición, qué
+  requisitos de equivalencia aplican para la contraparte UK y qué documentación contractual
+  es necesaria?
+
+  '
+expected_clean_has_caveat: true
+id: ADV-L3-029
+notes: sentence_irrelevant perturbation of CROSS-004

@@ -1,0 +1,12 @@
+attack_level: 2
+attack_type: word_synonym
+attacked_query: ¿Cómo se aplican los requisitos de fondos propios europeos a las sucursales
+  de entidades de crédito de terceros países establecidas en la UE bajo el CRR? ¿Existe
+  un régimen de tratamiento equivalente y qué lagunas regulacións presenta?
+base_case_id: BANK-EU-025
+clean_query: ¿Cómo se aplican los requisitos de capital europeos a las sucursales
+  de entidades de crédito de terceros países establecidas en la UE bajo el CRR? ¿Existe
+  un régimen de tratamiento equivalente y qué lagunas normativas presenta?
+expected_clean_has_caveat: true
+id: ADV-L2-025
+notes: word_synonym perturbation of BANK-EU-025

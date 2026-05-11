@@ -1,0 +1,10 @@
+attack_level: 2
+attack_type: word_synonym
+attacked_query: ¿En qué consiste el coeficiente de financiación estable neta (NSFR)
+  y cuál es su umbral mínimo bajo el CRR?
+base_case_id: BANK-EU-005
+clean_query: ¿En qué consiste el ratio de financiación estable neta (NSFR) y cuál
+  es su umbral mínimo bajo el CRR?
+expected_clean_has_caveat: true
+id: ADV-L2-005
+notes: word_synonym perturbation of BANK-EU-005

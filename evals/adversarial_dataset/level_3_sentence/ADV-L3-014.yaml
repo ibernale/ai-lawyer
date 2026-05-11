@@ -1,0 +1,12 @@
+attack_level: 3
+attack_type: sentence_irrelevant
+attacked_query: ¿Qué requisitos de idoneidad (fit & proper) deben cumplir los miembros
+  del consejo de administración de una entidad de crédito española según la CRD IV
+  y la normativa del Banco de España? Por favor responde lo antes posible.
+base_case_id: BANK-EU-014
+clean_query: ¿Qué requisitos de idoneidad (fit & proper) deben cumplir los miembros
+  del consejo de administración de una entidad de crédito española según la CRD IV
+  y la normativa del Banco de España?
+expected_clean_has_caveat: true
+id: ADV-L3-014
+notes: sentence_irrelevant perturbation of BANK-EU-014
