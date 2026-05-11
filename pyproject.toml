@@ -23,7 +23,7 @@ lex-agents-pipeline = { workspace = true }
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-src = ["apps", "packages"]
+src = ["apps", "packages", "evals/src"]
 
 [tool.ruff.lint]
 select = [
@@ -76,6 +76,7 @@ ignore_missing_imports = true
 # ─── Shared pytest config ─────────────────────────────────────────────────────
 [tool.pytest.ini_options]
 testpaths = ["apps", "packages", "evals"]
+pythonpath = ["apps/api/src", "packages/agents/src", "packages/rag/src", "packages/verifier/src", "packages/ingest/src", "packages/shared/src", "evals/src"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
