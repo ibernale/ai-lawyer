@@ -1,0 +1,32 @@
+id: CROSS-002
+jurisdiction: [ES]
+branch: cross_jurisdiction
+branches: [administrativo, penal_economico]
+difficulty: hard
+expert_reviewed: false
+run_in: fase_6_3
+query: >
+  El Banco de España ha iniciado un expediente sancionador por infracción muy
+  grave de los requisitos de capital (art. 92 CRR) contra una entidad bancaria.
+  Simultáneamente, la Fiscalía estudia si los hechos pueden ser constitutivos
+  de administración desleal (art. 252 CP). ¿Cómo se articulan ambos
+  procedimientos y qué principios de non bis in idem aplican?
+expected:
+  must_cite_any_of:
+    - {type: law, boe_id: "BOE-A-2014-6488", articles: ["97", "98"]}
+    - {type: regulation, celex: "32013R0575", articles: ["92"]}
+  must_mention_concepts:
+    - "non bis in idem"
+    - "procedimiento sancionador"
+    - "administración desleal"
+    - "prejudicialidad penal"
+    - "suspensión del procedimiento administrativo"
+  must_not_claim:
+    - "la sanción penal excluye automáticamente la administrativa"
+  expected_caveats:
+    - "prejudicialidad penal suspende el procedimiento administrativo"
+    - "responsabilidad de la persona jurídica"
+  output_type: dictamen
+notes: >
+  Caso canónico cross-jurisdicción administrativo+penal_economico.
+  Pendiente validación experta. run_in=fase_6_3.
