@@ -80,6 +80,8 @@ secrets/
 data/raw/
 data/canonical/
 data/processed/
+data/cendoj_quota.db
+data/cendoj_audit.log
 
 # ─── Qdrant local indexes ─────────────────────────────────────────────────────
 .qdrant/

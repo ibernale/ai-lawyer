@@ -23,7 +23,7 @@ Los contenidos de estas plataformas son **propiedad intelectual protegida** de s
 2. **Bases de datos protegidas:** las colecciones de jurisprudencia, normativa comentada y doctrina están protegidas como bases de datos sui generis (Directiva 96/9/CE).
 3. **Términos contractuales:** el acceso requiere suscripción con condiciones que prohíben expresamente la descarga masiva y el uso automatizado sin contrato API específico.
 
-**Regla ADR 0011:** no se crea ningún conector técnico hasta que exista contrato firmado. Crear infraestructura para contenido sin licencia genera riesgo legal independientemente del uso en producción.
+**Regla ADR 0011 + ADR 0029:** los adaptadores técnicos están implementados en fase 7.1 con todos los métodos reales pero protegidos por `CommercialSourceDisabledError`. Ninguno puede ejecutarse en producción sin `CONFIG_LICENSE_VERIFIED=true` y el source habilitado en config. La API valida esto en startup. Los tests CI usan únicamente fixtures locales.
 
 ---
 

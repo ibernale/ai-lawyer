@@ -32,15 +32,20 @@
 - Abrir issue GitHub con label `source:amber` y asignar a Legal del Grupo
 - El issue debe actualizarse con el estado de la solicitud al CGPJ mensualmente
 
-### Modo DEV (CendojPuntualSource)
+### Modo DEV (CendojSource — fase 7.1)
 
-Mientras se tramita la autorización, existe un modo de desarrollo **exclusivo para validación de calidad del golden dataset**:
+Implementado en `packages/ingest/src/lex_agents_ingest/sources/cendoj.py` según **ADR 0025**:
 
-- Activar con `CENDOJ_DEV_MODE=true` (variable de entorno)
-- Límite estricto: **≤50 req/día** (persistido en `/tmp/cendoj_puntual_counter.json`)
-- `asyncio.sleep(5)` entre cada petición
-- **Nunca activar en producción** sin autorización CGPJ
-- Los documentos obtenidos en modo DEV no se indexan en la base de datos de producción
+- `QuotaTracker` (SQLite en `data/cendoj_quota.db`) — límite estricto **≤50 req/día**, reset a 00:00 UTC
+- Backoff 60 s cuando quedan <10 requests; `CendojQuotaExhaustedError` cuando llega a 0
+- Ante HTTP 429/403 o captcha: suspensión inmediata con flag en DB; **sin reintento automático**
+- Headers de identificación: `User-Agent` con `CENDOJ_CONTACT_EMAIL` + `X-Purpose: legal-research-non-commercial`
+- Auditoría en `data/cendoj_audit.log` (timestamp, url, quota_remaining, status — sin contenido)
+- Modo fixture para tests: `fixture_path=Path("...")` — no consume cuota
+- **Variable requerida:** `CENDOJ_CONTACT_EMAIL` (falla en startup si no está definida)
+- **Nunca activar en producción** sin autorización CGPJ; asset Dagster es manual (`workflow_dispatch` únicamente)
+
+Para levantar un bloqueo por suspensión ver `docs/runbook.md` sección "Levantar bloqueo CENDOJ".
 
 ---
 
@@ -74,13 +79,13 @@ Mientras se tramita la autorización, existe un modo de desarrollo **exclusivo p
 
 ## Proceso de activación (AMBER → GREEN)
 
-Cuando se obtenga la autorización correspondiente:
+Cuando se obtenga la autorización CGPJ:
 
 1. Mover el issue de GitHub a estado "autorizado"
 2. Crear PR que:
-   - Elimina `raise NotImplementedError(...)` de la clase correspondiente
-   - Implementa el scraper real
-   - Añade `source_id` a las Literal de `CanonicalDocument`
+   - Elimina el rate limit duro del `QuotaTracker` (o lo sube al límite acordado)
+   - Mantiene los headers de identificación (`User-Agent`, `X-Purpose`)
+   - Activa el asset Dagster `cendoj_raw` con schedule semanal
    - Actualiza este documento con fecha de activación y referencia al sign-off
 3. El PR requiere aprobación de Legal y Compliance antes de merge
-4. Actualizar ADR 0011 con el cambio de estado
+4. Actualizar ADR 0011 y ADR 0025 con el cambio de estado

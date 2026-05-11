@@ -68,6 +68,32 @@ class ContentSizeMiddleware(BaseHTTPMiddleware):
 # ---------------------------------------------------------------------------
 
 @asynccontextmanager
+_COMMERCIAL_SOURCES = ("aranzadi", "laley", "tirant")
+
+
+def _validate_commercial_sources() -> None:
+    """Fail startup if any commercial source is enabled without a verified license.
+
+    Checks CONFIG_LICENSE_VERIFIED env var and the per-source enabled flags in
+    settings. Raises RuntimeError so the process exits before serving traffic.
+    See ADR 0029.
+    """
+    import os
+
+    license_verified = os.environ.get("CONFIG_LICENSE_VERIFIED", "").lower() == "true"
+    settings = get_settings()
+
+    for source_name in _COMMERCIAL_SOURCES:
+        source_cfg = getattr(settings, f"commercial_{source_name}_enabled", False)
+        if source_cfg and not license_verified:
+            raise RuntimeError(
+                f"Commercial source '{source_name}' is enabled in config but "
+                f"CONFIG_LICENSE_VERIFIED is not set to 'true'. "
+                f"Verify the signed license before enabling commercial sources. "
+                f"See docs/legal/comerciales-status.md and ADR 0029."
+            )
+
+
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
 
@@ -80,6 +106,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         otlp_endpoint=settings.otel_exporter_otlp_endpoint,
         service_version=settings.version,
     )
+
+    # Guard: commercial sources must not be enabled without a verified license.
+    # This fails fast at startup rather than at request time. ADR 0029.
+    _validate_commercial_sources()
 
     logger.info(
         "startup",
