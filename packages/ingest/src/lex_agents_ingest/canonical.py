@@ -52,11 +52,22 @@ class HierarchyNode(BaseModel):
 
 class CanonicalDocument(BaseModel):
     id: str = ""
-    jurisdiction: Literal["ES", "EU"] = "EU"
-    source: Literal["boe", "eurlex"]
+    jurisdiction: Literal["ES", "EU", "GB"] = "EU"
+    source: Literal[
+        "boe",
+        "eurlex",
+        "aepd",
+        "edpb",
+        "bde",
+        "eba",
+        "esma",
+        "legislation_uk",
+        "fca",
+    ]
     source_id: str
     type: Literal[
-        "regulation", "directive", "ley", "real_decreto", "circular", "other"
+        "regulation", "directive", "ley", "real_decreto", "circular",
+        "resolution", "guideline", "opinion", "qa", "other",
     ] = "other"
     title: str = ""
     publication_date: date = Field(default_factory=date.today)
@@ -69,6 +80,9 @@ class CanonicalDocument(BaseModel):
     raw_url: str = ""
     fetched_at: datetime = Field(default_factory=datetime.utcnow)
     checksum: str = ""
+    # Extended metadata — source-specific fields stored as free-form dict
+    extra: dict[str, str] = Field(default_factory=dict)
+    domain: str = ""
 
     def model_post_init(self, __context: object) -> None:
         if not self.id:
