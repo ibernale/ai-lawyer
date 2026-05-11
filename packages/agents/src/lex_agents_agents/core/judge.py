@@ -188,4 +188,5 @@ class LegalJudge:
             gaps=[f"judge_unavailable:{reason}"],
             iteration_brief="",
             iteration=iteration,
+            is_fallback=True,
         )

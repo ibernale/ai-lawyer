@@ -21,6 +21,24 @@ from lex_agents_evals_advanced.types import (
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
+# ── Input validation ──────────────────────────────────────────────────────────
+_SAFE_RATIONALE_RE = re.compile(r"^[\w\s\-.,;:()\[\]áéíóúñüÁÉÍÓÚÑÜ%/·'\"]{1,500}$", re.UNICODE)
+_SAFE_BRANCH_RE = re.compile(r"^[a-z0-9_]{3,50}$")
+
+_SUBPROCESS_TIMEOUT_GIT = 30   # seconds
+_SUBPROCESS_TIMEOUT_GH = 30    # seconds
+
+
+def _validate_diff_inputs(diff: "PromptDiff") -> str | None:
+    """Return error message if inputs are unsafe; None if OK."""
+    if not _SAFE_BRANCH_RE.match(diff.branch):
+        return f"branch name contains unsafe characters: {diff.branch!r}"
+    rationale_safe = diff.rationale.replace("\n", " ").replace("\r", "")
+    if not _SAFE_RATIONALE_RE.match(rationale_safe[:500]):
+        return f"rationale contains unsafe characters (first 80): {rationale_safe[:80]!r}"
+    return None
+
+
 # ── INVARIANT: Do NOT add any call to "gh pr merge" in this file. ────────────
 # Prompt-evolution PRs require at least one human review (CODEOWNERS + ADR 0021).
 # Any automated merge would violate the governance policy.
@@ -64,6 +82,7 @@ def _git(args: list[str], cwd: str | None = None) -> tuple[int, str, str]:
         capture_output=True,
         text=True,
         cwd=cwd,
+        timeout=_SUBPROCESS_TIMEOUT_GIT,
     )
     return result.returncode, result.stdout.strip(), result.stderr.strip()
 
@@ -75,8 +94,10 @@ def _regression_summary(regression_result: RegressionResult) -> str:
              "|------|----------------|---------------|---------------|--------|"]
     for rc in regression_result.regression_cases:
         status = "✅" if rc.passed else "❌"
+        # Escape pipe characters to prevent markdown table injection
+        safe_case_id = rc.case_id.replace("|", "\\|")
         lines.append(
-            f"| {rc.case_id} | {rc.concept_coverage_before:.1%} | "
+            f"| {safe_case_id} | {rc.concept_coverage_before:.1%} | "
             f"{rc.concept_coverage_after:.1%} | {rc.forbidden_claim_rate_after:.1%} | {status} |"
         )
     return "\n".join(lines)
@@ -100,6 +121,9 @@ def open_pr(
         return None
 
     diff = regression_result.diff
+    if err := _validate_diff_inputs(diff):
+        logger.error("pr_opener_invalid_inputs", error=err)
+        return None
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
     branch_name = f"prompt-evolution/{timestamp}-{diff.branch}"
     new_version = diff.current_version + 1
@@ -205,6 +229,7 @@ _ADR de referencia: 0021 (prompt evolution policy)_
         ],
         capture_output=True,
         text=True,
+        timeout=_SUBPROCESS_TIMEOUT_GH,
     )
 
     if result.returncode != 0:

@@ -43,3 +43,4 @@ class JudgeVerdict:
     gaps: list[str]
     iteration_brief: str
     iteration: int = 1
+    is_fallback: bool = False              # True when forced publish due to api/parse error

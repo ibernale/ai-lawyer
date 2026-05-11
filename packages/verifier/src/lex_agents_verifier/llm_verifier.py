@@ -74,7 +74,7 @@ class LLMVerifier:
         results: list[ClaimVerification] = []
         tasks: list[tuple[int, asyncio.Task[ClaimVerification]]] = []
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         for i, (claim, chunk_text, existing) in enumerate(claims_with_chunks):
             if existing.verdict != "UNCERTAIN":
@@ -129,7 +129,7 @@ class LLMVerifier:
             "</chunk_text>"
         )
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         response = await loop.run_in_executor(
             None,

@@ -67,17 +67,28 @@ class CrossJurisdictionCoordinator:
                 return_exceptions=True,
             )
             responses: list[AgentResponse] = []
+            n_failed = 0
             for i, result in enumerate(raw_results):
                 if isinstance(result, BaseException):
+                    n_failed += 1
                     logger.error(
                         "coordinator_specialist_failed",
                         branch=sorted_tasks[i].branch,
                         error=str(result),
+                        exc_info=result,
                     )
                 else:
                     responses.append(result)
             if not responses:
                 raise RuntimeError("All specialist branches failed; cannot synthesize.")
+            if n_failed > 0:
+                # Partial failure: log clearly so degraded response is visible in traces
+                logger.warning(
+                    "coordinator_partial_failure",
+                    n_failed=n_failed,
+                    n_ok=len(responses),
+                    total=len(sorted_tasks),
+                )
             logger.info("coordinator_parallel_done", n_responses=len(responses))
             return responses
 
