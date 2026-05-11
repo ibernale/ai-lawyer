@@ -117,8 +117,17 @@ class LLMVerifier:
         chunk_text: str,
         existing: ClaimVerification,
     ) -> ClaimVerification:
-        prompt_body = self._get_prompt_body()
-        message = prompt_body.replace("{claim}", claim.text).replace("{chunk_text}", chunk_text)
+        system_prompt = self._get_prompt_body()
+        # Use separate user message with XML tags to prevent prompt injection
+        # from claim text or chunk content reaching the system instructions.
+        user_message = (
+            "<claim>\n"
+            f"{claim.text}\n"
+            "</claim>\n\n"
+            "<chunk_text>\n"
+            f"{chunk_text}\n"
+            "</chunk_text>"
+        )
 
         loop = asyncio.get_event_loop()
 
@@ -128,7 +137,8 @@ class LLMVerifier:
                 model=MODEL_HAIKU,
                 max_tokens=128,
                 temperature=0.0,
-                messages=[{"role": "user", "content": message}],
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_message}],
             ),
         )
 
