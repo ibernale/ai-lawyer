@@ -105,10 +105,10 @@ jobs:
           tags: lex-agents/api:scan
           cache-from: type=gha
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.2
-        with:
-          version: v0.70.0
-      - name: Trivy scan (table — CVE names visible in log)
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sudo sh -s -- -b /usr/local/bin v0.70.0
+      - name: Trivy scan — table (CVE names visible in log)
         run: |
           trivy image \
             --severity CRITICAL,HIGH \
@@ -116,7 +116,7 @@ jobs:
             --exit-code 0 \
             --format table \
             lex-agents/api:scan
-      - name: Trivy scan (SARIF — gate + Security tab)
+      - name: Trivy scan — SARIF gate
         run: |
           trivy image \
             --severity CRITICAL,HIGH \
