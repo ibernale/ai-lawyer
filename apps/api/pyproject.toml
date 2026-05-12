@@ -21,6 +21,7 @@ dependencies = [
     "slowapi>=0.1.9",
     "prometheus-fastapi-instrumentator>=7.0.0",
     "python-docx>=1.1.0",
+    "openpyxl>=3.1.0",
     "lex-agents-shared",
     "lex-agents-ingest",
     "lex-agents-rag",
