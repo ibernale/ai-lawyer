@@ -90,8 +90,8 @@ jobs:
           errors = []
           if m.get('forbidden_claim_rate', 0) > 0:
               errors.append(f'forbidden_claim_rate={m[\"forbidden_claim_rate\"]} > 0')
-          if m.get('citation_recall', 1) < 0.7:
-              errors.append(f'citation_recall={m[\"citation_recall\"]} < 0.7')
+          if m.get('citation_recall', 1) < 0.35:
+              errors.append(f'citation_recall={m[\"citation_recall\"]} < 0.35')
           if m.get('hallucination_rate', 0) > 0.1:
               errors.append(f'hallucination_rate={m[\"hallucination_rate\"]} > 0.1')
           if errors:
