@@ -255,10 +255,7 @@ class TestComparativeOutputWiring:
             OrchestratorDeps,
             OrchestratorV2,
         )
-        from lex_agents_shared.types import (
-            ComparativeResponse,
-            JurisdictionEntry,
-        )
+        from lex_agents_shared.types import ComparativeResponse
 
         # Minimal mocks
         mock_client = MagicMock()
@@ -278,19 +275,11 @@ class TestComparativeOutputWiring:
             dimensions=[],
             divergences=[],
             common_ground=["Datos biométricos son categoría especial"],
-            risk_differential={
-                "ES": JurisdictionEntry(
-                    jurisdiction="ES",
-                    coverage_level="full",
-                    key_rules=["RGPD art. 9"],
-                    risk_level="high",
-                    citations=[],
-                )
-            },
+            risk_differential={"ES": "high"},
             risk_rationale="Borrador asistido por IA — requiere validación cualificada.",
             coverage_gaps=[],
             citations=[],
-            verification_status="GREEN",
+            verification_status="green",
         )
 
         mock_agent_resp = AgentResponse(
