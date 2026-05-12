@@ -6,6 +6,45 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.3.0] — 2026-05-12
+
+### Added
+
+**Fase 7.3 — Comparative Law Module**
+
+- `ComparativeResponse` schema: `JurisdictionEntry`, `ComparativeDimension`, `Divergence`, `CoverageGap` Pydantic types in `lex_agents_shared`
+- `ComparativeSynthesizer`: calls claude-opus-4-7 with `sintesis_comparative/v1` prompt; auto-injects `CoverageGap` for BR/MX/UK (no-fabrication invariant)
+- `output_type=analisis_comparativo`: explicit activation mode wired into standard and deep orchestrator paths
+- `GET /api/v1/consult/{trace_id}/export/comparative`: 4-sheet XLSX export (pivot, divergences, risk, citations) via openpyxl
+- `ComparativeView.tsx`: tabbed pivot table, divergence cards, risk badges, XLSX export link
+- 4 canonical YAML eval cases (COMP-001–COMP-004) in `evals/comparative/`
+
+**Fase 7.4 — Hardening Final**
+
+- `CaveatBanner.tsx`: reinforced red banner on all responses; amber CENDOJ-specific variant when CENDOJ citations detected
+- `FeedbackWidget.tsx` + `POST /api/v1/feedback`: user verdict (aceptable/dudoso/incorrecto) + notes stored in `user_feedback` SQLite table
+- `packages/audit` (`AuditStore`, `daily_sampler`): stratified 5-samples/day by branch+depth; idempotent; `GET/PUT /api/v1/audit` REST API
+- `/auditoria` frontend page: table of audit samples with modal review panel (verdict + notes)
+- `unsupported_detector.py`: 4 regex categories (cuantificacion, estrategia, plazo_activo, asesoramiento_personal) return `DetectionResult` with degraded response; short-circuits before RAG in consult endpoint
+- `failure_analyzer.py` extended: optional `audit_negatives` + `feedback_negatives` signals; priority scoring (audit-incorrecto: 3 pts, feedback-incorrecto: 2 pts, LeMAJ: 1 pt/case); clusters sorted by priority descending
+- 9 new Prometheus metrics + Grafana panels (Document Agents, Comparative Law, Audit & Feedback, Unsupported detector)
+- ADR 0028: mitigaciones por ausencia de validación experta externa
+- `docs/limitations.md`: jurisdiction coverage table, unsupported patterns, development sources
+- `docs/roadmap-fase-8.md`: 3 blocking prerequisites + 7 capability gates
+- 30-minute demo script (`docs/demo.md`), 5 new runbook operations
+
+### Changed
+
+- `ConsultResponse` gains `comparative_output: ComparativeResponse | None`; backward-compatible (`answer` always populated)
+- `FailedCluster` gains `priority_score`, `audit_incorrecto_count`, `feedback_incorrecto_count`
+- Consult endpoint: unsupported queries return degraded response immediately (no RAG/LLM cost)
+
+### Fixed
+
+- `comparative_output` now propagated in `resp_with_cid` construction in consult router (was silently dropped)
+
+---
+
 ## [0.2.0] — 2026-05-11
 
 ### Added
