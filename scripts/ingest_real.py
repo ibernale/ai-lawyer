@@ -35,7 +35,7 @@ async def _run(source: object, anthropic_key: str) -> None:
     anthropic = Anthropic(api_key=anthropic_key)
     contextualizer = Contextualizer(anthropic, cache_dir="data/contexts")
     embedder = BgeM3Embedder()
-    qdrant = QdrantClient(url=os.getenv("QDRANT_URL", "http://localhost:6333"))
+    qdrant = QdrantClient(url=os.getenv("QDRANT_URL", "http://localhost:6333"), timeout=30)
     indexer = QdrantIndexer(qdrant)
 
     pipeline = IngestPipeline(source, chunker, contextualizer, embedder, indexer, storage)
