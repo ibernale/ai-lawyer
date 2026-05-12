@@ -141,6 +141,81 @@ def compute_legal_quality_score(cr: CaseResult, weights: dict[str, float]) -> fl
 
 
 # ---------------------------------------------------------------------------
+# Comparative law metrics
+# ---------------------------------------------------------------------------
+
+def comparative_coverage_accuracy(
+    result: dict,
+    expected: dict,
+) -> float:
+    """Measures what fraction of expected coverage gaps were correctly declared
+    in the comparative output.
+
+    = declared_gaps_matching_expected / total_expected_gaps
+
+    A gap 'matches' if:
+    - result.comparative_output.coverage_gaps contains an entry for the expected jurisdiction
+    - AND the entry's coverage level matches expected_coverage (partial/insufficient)
+
+    Returns 1.0 if no gaps expected and none declared.
+    Returns 0.0 if gaps expected but comparative_output is None.
+    """
+    expected_gaps = expected.get("must_flag_coverage_gap", [])
+    if not expected_gaps:
+        return 1.0
+
+    comparative = result.get("comparative_output")
+    if not comparative:
+        return 0.0
+
+    declared_gaps = comparative.get("coverage_gaps", [])
+    declared_jurisdictions = {g["jurisdiction"] for g in declared_gaps}
+
+    # Also check dimensions for partial/insufficient coverage cells
+    dimensions = comparative.get("dimensions", [])
+    partial_in_dimensions: set[str] = set()
+    for dim in dimensions:
+        for jur, entry in dim.get("by_jurisdiction", {}).items():
+            if entry.get("coverage") in ("partial", "insufficient"):
+                partial_in_dimensions.add(jur)
+
+    all_declared = declared_jurisdictions | partial_in_dimensions
+
+    matched = sum(
+        1 for gap in expected_gaps
+        if gap["jurisdiction"] in all_declared
+    )
+    return matched / len(expected_gaps)
+
+
+def must_compare_jurisdictions_check(result: dict, expected: dict) -> bool:
+    """Returns True if all expected jurisdictions appear in comparative_output."""
+    expected_jurs = set(expected.get("must_compare_jurisdictions", []))
+    if not expected_jurs:
+        return True
+    comparative = result.get("comparative_output")
+    if not comparative:
+        return False
+    actual_jurs = set(comparative.get("jurisdictions_compared", []))
+    return expected_jurs.issubset(actual_jurs)
+
+
+def must_identify_divergences_check(result: dict, expected: dict) -> bool:
+    """Returns True if all expected divergences are identified (by dimension name)."""
+    expected_divs = expected.get("must_identify_divergences", [])
+    if not expected_divs:
+        return True
+    comparative = result.get("comparative_output")
+    if not comparative:
+        return False
+    actual_dims = {d["dimension"] for d in comparative.get("divergences", [])}
+    for exp_div in expected_divs:
+        if not any(exp_div["dimension"].lower() in actual_dim.lower() for actual_dim in actual_dims):
+            return False
+    return True
+
+
+# ---------------------------------------------------------------------------
 # Aggregation
 # ---------------------------------------------------------------------------
 

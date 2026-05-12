@@ -1,0 +1,33 @@
+id: COMP-003
+type: comparative
+jurisdictions: [ES, BR, MX]
+branches: [administrativo, penal_economico]
+difficulty: hard
+expert_reviewed: false
+query: "Sanción administrativa por incumplimiento de obligaciones PBC/FT (prevención blanqueo de capitales y financiación del terrorismo): tratamiento comparado en España, Brasil y México."
+expected:
+  output_type: analisis_comparativo
+  must_compare_jurisdictions: [ES, BR, MX]
+  must_identify_divergences:
+    - dimension: "Régimen sancionador PBC/FT"
+      between: [ES, BR, MX]
+      reason: "Ley 10/2010 ES vs Lei 9.613/1998 BR vs Ley Federal para Prevención de Lavado de Dinero MX — importes y procedimientos distintos"
+    - dimension: "Autoridad supervisora"
+      between: [ES, BR, MX]
+      reason: "SEPBLAC+BdE vs COAF+BCB vs SHCP+SAT+CNH"
+  must_flag_coverage_gap:
+    - jurisdiction: BR
+      expected_coverage: partial
+    - jurisdiction: MX
+      expected_coverage: partial
+  must_mention_concepts:
+    - "blanqueo de capitales"
+    - "SEPBLAC"
+    - "COAF"
+    - "SHCP"
+    - "PBC/FT"
+  risk_differential:
+    ES: low
+    BR: high
+    MX: high
+notes: "Both BR and MX have partial coverage. Three-jurisdiction comparison required."

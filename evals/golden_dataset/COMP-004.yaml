@@ -1,0 +1,31 @@
+id: COMP-004
+type: comparative
+jurisdictions: [ES, EU, UK]
+branches: [mercantil_societario, regulatorio_bancario_ue_es]
+difficulty: hard
+expert_reviewed: false
+query: "Cláusula de jurisdicción internacional en contrato bancario entre entidad española y contraparte británica post-Brexit. ¿Qué ordenamiento es aplicable y cuáles son las diferencias en el reconocimiento de sentencias?"
+expected:
+  output_type: analisis_comparativo
+  must_compare_jurisdictions: [ES, EU, UK]
+  must_identify_divergences:
+    - dimension: "Ley aplicable a contratos internacionales"
+      between: [EU, UK]
+      reason: "Reglamento Roma I sigue aplicando en ES/EU; UK post-Brexit aplica retained EU law con posibles divergencias futuras"
+    - dimension: "Reconocimiento de sentencias"
+      between: [EU, UK]
+      reason: "Reglamento Bruselas I bis no aplica UK desde 2021; sustituido por acuerdos bilaterales limitados"
+  must_flag_coverage_gap:
+    - jurisdiction: UK
+      expected_coverage: partial
+  must_mention_concepts:
+    - "Brexit"
+    - "Roma I"
+    - "Bruselas I"
+    - "jurisdicción"
+    - "reconocimiento de sentencias"
+  risk_differential:
+    ES: low
+    EU: low
+    UK: medium
+notes: "UK post-Brexit partial coverage. legislation.gov.uk + FCA sources available."

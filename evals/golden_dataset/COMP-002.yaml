@@ -1,0 +1,30 @@
+id: COMP-002
+type: comparative
+jurisdictions: [ES, MX]
+branches: [regulatorio_bancario_ue_es, administrativo]
+difficulty: hard
+expert_reviewed: false
+query: "Apertura de filial bancaria de Santander en México: requisitos regulatorios comparados con España. ¿Qué diferencias hay en los requisitos de autorización, capital mínimo y supervisión?"
+expected:
+  output_type: analisis_comparativo
+  must_compare_jurisdictions: [ES, MX]
+  must_identify_divergences:
+    - dimension: "Autorización y licencia bancaria"
+      between: [ES, MX]
+      reason: "BdE/BCE vs CNBV — regímenes de autorización distintos"
+    - dimension: "Capital mínimo regulatorio"
+      between: [ES, MX]
+      reason: "CRR II vs Ley de Instituciones de Crédito — umbrales distintos"
+  must_flag_coverage_gap:
+    - jurisdiction: MX
+      expected_coverage: partial
+  must_mention_concepts:
+    - "CNBV"
+    - "Banco de España"
+    - "capital mínimo"
+    - "autorización"
+    - "supervisión prudencial"
+  risk_differential:
+    ES: low
+    MX: medium
+notes: "MX coverage partial (SIDOF-DOF AMBER). Focus on authorization and capital requirements."
