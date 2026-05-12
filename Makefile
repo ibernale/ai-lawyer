@@ -136,3 +136,12 @@ db-show: ## Show recent consultations from SQLite history
 
 grafana: ## Open Grafana dashboard in browser
 	open http://localhost:3001
+
+## ─── Admin user management ───────────────────────────────────────────────────
+.PHONY: admin-bootstrap user-add
+
+admin-bootstrap:
+	@python scripts/admin_bootstrap.py --role admin
+
+user-add:
+	@python scripts/admin_bootstrap.py --role $(ROLE) --username $(USERNAME)

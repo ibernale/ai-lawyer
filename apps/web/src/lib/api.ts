@@ -424,3 +424,152 @@ export async function deleteDocument(docId: string): Promise<void> {
     headers,
   });
 }
+
+// ─── Governance types & API ───────────────────────────────────────────────────
+
+export type ProposalStatus = "pending" | "approved" | "rejected" | "changes_requested";
+
+export type PromptEvolutionProposal = {
+  id: number;
+  pr_number: number | null;
+  pr_url: string;
+  specialist: string;
+  diff: string;
+  motivating_cases: string | null;
+  simulation_results: string | null;
+  status: ProposalStatus;
+  created_at: string;
+  decided_at: string | null;
+  decided_by: string | null;
+  decision_reason: string | null;
+};
+
+export type SourceStatus = {
+  source_id: string;
+  display_name: string | null;
+  status: "active" | "paused";
+  paused_at: string | null;
+  paused_by: string | null;
+  paused_reason: string | null;
+  last_synced_at: string | null;
+};
+
+export type RecentDecision = {
+  id: number;
+  timestamp: string;
+  actor: string;
+  actor_role: string;
+  action_type: string;
+  target_type: string;
+  target_id: string | null;
+  reason: string;
+};
+
+export type AuditEntry = {
+  id: number;
+  timestamp: string;
+  actor_user_id: string;
+  actor_role: string;
+  action_type: string;
+  target_type: string;
+  target_id: string | null;
+  before_state: string | null;
+  after_state: string | null;
+  reason: string;
+  correlation_id: string | null;
+  checksum_self: string | null;
+};
+
+export type AuditFilter = {
+  actor?: string;
+  action_type?: string;
+  target_type?: string;
+  since?: string;
+  until?: string;
+  limit?: number;
+};
+
+export type ChainVerification = {
+  valid: boolean;
+  total: number;
+  broken_at: number | null;
+};
+
+// Governance endpoints
+export const listProposals = (status?: string) =>
+  apiFetch<PromptEvolutionProposal[]>(
+    `/api/v1/admin/governance/proposals${status ? `?status=${status}` : ""}`,
+  );
+
+export const approveProposal = (prNumber: number, reason: string) =>
+  apiFetch<{ status: string; pr_number: number; gh_merge_ok: boolean }>(
+    `/api/v1/admin/governance/proposals/${prNumber}/approve`,
+    { method: "POST", body: JSON.stringify({ reason }) },
+  );
+
+export const rejectProposal = (prNumber: number, reason: string) =>
+  apiFetch<{ status: string; pr_number: number; gh_close_ok: boolean }>(
+    `/api/v1/admin/governance/proposals/${prNumber}/reject`,
+    { method: "POST", body: JSON.stringify({ reason }) },
+  );
+
+export const requestChangesProposal = (prNumber: number, comment: string) =>
+  apiFetch<{ status: string; pr_number: number }>(
+    `/api/v1/admin/governance/proposals/${prNumber}/request-changes`,
+    { method: "POST", body: JSON.stringify({ comment }) },
+  );
+
+export const listSources = () =>
+  apiFetch<SourceStatus[]>("/api/v1/admin/governance/sources");
+
+export const pauseSource = (sourceId: string, reason: string) =>
+  apiFetch<{ source_id: string; status: string }>(
+    `/api/v1/admin/governance/sources/${sourceId}/pause`,
+    { method: "POST", body: JSON.stringify({ reason }) },
+  );
+
+export const resumeSource = (sourceId: string, reason: string) =>
+  apiFetch<{ source_id: string; status: string }>(
+    `/api/v1/admin/governance/sources/${sourceId}/resume`,
+    { method: "POST", body: JSON.stringify({ reason }) },
+  );
+
+export const listRecentDecisions = (limit = 50) =>
+  apiFetch<RecentDecision[]>(
+    `/api/v1/admin/governance/recent-decisions?limit=${limit}`,
+  );
+
+// Audit trail endpoints
+export const listAuditTrail = (filters: AuditFilter = {}) => {
+  const params = new URLSearchParams();
+  if (filters.actor) params.set("actor", filters.actor);
+  if (filters.action_type) params.set("action_type", filters.action_type);
+  if (filters.target_type) params.set("target_type", filters.target_type);
+  if (filters.since) params.set("since", filters.since);
+  if (filters.until) params.set("until", filters.until);
+  if (filters.limit) params.set("limit", String(filters.limit));
+  const qs = params.toString();
+  return apiFetch<AuditEntry[]>(`/api/v1/admin/audit-trail${qs ? `?${qs}` : ""}`);
+};
+
+export const getAuditEntry = (id: number) =>
+  apiFetch<AuditEntry>(`/api/v1/admin/audit-trail/${id}`);
+
+export const verifyAuditChain = () =>
+  apiFetch<ChainVerification>("/api/v1/admin/audit-trail/verify");
+
+export const exportAuditTrail = async (format: "csv" | "json"): Promise<Blob> => {
+  const token =
+    typeof window !== "undefined"
+      ? (sessionStorage.getItem("lex_agents_token") ?? (await getToken()))
+      : null;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE}/api/v1/admin/audit-trail/export`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ format }),
+  });
+  if (!res.ok) throw new Error(`Export failed: ${res.status}`);
+  return res.blob();
+};
