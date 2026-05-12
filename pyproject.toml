@@ -84,6 +84,10 @@ known-first-party = ["shared", "agents", "rag", "verifier", "ingest"]
 "**/*.ipynb" = ["T20", "E712", "RUF003", "E501", "RUF"]
 # auth module — token_type value is not a password
 "apps/api/src/lex_agents_api/auth.py" = ["S105"]
+# governance router — gh CLI is a well-known binary, S607 is a false positive
+"apps/api/src/lex_agents_api/routers/governance.py" = ["S607"]
+# audit_trail — WHERE clause is built from literal strings only, not user input
+"packages/audit/src/lex_agents_audit/audit_trail.py" = ["S608"]
 # prompt_proposer uses en dash in legal text strings
 "packages/evals_advanced/src/lex_agents_evals_advanced/reflection/prompt_proposer.py" = ["RUF001"]
 

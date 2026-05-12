@@ -136,8 +136,8 @@ async def export_audit_trail(
     try:
         await mgr.log(
             "export.audit_trail", "audit_trail",
-            actor=user.username,  # type: ignore[union-attr]
-            actor_role=user.role,  # type: ignore[union-attr]
+            actor=user.username,
+            actor_role=user.role,
             reason=f"Manual export requested (format={body.format})",
             after={"format": body.format, "rows_exported": len(entries)},
         )

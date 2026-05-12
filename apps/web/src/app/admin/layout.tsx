@@ -14,14 +14,18 @@ function getStoredRole(): string {
   try {
     const token = sessionStorage.getItem("lex_agents_token");
     if (!token) return "";
-    const payload = JSON.parse(atob(token.split(".")[1]));
+    const payload = JSON.parse(atob(token.split(".")[1] ?? ""));
     return payload.role ?? "";
   } catch {
     return "";
   }
 }
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const [role, setRole] = useState<string>("");
@@ -52,7 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {NAV.map(({ href, label }) => (
           <Link
             key={href}
-            href={href}
+            href={href as never}
             className={`text-sm font-medium px-3 py-1 rounded transition-colors ${
               pathname?.startsWith(href)
                 ? "bg-blue-100 text-blue-700"

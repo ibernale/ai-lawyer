@@ -91,13 +91,13 @@ async def approve_proposal(
         await mgr.update_proposal_status(
             pr_number=pr_number,
             status="approved",
-            decided_by=user.username,  # type: ignore[union-attr]
+            decided_by=user.username,
             decision_reason=body.reason,
         )
         await mgr.log(
             "prompt_evolution_pr.approve", "prompt_evolution_pr",
-            actor=user.username,  # type: ignore[union-attr]
-            actor_role=user.role,  # type: ignore[union-attr]
+            actor=user.username,
+            actor_role=user.role,
             reason=body.reason,
             target_id=str(pr_number),
             after={"pr_number": pr_number, "gh_merge_ok": gh_ok},
@@ -128,13 +128,13 @@ async def reject_proposal(
         await mgr.update_proposal_status(
             pr_number=pr_number,
             status="rejected",
-            decided_by=user.username,  # type: ignore[union-attr]
+            decided_by=user.username,
             decision_reason=body.reason,
         )
         await mgr.log(
             "prompt_evolution_pr.reject", "prompt_evolution_pr",
-            actor=user.username,  # type: ignore[union-attr]
-            actor_role=user.role,  # type: ignore[union-attr]
+            actor=user.username,
+            actor_role=user.role,
             reason=body.reason,
             target_id=str(pr_number),
             after={"pr_number": pr_number, "gh_close_ok": gh_ok},
@@ -163,13 +163,13 @@ async def request_changes_proposal(
         await mgr.update_proposal_status(
             pr_number=pr_number,
             status="changes_requested",
-            decided_by=user.username,  # type: ignore[union-attr]
+            decided_by=user.username,
             decision_reason=body.comment,
         )
         await mgr.log(
             "prompt_evolution_pr.request_changes", "prompt_evolution_pr",
-            actor=user.username,  # type: ignore[union-attr]
-            actor_role=user.role,  # type: ignore[union-attr]
+            actor=user.username,
+            actor_role=user.role,
             reason=body.comment,
             target_id=str(pr_number),
         )
@@ -211,13 +211,13 @@ async def pause_source(
         await mgr.set_source_status(
             source_id,
             "paused",
-            paused_by=user.username,  # type: ignore[union-attr]
+            paused_by=user.username,
             paused_reason=body.reason,
         )
         await mgr.log(
             "source.pause", "source",
-            actor=user.username,  # type: ignore[union-attr]
-            actor_role=user.role,  # type: ignore[union-attr]
+            actor=user.username,
+            actor_role=user.role,
             reason=body.reason,
             target_id=source_id,
             before=before,
@@ -246,8 +246,8 @@ async def resume_source(
         await mgr.set_source_status(source_id, "active")
         await mgr.log(
             "source.resume", "source",
-            actor=user.username,  # type: ignore[union-attr]
-            actor_role=user.role,  # type: ignore[union-attr]
+            actor=user.username,
+            actor_role=user.role,
             reason=body.reason,
             target_id=source_id,
             before=before,

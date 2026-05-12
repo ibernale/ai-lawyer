@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime, timedelta
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, Any
 
 import bcrypt as _bcrypt
@@ -32,7 +32,7 @@ _bearer = HTTPBearer(auto_error=False)
 # Models
 # ---------------------------------------------------------------------------
 
-class Role(str, Enum):
+class Role(StrEnum):
     ANALYST = "analyst"
     AUDITOR = "auditor"
     OPERATOR = "operator"

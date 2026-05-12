@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
+from typing import Any
 
 from fastapi import Depends, HTTPException
 
 
-class Role(str, Enum):
+class Role(StrEnum):
     ANALYST = "analyst"
     AUDITOR = "auditor"
     OPERATOR = "operator"
@@ -28,9 +29,9 @@ def role_gte(user_role: str, required_role: Role) -> bool:
         return False
 
 
-def requires_role(*roles: Role):
+def requires_role(*roles: Role) -> Any:
     """FastAPI dependency factory. Accepts any of the given roles (OR logic, no hierarchy)."""
-    from lex_agents_api.auth import require_auth, CurrentUser  # late import to avoid circular
+    from lex_agents_api.auth import CurrentUser, require_auth  # late import to avoid circular
 
     async def _check(user: CurrentUser = Depends(require_auth)) -> CurrentUser:
         if user.role not in {r.value for r in roles}:

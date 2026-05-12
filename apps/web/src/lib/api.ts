@@ -427,7 +427,11 @@ export async function deleteDocument(docId: string): Promise<void> {
 
 // ─── Governance types & API ───────────────────────────────────────────────────
 
-export type ProposalStatus = "pending" | "approved" | "rejected" | "changes_requested";
+export type ProposalStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "changes_requested";
 
 export type PromptEvolutionProposal = {
   id: number;
@@ -549,7 +553,9 @@ export const listAuditTrail = (filters: AuditFilter = {}) => {
   if (filters.until) params.set("until", filters.until);
   if (filters.limit) params.set("limit", String(filters.limit));
   const qs = params.toString();
-  return apiFetch<AuditEntry[]>(`/api/v1/admin/audit-trail${qs ? `?${qs}` : ""}`);
+  return apiFetch<AuditEntry[]>(
+    `/api/v1/admin/audit-trail${qs ? `?${qs}` : ""}`,
+  );
 };
 
 export const getAuditEntry = (id: number) =>
@@ -558,12 +564,16 @@ export const getAuditEntry = (id: number) =>
 export const verifyAuditChain = () =>
   apiFetch<ChainVerification>("/api/v1/admin/audit-trail/verify");
 
-export const exportAuditTrail = async (format: "csv" | "json"): Promise<Blob> => {
+export const exportAuditTrail = async (
+  format: "csv" | "json",
+): Promise<Blob> => {
   const token =
     typeof window !== "undefined"
       ? (sessionStorage.getItem("lex_agents_token") ?? (await getToken()))
       : null;
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
   if (token) headers["Authorization"] = `Bearer ${token}`;
   const res = await fetch(`${API_BASE}/api/v1/admin/audit-trail/export`, {
     method: "POST",

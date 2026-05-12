@@ -34,7 +34,9 @@ function Badge({ status }: { status: string }) {
     incorrecto: "bg-red-100 text-red-800",
   };
   return (
-    <span className={`text-xs font-medium px-2 py-0.5 rounded ${colors[status] ?? "bg-gray-100 text-gray-600"}`}>
+    <span
+      className={`text-xs font-medium px-2 py-0.5 rounded ${colors[status] ?? "bg-gray-100 text-gray-600"}`}
+    >
       {status}
     </span>
   );
@@ -63,7 +65,10 @@ function ReasonDialog({
           onChange={(e) => setValue(e.target.value)}
         />
         <div className="flex justify-end gap-2 mt-4">
-          <button onClick={onCancel} className="px-3 py-1.5 text-sm border rounded hover:bg-gray-50">
+          <button
+            onClick={onCancel}
+            className="px-3 py-1.5 text-sm border rounded hover:bg-gray-50"
+          >
             Cancelar
           </button>
           <button
@@ -84,8 +89,12 @@ function ReasonDialog({
 function PromptEvolutionTab() {
   const [proposals, setProposals] = useState<PromptEvolutionProposal[]>([]);
   const [filter, setFilter] = useState<string>("pending");
-  const [selected, setSelected] = useState<PromptEvolutionProposal | null>(null);
-  const [dialog, setDialog] = useState<{ action: string; pr: number } | null>(null);
+  const [selected, setSelected] = useState<PromptEvolutionProposal | null>(
+    null,
+  );
+  const [dialog, setDialog] = useState<{ action: string; pr: number } | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -96,7 +105,11 @@ function PromptEvolutionTab() {
       .finally(() => setLoading(false));
   }, [filter]);
 
-  async function handleAction(prNumber: number, action: string, reason: string) {
+  async function handleAction(
+    prNumber: number,
+    action: string,
+    reason: string,
+  ) {
     try {
       if (action === "approve") await approveProposal(prNumber, reason);
       else if (action === "reject") await rejectProposal(prNumber, reason);
@@ -112,15 +125,17 @@ function PromptEvolutionTab() {
   return (
     <div>
       <div className="flex gap-2 mb-4 flex-wrap">
-        {["pending", "approved", "rejected", "changes_requested", ""].map((s) => (
-          <button
-            key={s}
-            onClick={() => setFilter(s)}
-            className={`px-3 py-1 text-sm rounded border ${filter === s ? "bg-blue-600 text-white border-blue-600" : "border-gray-300 hover:bg-gray-50"}`}
-          >
-            {s || "Todos"}
-          </button>
-        ))}
+        {["pending", "approved", "rejected", "changes_requested", ""].map(
+          (s) => (
+            <button
+              key={s}
+              onClick={() => setFilter(s)}
+              className={`px-3 py-1 text-sm rounded border ${filter === s ? "bg-blue-600 text-white border-blue-600" : "border-gray-300 hover:bg-gray-50"}`}
+            >
+              {s || "Todos"}
+            </button>
+          ),
+        )}
       </div>
 
       {loading ? (
@@ -143,7 +158,12 @@ function PromptEvolutionTab() {
               <tr key={p.id} className="border-b hover:bg-gray-50">
                 <td className="py-2 pr-4">
                   {p.pr_number ? (
-                    <a href={p.pr_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    <a
+                      href={p.pr_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
                       #{p.pr_number}
                     </a>
                   ) : (
@@ -151,15 +171,48 @@ function PromptEvolutionTab() {
                   )}
                 </td>
                 <td className="py-2 pr-4 font-mono text-xs">{p.specialist}</td>
-                <td className="py-2 pr-4"><Badge status={p.status} /></td>
-                <td className="py-2 pr-4 text-gray-400 text-xs">{p.created_at?.slice(0, 16)}</td>
+                <td className="py-2 pr-4">
+                  <Badge status={p.status} />
+                </td>
+                <td className="py-2 pr-4 text-gray-400 text-xs">
+                  {p.created_at?.slice(0, 16)}
+                </td>
                 <td className="py-2 flex gap-1 flex-wrap">
-                  <button onClick={() => setSelected(p)} className="px-2 py-0.5 text-xs border rounded hover:bg-gray-50">Ver diff</button>
+                  <button
+                    onClick={() => setSelected(p)}
+                    className="px-2 py-0.5 text-xs border rounded hover:bg-gray-50"
+                  >
+                    Ver diff
+                  </button>
                   {p.status === "pending" && (
                     <>
-                      <button onClick={() => setDialog({ action: "approve", pr: p.pr_number ?? 0 })} className="px-2 py-0.5 text-xs bg-green-100 text-green-700 border border-green-300 rounded hover:bg-green-200">Aprobar</button>
-                      <button onClick={() => setDialog({ action: "request_changes", pr: p.pr_number ?? 0 })} className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-700 border border-yellow-300 rounded hover:bg-yellow-200">Cambios</button>
-                      <button onClick={() => setDialog({ action: "reject", pr: p.pr_number ?? 0 })} className="px-2 py-0.5 text-xs bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200">Rechazar</button>
+                      <button
+                        onClick={() =>
+                          setDialog({ action: "approve", pr: p.pr_number ?? 0 })
+                        }
+                        className="px-2 py-0.5 text-xs bg-green-100 text-green-700 border border-green-300 rounded hover:bg-green-200"
+                      >
+                        Aprobar
+                      </button>
+                      <button
+                        onClick={() =>
+                          setDialog({
+                            action: "request_changes",
+                            pr: p.pr_number ?? 0,
+                          })
+                        }
+                        className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-700 border border-yellow-300 rounded hover:bg-yellow-200"
+                      >
+                        Cambios
+                      </button>
+                      <button
+                        onClick={() =>
+                          setDialog({ action: "reject", pr: p.pr_number ?? 0 })
+                        }
+                        className="px-2 py-0.5 text-xs bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200"
+                      >
+                        Rechazar
+                      </button>
                     </>
                   )}
                 </td>
@@ -173,8 +226,15 @@ function PromptEvolutionTab() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-3xl max-h-[80vh] overflow-auto">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="font-semibold text-gray-800">Diff — {selected.specialist} #{selected.pr_number}</h3>
-              <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+              <h3 className="font-semibold text-gray-800">
+                Diff — {selected.specialist} #{selected.pr_number}
+              </h3>
+              <button
+                onClick={() => setSelected(null)}
+                className="text-gray-400 hover:text-gray-600 text-lg"
+              >
+                ✕
+              </button>
             </div>
             {selected.motivating_cases && (
               <div className="mb-3 text-sm text-gray-600 bg-gray-50 rounded p-3">
@@ -190,7 +250,13 @@ function PromptEvolutionTab() {
 
       {dialog && (
         <ReasonDialog
-          title={dialog.action === "approve" ? "Razón para aprobar" : dialog.action === "reject" ? "Razón para rechazar" : "Cambios solicitados"}
+          title={
+            dialog.action === "approve"
+              ? "Razón para aprobar"
+              : dialog.action === "reject"
+                ? "Razón para rechazar"
+                : "Cambios solicitados"
+          }
           placeholder="Explica la decisión…"
           onConfirm={(r) => handleAction(dialog.pr, dialog.action, r)}
           onCancel={() => setDialog(null)}
@@ -215,7 +281,9 @@ function AuditSamplesTab() {
 
   useEffect(() => {
     setLoading(true);
-    listAuditSamples(statusFilter as "pending" | "reviewing" | "reviewed" | undefined)
+    listAuditSamples(
+      statusFilter as "pending" | "reviewing" | "reviewed" | undefined,
+    )
       .then(setSamples)
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -225,7 +293,11 @@ function AuditSamplesTab() {
     <div>
       <div className="flex gap-2 mb-4">
         {["pending", "reviewing", "reviewed"].map((s) => (
-          <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1 text-sm rounded border ${statusFilter === s ? "bg-blue-600 text-white border-blue-600" : "border-gray-300 hover:bg-gray-50"}`}>
+          <button
+            key={s}
+            onClick={() => setStatusFilter(s)}
+            className={`px-3 py-1 text-sm rounded border ${statusFilter === s ? "bg-blue-600 text-white border-blue-600" : "border-gray-300 hover:bg-gray-50"}`}
+          >
             {s}
           </button>
         ))}
@@ -252,10 +324,18 @@ function AuditSamplesTab() {
                 <td className="py-2 pr-4 text-xs font-mono">{s.branch}</td>
                 <td className="py-2 pr-4">
                   <Badge status={s.status} />
-                  {isUrgent(s) && <span className="ml-1 text-xs text-red-600 font-bold">⚠ Urgente</span>}
+                  {isUrgent(s) && (
+                    <span className="ml-1 text-xs text-red-600 font-bold">
+                      ⚠ Urgente
+                    </span>
+                  )}
                 </td>
-                <td className="py-2 pr-4">{s.review_verdict ? <Badge status={s.review_verdict} /> : "—"}</td>
-                <td className="py-2 text-xs text-gray-400">{s.sampled_at?.slice(0, 16)}</td>
+                <td className="py-2 pr-4">
+                  {s.review_verdict ? <Badge status={s.review_verdict} /> : "—"}
+                </td>
+                <td className="py-2 text-xs text-gray-400">
+                  {s.sampled_at?.slice(0, 16)}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -270,9 +350,11 @@ function AuditSamplesTab() {
 function MemoryEditsTab() {
   return (
     <div className="text-sm text-gray-500 italic">
-      Las ediciones de memoria se gestionan vía PR con label <code>memory-edit</code>.
-      La revisión de PRs de memoria seguirá el mismo flujo que Prompt Evolution.
-      <br /><br />
+      Las ediciones de memoria se gestionan vía PR con label{" "}
+      <code>memory-edit</code>. La revisión de PRs de memoria seguirá el mismo
+      flujo que Prompt Evolution.
+      <br />
+      <br />
       Próximamente: lista de PRs pendientes con label memory-edit.
     </div>
   );
@@ -282,15 +364,25 @@ function MemoryEditsTab() {
 
 function SourceStatusTab() {
   const [sources, setSources] = useState<SourceStatus[]>([]);
-  const [dialog, setDialog] = useState<{ action: "pause" | "resume"; id: string } | null>(null);
+  const [dialog, setDialog] = useState<{
+    action: "pause" | "resume";
+    id: string;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
-    listSources().then(setSources).catch(console.error).finally(() => setLoading(false));
+    listSources()
+      .then(setSources)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
-  async function handleSourceAction(sourceId: string, action: "pause" | "resume", reason: string) {
+  async function handleSourceAction(
+    sourceId: string,
+    action: "pause" | "resume",
+    reason: string,
+  ) {
     try {
       if (action === "pause") await pauseSource(sourceId, reason);
       else await resumeSource(sourceId, reason);
@@ -319,15 +411,37 @@ function SourceStatusTab() {
           <tbody>
             {sources.map((s) => (
               <tr key={s.source_id} className="border-b hover:bg-gray-50">
-                <td className="py-2 pr-4 font-medium">{s.display_name ?? s.source_id}</td>
-                <td className="py-2 pr-4"><Badge status={s.status} /></td>
-                <td className="py-2 pr-4 text-gray-400 text-xs">{s.paused_by ?? "—"}</td>
-                <td className="py-2 pr-4 text-gray-500 text-xs max-w-xs truncate">{s.paused_reason ?? "—"}</td>
+                <td className="py-2 pr-4 font-medium">
+                  {s.display_name ?? s.source_id}
+                </td>
+                <td className="py-2 pr-4">
+                  <Badge status={s.status} />
+                </td>
+                <td className="py-2 pr-4 text-gray-400 text-xs">
+                  {s.paused_by ?? "—"}
+                </td>
+                <td className="py-2 pr-4 text-gray-500 text-xs max-w-xs truncate">
+                  {s.paused_reason ?? "—"}
+                </td>
                 <td className="py-2">
                   {s.status === "active" ? (
-                    <button onClick={() => setDialog({ action: "pause", id: s.source_id })} className="px-2 py-0.5 text-xs bg-gray-100 text-gray-700 border rounded hover:bg-gray-200">Pausar</button>
+                    <button
+                      onClick={() =>
+                        setDialog({ action: "pause", id: s.source_id })
+                      }
+                      className="px-2 py-0.5 text-xs bg-gray-100 text-gray-700 border rounded hover:bg-gray-200"
+                    >
+                      Pausar
+                    </button>
                   ) : (
-                    <button onClick={() => setDialog({ action: "resume", id: s.source_id })} className="px-2 py-0.5 text-xs bg-green-100 text-green-700 border border-green-300 rounded hover:bg-green-200">Reanudar</button>
+                    <button
+                      onClick={() =>
+                        setDialog({ action: "resume", id: s.source_id })
+                      }
+                      className="px-2 py-0.5 text-xs bg-green-100 text-green-700 border border-green-300 rounded hover:bg-green-200"
+                    >
+                      Reanudar
+                    </button>
                   )}
                 </td>
               </tr>
@@ -338,7 +452,11 @@ function SourceStatusTab() {
 
       {dialog && (
         <ReasonDialog
-          title={dialog.action === "pause" ? `Pausar ${dialog.id}` : `Reanudar ${dialog.id}`}
+          title={
+            dialog.action === "pause"
+              ? `Pausar ${dialog.id}`
+              : `Reanudar ${dialog.id}`
+          }
           placeholder="Razón de la acción…"
           onConfirm={(r) => handleSourceAction(dialog.id, dialog.action, r)}
           onCancel={() => setDialog(null)}
@@ -356,7 +474,10 @@ function RecentDecisionsTab() {
 
   useEffect(() => {
     setLoading(true);
-    listRecentDecisions(50).then(setDecisions).catch(console.error).finally(() => setLoading(false));
+    listRecentDecisions(50)
+      .then(setDecisions)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -364,19 +485,32 @@ function RecentDecisionsTab() {
       {loading ? (
         <p className="text-sm text-gray-500">Cargando…</p>
       ) : decisions.length === 0 ? (
-        <p className="text-sm text-gray-400 italic">Sin decisiones registradas.</p>
+        <p className="text-sm text-gray-400 italic">
+          Sin decisiones registradas.
+        </p>
       ) : (
         <ol className="space-y-2">
           {decisions.map((d) => (
-            <li key={d.id} className="flex gap-3 items-start text-sm border-b pb-2">
-              <span className="text-gray-300 text-xs mt-0.5 w-16 shrink-0">{d.timestamp?.slice(0, 16)}</span>
+            <li
+              key={d.id}
+              className="flex gap-3 items-start text-sm border-b pb-2"
+            >
+              <span className="text-gray-300 text-xs mt-0.5 w-16 shrink-0">
+                {d.timestamp?.slice(0, 16)}
+              </span>
               <div>
-                <span className="font-mono text-xs bg-gray-100 rounded px-1">{d.action_type}</span>
-                {" "}
-                <span className="text-gray-700">{d.target_type}{d.target_id ? ` #${d.target_id}` : ""}</span>
+                <span className="font-mono text-xs bg-gray-100 rounded px-1">
+                  {d.action_type}
+                </span>{" "}
+                <span className="text-gray-700">
+                  {d.target_type}
+                  {d.target_id ? ` #${d.target_id}` : ""}
+                </span>
                 {" — "}
                 <span className="text-gray-500 italic">{d.reason}</span>
-                <span className="ml-2 text-gray-400 text-xs">por {d.actor}</span>
+                <span className="ml-2 text-gray-400 text-xs">
+                  por {d.actor}
+                </span>
               </div>
             </li>
           ))}
@@ -389,7 +523,11 @@ function RecentDecisionsTab() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: "proposals", label: "Prompt Evolution PRs", Component: PromptEvolutionTab },
+  {
+    id: "proposals",
+    label: "Prompt Evolution PRs",
+    Component: PromptEvolutionTab,
+  },
   { id: "samples", label: "Audit Samples", Component: AuditSamplesTab },
   { id: "memory", label: "Memory Edits", Component: MemoryEditsTab },
   { id: "sources", label: "Source Status", Component: SourceStatusTab },

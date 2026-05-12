@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import aiosqlite
@@ -228,7 +228,7 @@ class AuditTrailManager:
 
         before_str = json.dumps(before, default=str) if before is not None else None
         after_str = json.dumps(after, default=str) if after is not None else None
-        ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+        ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S")
 
         async with aiosqlite.connect(self._db_path) as db:
             # Get last checksum_self for chaining (computed before insert)
@@ -330,7 +330,7 @@ class AuditTrailManager:
                           before_state, after_state, reason, checksum_prev, checksum_self
                    FROM audit_trail ORDER BY id ASC"""
             ) as cur:
-                rows = await cur.fetchall()
+                rows: list[Any] = list(await cur.fetchall())
 
         total = len(rows)
         for row in rows:
@@ -388,7 +388,7 @@ class AuditTrailManager:
         decided_by: str,
         decision_reason: str,
     ) -> bool:
-        ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+        ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S")
         async with aiosqlite.connect(self._db_path) as db:
             async with db.execute(
                 """UPDATE prompt_evolution_proposals
@@ -420,7 +420,7 @@ class AuditTrailManager:
         paused_by: str | None = None,
         paused_reason: str | None = None,
     ) -> bool:
-        ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+        ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S")
         paused_at = ts if new_status == "paused" else None
         async with aiosqlite.connect(self._db_path) as db:
             async with db.execute(

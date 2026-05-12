@@ -33,8 +33,8 @@ from lex_agents_api.routers import export as export_router
 from lex_agents_api.routers import feedback as feedback_router
 from lex_agents_api.routers import health as health_router
 from lex_agents_api.routers import rag as rag_router
-from lex_agents_api.routers.governance import router as governance_router
 from lex_agents_api.routers.audit_trail import router as audit_trail_router
+from lex_agents_api.routers.governance import router as governance_router
 from lex_agents_api.settings import get_settings
 from lex_agents_api.tracing import configure_tracing
 
