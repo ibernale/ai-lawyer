@@ -94,16 +94,16 @@ def load_weights(weights_path: Path | None = None) -> dict[str, float]:
 
 def _build_orchestrator() -> Any:
     """Construct OrchestratorV2 from environment variables (no FastAPI dependency)."""
-    from qdrant_client import QdrantClient
+    import anthropic as _anthropic
     from lex_agents_agents.core.orchestrator_v2 import OrchestratorDeps, OrchestratorV2
+    from lex_agents_rag.assembler import ContextAssembler
     from lex_agents_rag.embedder import BgeM3Embedder
+    from lex_agents_rag.query_rewriter import LegalQueryRewriter
     from lex_agents_rag.reranker import RerankerConfig, make_reranker
     from lex_agents_rag.retriever import HybridRetriever
-    from lex_agents_rag.query_rewriter import LegalQueryRewriter
-    from lex_agents_rag.assembler import ContextAssembler
     from lex_agents_shared.anthropic_client import AnthropicClientWrapper
     from lex_agents_verifier.pipeline import VerifierPipeline
-    import anthropic as _anthropic
+    from qdrant_client import QdrantClient
 
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     qdrant_url = os.environ.get("QDRANT_URL", "http://localhost:6333")
