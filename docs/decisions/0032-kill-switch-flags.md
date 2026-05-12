@@ -61,6 +61,7 @@ All mutations (engage/release kill switch, set flag) require `admin` role. Read 
 ### Audit trail
 
 Every mutation emits an audit entry:
+
 - `system.kill_switch.engage` / `system.kill_switch.release`
 - `system.flag.change`
 

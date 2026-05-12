@@ -273,27 +273,21 @@ function SourcesTab() {
               <td className="px-4 py-3 flex gap-2">
                 {s.status === "active" ? (
                   <button
-                    onClick={() =>
-                      setDialog({ source: s, action: "pause" })
-                    }
+                    onClick={() => setDialog({ source: s, action: "pause" })}
                     className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200"
                   >
                     Pausar
                   </button>
                 ) : (
                   <button
-                    onClick={() =>
-                      setDialog({ source: s, action: "resume" })
-                    }
+                    onClick={() => setDialog({ source: s, action: "resume" })}
                     className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200"
                   >
                     Reanudar
                   </button>
                 )}
                 <button
-                  onClick={() =>
-                    setDialog({ source: s, action: "resync" })
-                  }
+                  onClick={() => setDialog({ source: s, action: "resync" })}
                   className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
                 >
                   Force Resync
@@ -341,9 +335,7 @@ function SourcesTab() {
 function RagMemoryTab() {
   const [rag, setRag] = useState<RagStatus | null>(null);
   const [memory, setMemory] = useState<MemoryStatus | null>(null);
-  const [patterns, setPatterns] = useState<ProceduralPatternRow[] | null>(
-    null,
-  );
+  const [patterns, setPatterns] = useState<ProceduralPatternRow[] | null>(null);
   const [expandedPattern, setExpandedPattern] = useState<string | null>(null);
   const [error, setError] = useState("");
 
@@ -421,7 +413,9 @@ function RagMemoryTab() {
               <div className="text-2xl font-bold text-gray-800">
                 {memory.semantic_files_count}
               </div>
-              <div className="text-xs text-gray-500 mt-1">Ficheros semánticos</div>
+              <div className="text-xs text-gray-500 mt-1">
+                Ficheros semánticos
+              </div>
             </div>
           </div>
         )}
@@ -482,9 +476,7 @@ function HealthTab() {
               : "unavailable",
         );
         setQdrantStatus(
-          data.deps_status?.qdrant === "healthy"
-            ? "healthy"
-            : "unavailable",
+          data.deps_status?.qdrant === "healthy" ? "healthy" : "unavailable",
         );
       })
       .catch(() => {

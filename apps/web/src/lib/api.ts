@@ -620,10 +620,10 @@ export const setKillSwitch = (
   engage: boolean,
   reason: string,
 ) =>
-  apiFetch<void>(
-    `/api/v1/admin/system/kill/${encodeURIComponent(target)}`,
-    { method: "PUT", body: JSON.stringify({ engage, reason }) },
-  );
+  apiFetch<void>(`/api/v1/admin/system/kill/${encodeURIComponent(target)}`, {
+    method: "PUT",
+    body: JSON.stringify({ engage, reason }),
+  });
 
 // ─── Ops: agents ──────────────────────────────────────────────────────────────
 
@@ -639,8 +639,7 @@ export type AgentStatus = {
   last_error: string | null;
 };
 
-export const listAgents = () =>
-  apiFetch<AgentStatus[]>("/api/v1/admin/agents");
+export const listAgents = () => apiFetch<AgentStatus[]>("/api/v1/admin/agents");
 
 // ─── Ops: RAG & Memory ────────────────────────────────────────────────────────
 
@@ -680,7 +679,10 @@ export const getSemanticFile = (filename: string) =>
   );
 
 export const forceResync = (source: string, reason: string) =>
-  apiFetch<void>(`/api/v1/admin/sources/${encodeURIComponent(source)}/force-resync`, {
-    method: "POST",
-    body: JSON.stringify({ reason }),
-  });
+  apiFetch<void>(
+    `/api/v1/admin/sources/${encodeURIComponent(source)}/force-resync`,
+    {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    },
+  );

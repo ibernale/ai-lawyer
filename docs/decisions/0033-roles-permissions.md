@@ -14,12 +14,12 @@ The platform has four roles defined in `packages/admin/src/lex_agents_admin/rbac
 
 ## Roles
 
-| Role | Description |
-|---|---|
-| `analyst` | Can query the system; no admin access |
-| `auditor` | Can read audit trail and governance decisions; no write |
+| Role       | Description                                                                              |
+| ---------- | ---------------------------------------------------------------------------------------- |
+| `analyst`  | Can query the system; no admin access                                                    |
+| `auditor`  | Can read audit trail and governance decisions; no write                                  |
 | `operator` | Can pause/resume sources and read ops state; cannot engage kill switches or change flags |
-| `admin` | Full access including kill switches, feature flags, and audit export |
+| `admin`    | Full access including kill switches, feature flags, and audit export                     |
 
 Hierarchy (lowest to highest): `analyst < auditor < operator < admin`.
 
@@ -27,23 +27,23 @@ Hierarchy (lowest to highest): `analyst < auditor < operator < admin`.
 
 ## Permission Matrix
 
-| Endpoint | analyst | auditor | operator | admin |
-|---|---|---|---|---|
-| `POST /consult` | ✓ | ✓ | ✓ | ✓ |
-| `GET /api/v1/admin/audit-trail` | ✗ | ✓ | ✓ | ✓ |
-| `POST /api/v1/admin/audit-trail/export` | ✗ | ✗ | ✗ | ✓ |
-| `GET /api/v1/admin/governance/proposals` | ✗ | ✗ | ✓ | ✓ |
-| `POST /api/v1/admin/governance/proposals/*/approve` | ✗ | ✗ | ✓ | ✓ |
-| `GET /api/v1/admin/governance/sources` | ✗ | ✗ | ✓ | ✓ |
-| `POST /api/v1/admin/governance/sources/*/pause` | ✗ | ✗ | ✓ | ✓ |
-| `GET /api/v1/admin/system/state` | ✗ | ✗ | ✓ | ✓ |
-| `PUT /api/v1/admin/system/flags/*` | ✗ | ✗ | ✗ | ✓ |
-| `PUT /api/v1/admin/system/kill/*` | ✗ | ✗ | ✗ | ✓ |
-| `GET /api/v1/admin/agents` | ✗ | ✗ | ✗ | ✓ |
-| `GET /api/v1/admin/rag/status` | ✗ | ✗ | ✗ | ✓ |
-| `GET /api/v1/admin/memory/*` | ✗ | ✗ | ✗ | ✓ |
-| `PUT /api/v1/admin/memory/procedural` | ✗ | ✗ | ✗ | ✓ |
-| `POST /api/v1/admin/sources/*/force-resync` | ✗ | ✗ | ✗ | ✓ |
+| Endpoint                                            | analyst | auditor | operator | admin |
+| --------------------------------------------------- | ------- | ------- | -------- | ----- |
+| `POST /consult`                                     | ✓       | ✓       | ✓        | ✓     |
+| `GET /api/v1/admin/audit-trail`                     | ✗       | ✓       | ✓        | ✓     |
+| `POST /api/v1/admin/audit-trail/export`             | ✗       | ✗       | ✗        | ✓     |
+| `GET /api/v1/admin/governance/proposals`            | ✗       | ✗       | ✓        | ✓     |
+| `POST /api/v1/admin/governance/proposals/*/approve` | ✗       | ✗       | ✓        | ✓     |
+| `GET /api/v1/admin/governance/sources`              | ✗       | ✗       | ✓        | ✓     |
+| `POST /api/v1/admin/governance/sources/*/pause`     | ✗       | ✗       | ✓        | ✓     |
+| `GET /api/v1/admin/system/state`                    | ✗       | ✗       | ✓        | ✓     |
+| `PUT /api/v1/admin/system/flags/*`                  | ✗       | ✗       | ✗        | ✓     |
+| `PUT /api/v1/admin/system/kill/*`                   | ✗       | ✗       | ✗        | ✓     |
+| `GET /api/v1/admin/agents`                          | ✗       | ✗       | ✗        | ✓     |
+| `GET /api/v1/admin/rag/status`                      | ✗       | ✗       | ✗        | ✓     |
+| `GET /api/v1/admin/memory/*`                        | ✗       | ✗       | ✗        | ✓     |
+| `PUT /api/v1/admin/memory/procedural`               | ✗       | ✗       | ✗        | ✓     |
+| `POST /api/v1/admin/sources/*/force-resync`         | ✗       | ✗       | ✗        | ✓     |
 
 ---
 
