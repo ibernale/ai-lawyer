@@ -249,6 +249,15 @@ _ADR de referencia: 0021 (prompt evolution policy)_
         new_version=new_version,
     )
 
+    # Write proposal to governance DB (ADR 0035) — graceful if DB not available in CI
+    _record_proposal_in_governance_db(
+        pr_number=pr_number,
+        pr_url=pr_url,
+        specialist=diff.branch,
+        diff_text=diff.diff_text,
+        rationale=diff.rationale,
+    )
+
     _git(["checkout", "main"])
 
     return PromptEvolutionPR(
@@ -259,3 +268,48 @@ _ADR de referencia: 0021 (prompt evolution policy)_
         new_version=new_version,
         diff_summary=diff.rationale[:200],
     )
+
+
+def _record_proposal_in_governance_db(
+    *,
+    pr_number: int,
+    pr_url: str,
+    specialist: str,
+    diff_text: str,
+    rationale: str,
+) -> None:
+    """Write a prompt_evolution_proposals row to governance.db (ADR 0035).
+
+    ImportError-safe: silently skips if lex-agents-audit is not installed
+    (e.g. when running in a CI environment without the governance package).
+    """
+    try:
+        import asyncio
+        import os
+
+        from lex_agents_audit.audit_trail import AuditTrailManager
+
+        governance_db = os.getenv("GOVERNANCE_DB_PATH", "data/governance.db")
+        mgr = AuditTrailManager(governance_db)
+
+        async def _write() -> None:
+            await mgr.init()
+            await mgr.save_proposal(
+                pr_url=pr_url,
+                specialist=specialist,
+                diff=diff_text,
+                pr_number=pr_number if pr_number else None,
+                motivating_cases=rationale,
+            )
+
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(_write())
+        except RuntimeError:
+            asyncio.run(_write())
+
+        logger.info("governance_proposal_recorded", pr_number=pr_number, specialist=specialist)
+    except ImportError:
+        logger.debug("governance_db_not_available_skipping_proposal_record")
+    except Exception as exc:
+        logger.warning("governance_proposal_record_failed", error=str(exc))

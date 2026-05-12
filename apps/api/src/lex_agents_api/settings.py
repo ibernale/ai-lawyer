@@ -57,6 +57,9 @@ class Settings(BaseSettings):
     consultation_db_path: str = "data/consultations.db"
     agents_package_enabled: bool = True
 
+    # Governance & audit trail (ADR 0035)
+    governance_db_path: str = "data/governance.db"
+
     # Build metadata (injected by Dockerfile ARG → ENV)
     commit_sha: str = "unknown"
     build_time: str = "unknown"

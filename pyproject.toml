@@ -10,6 +10,7 @@ members = [
     "packages/evals_advanced",
     "packages/memory",
     "packages/audit",
+    "packages/admin",
     "evals",
 ]
 
@@ -24,6 +25,7 @@ lex-agents-pipeline = { workspace = true }
 lex-agents-evals-advanced = { workspace = true }
 lex-agents-memory = { workspace = true }
 lex-agents-audit = { workspace = true }
+lex-agents-admin = { workspace = true }
 
 # ─── Shared ruff config (inherited by all packages) ───────────────────────────
 [tool.ruff]
@@ -69,7 +71,7 @@ known-first-party = ["shared", "agents", "rag", "verifier", "ingest"]
 # CLI entry points use print
 "packages/evals_advanced/src/**/__main__.py" = ["T20"]
 # reflection pipeline: subprocess and print are intentional
-"packages/evals_advanced/src/lex_agents_evals_advanced/reflection/*.py" = ["S607", "S110", "S112", "T20", "RUF001"]
+"packages/evals_advanced/src/lex_agents_evals_advanced/reflection/*.py" = ["S607", "S110", "S112", "T20", "RUF001", "RUF006"]
 # adversarial perturbations use Cyrillic lookalikes intentionally and random for test perturbations
 "packages/evals_advanced/src/lex_agents_evals_advanced/adversarial/perturbations.py" = ["S311", "RUF001", "RUF003"]
 # panel.py uses forward type reference with type: ignore
@@ -82,6 +84,10 @@ known-first-party = ["shared", "agents", "rag", "verifier", "ingest"]
 "**/*.ipynb" = ["T20", "E712", "RUF003", "E501", "RUF"]
 # auth module — token_type value is not a password
 "apps/api/src/lex_agents_api/auth.py" = ["S105"]
+# governance router — gh CLI is a well-known binary, S607 is a false positive
+"apps/api/src/lex_agents_api/routers/governance.py" = ["S607"]
+# audit_trail — WHERE clause is built from literal strings only, not user input
+"packages/audit/src/lex_agents_audit/audit_trail.py" = ["S608"]
 # prompt_proposer uses en dash in legal text strings
 "packages/evals_advanced/src/lex_agents_evals_advanced/reflection/prompt_proposer.py" = ["RUF001"]
 
@@ -148,7 +154,7 @@ ignore_errors = true
 # ─── Shared pytest config ─────────────────────────────────────────────────────
 [tool.pytest.ini_options]
 testpaths = ["apps", "packages", "evals", "tests"]
-pythonpath = ["apps/api/src", "packages/agents/src", "packages/rag/src", "packages/verifier/src", "packages/ingest/src", "packages/shared/src", "packages/memory/src", "packages/evals_advanced/src", "evals/src"]
+pythonpath = ["apps/api/src", "packages/agents/src", "packages/rag/src", "packages/verifier/src", "packages/ingest/src", "packages/shared/src", "packages/memory/src", "packages/evals_advanced/src", "packages/audit/src", "packages/admin/src", "evals/src"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

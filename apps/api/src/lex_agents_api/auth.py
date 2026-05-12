@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime, timedelta
+from enum import StrEnum
 from typing import Annotated, Any
 
 import bcrypt as _bcrypt
@@ -30,6 +31,13 @@ _bearer = HTTPBearer(auto_error=False)
 # ---------------------------------------------------------------------------
 # Models
 # ---------------------------------------------------------------------------
+
+class Role(StrEnum):
+    ANALYST = "analyst"
+    AUDITOR = "auditor"
+    OPERATOR = "operator"
+    ADMIN = "admin"
+
 
 class UserConfig(BaseModel):
     username: str
@@ -118,6 +126,22 @@ def require_auth(
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
+
+
+# ---------------------------------------------------------------------------
+# Role-based access control dependency
+# ---------------------------------------------------------------------------
+
+def require_role(*roles: str) -> Any:
+    """FastAPI dependency factory: enforces that the authenticated user holds one of the given roles."""
+    async def _check(user: CurrentUser = Depends(require_auth)) -> CurrentUser:
+        if user.role not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Role '{user.role}' is not authorised. Required: {list(roles)}",
+            )
+        return user
+    return _check
 
 
 # ---------------------------------------------------------------------------
