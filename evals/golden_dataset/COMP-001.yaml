@@ -1,0 +1,34 @@
+id: COMP-001
+type: comparative
+jurisdictions: [ES, EU, BR]
+branches: [regulatorio_bancario_ue_es, datos_personales_rgpd]
+difficulty: hard
+expert_reviewed: false
+query: "Una entidad bancaria española filial de Santander quiere transferir datos personales biométricos de clientes a su filial brasileña para gestión centralizada de fraude. ¿Qué debemos analizar desde el punto de vista regulatorio comparado?"
+expected:
+  output_type: analisis_comparativo
+  must_compare_jurisdictions: [ES, EU, BR]
+  must_identify_divergences:
+    - dimension: "Transferencia internacional de datos"
+      between: [EU, BR]
+      reason: "RGPD art. 46 vs LGPD art. 33 — mecanismos de transferencia distintos"
+    - dimension: "Datos biométricos"
+      between: [EU, BR]
+      reason: "Categorías especiales RGPD art. 9 vs datos sensibles LGPD art. 11"
+  must_flag_coverage_gap:
+    - jurisdiction: BR
+      expected_coverage: partial
+  must_mention_concepts:
+    - "transferencia internacional"
+    - "datos biométricos"
+    - "RGPD"
+    - "LGPD"
+    - "BCR o cláusulas tipo"
+  must_cite_any_of:
+    - {type: regulation, celex: "32016R0679", articles: ["9", "46", "47"]}
+    - {type: ley, source: boe, keyword: "LOPDGDD"}
+  risk_differential:
+    BR: high
+    ES: low
+    EU: low
+notes: "BR coverage expected partial due to INLABS-DOU indexing status (AMBER). UK not in scope."
