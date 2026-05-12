@@ -6,6 +6,37 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.3.0-alpha] — 2026-05-11
+
+### Added
+
+**Document Agents pipeline (ADR 0026)**
+
+- `packages/documents/` — new package: `ParsedDocument`, `DocumentSegment`, `ExtractedEntities`, `DocumentAnalysisResult` types; `LegalSegmenter`, `EntityExtractor`
+- Parsers: `PDFParser` (pymupdf4llm, ≤200 pages), `DocxParser` (python-docx), `TxtParser` (chardet encoding detection), `EmlParser` (mailparser + recursive attachments)
+- Format dispatcher `detect_and_parse()` — MIME detection, 50 MB hard limit, segments populated in-place
+- Legal segmentation: 10 pattern types (`clausula`, `considerando`, `antecedente`, `acuerdo`, `resolucion`, `fundamento`, `firma`, `anexo`, `parrafo`, `thread`)
+- Entity extraction: NIF/CIF, article references, BOE IDs, ECLI, dates, amounts via regex; Claude Haiku LLM fallback when < 3 entities detected
+- `DocumentAnalystSpecialist` — `[DOC:s]` + `[REF:n]` citation support, 4 analysis modes (`resumen_ejecutivo`, `analisis_clausulas`, `riesgos`, `comparativa`)
+- `docs/prompts/document_analyst/v1.md` — Spanish system prompt, mandatory AVISO, explicit gap declaration
+- `DocSegmentVerifier` — 4 checks: invalid index, empty segment, prompt injection scan (5 patterns), Jaccard 0.70 threshold
+- `VerifierPipeline.verify_doc_segments()` — extends pipeline for `[DOC:s]` citations
+- API endpoints: `POST /api/v1/documents/upload`, `POST /api/v1/documents/{id}/analyze`, `POST /api/v1/documents/compare`, `DELETE /api/v1/documents/{id}`
+- Document store: in-memory, TTL 30 min, never persisted to disk (privacy invariant)
+- Frontend `/documentos/` — drag-and-drop upload, document cards, mode selector, analysis result with `[DOC:s]` chips
+- `[DOC:s]` purple chips in `ResponseView.tsx` alongside existing blue `[REF:n]` chips
+- `docs/legal/document-analysis-disclaimer.md` — RGPD compliance, retention policy, escalation protocol
+- `.claude/skills/document-parsing/SKILL.md` — parsing protocol, types, citation syntax
+- `.claude/agents/document-parser-builder.md` — specialized subagent definition
+
+### Changed
+
+- `packages/shared/types.py`: `AggregateVerificationReport` gains `doc_broken_refs: list[int]`
+- `ResponseView.tsx`: `renderAnswerWithChips` now handles both `[REF:n]` (blue) and `[DOC:s]` (purple) patterns
+- `apps/api/main.py`: wired `documents_router`
+
+---
+
 ## [0.2.0] — 2026-05-11
 
 ### Added
