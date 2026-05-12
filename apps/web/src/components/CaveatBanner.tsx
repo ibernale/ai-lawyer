@@ -36,8 +36,8 @@ export function CaveatBanner({
         <p className="mt-1 text-xs text-red-800 leading-relaxed">
           Cada respuesta es un <strong>BORRADOR</strong> que requiere
           verificación humana cualificada antes de cualquier uso operativo. Las
-          citas jurisprudenciales (sentencias, autos) son especialmente sensibles
-          y deben verificarse contra la fuente original. No constituye
+          citas jurisprudenciales (sentencias, autos) son especialmente
+          sensibles y deben verificarse contra la fuente original. No constituye
           asesoramiento legal.
         </p>
       </div>

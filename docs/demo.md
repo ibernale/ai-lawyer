@@ -40,6 +40,7 @@ graph TD
 ```
 
 **Key points to highlight:**
+
 - Six specialist agents run in parallel for standard/deep queries.
 - LegalJudge iterates up to 2 times before delivering to VerifierPipeline.
 - LeMAJ and Reflection are asynchronous nightly jobs — not in the hot query path.
@@ -157,6 +158,7 @@ divergences are made explicit; export works for stakeholder reporting.
 ## 17–20 min: Document agent — análisis de contrato PDF
 
 **What to do:**
+
 1. Prepare a sample PDF contract (use the fixture at `docs/sources/fixtures/contrato_sample.pdf`
    or any short banking IT outsourcing contract, 5–15 pages).
 2. In the UI, click **Adjuntar documento** (document upload button).
@@ -257,16 +259,19 @@ attempts produce structured degraded responses, not compliance failures.
 Navigate to `http://localhost:3001`. Open the lex-agents dashboard.
 
 **Panel 1 — Document Agents:**
+
 - Show `document_agent_requests_total` counter.
 - Show `document_agent_latency_p95` gauge.
 - Explain: this panel is new in Fase 7; confirms document upload processing is within SLA.
 
 **Panel 2 — Comparative Law:**
+
 - Show `comparative_law_requests_total` counter.
 - Show jurisdictions breakdown (pie or bar chart if configured).
 - Confirm XLSX export counter is visible.
 
 **Panel 3 — Audit & Feedback:**
+
 - Show `feedback_aceptable_total`, `feedback_dudoso_total`, `feedback_incorrecto_total` counters.
 - Show `audit_pending_samples` gauge (should reflect current pending count).
 - Show `audit_reviewed_today` counter (should reflect the review done in segment 20–23 min).

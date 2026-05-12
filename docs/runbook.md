@@ -385,6 +385,7 @@ When a commercial legal database license (Aranzadi, La Ley, or Tirant lo Blanch)
 follow this checklist in order:
 
 - [ ] **(a) Configure env var** — add the API key or connection string to `.env`:
+
   ```bash
   # Example for Aranzadi
   ARANZADI_API_KEY=<key>
@@ -392,24 +393,25 @@ follow this checklist in order:
   ```
 
 - [ ] **(b) Create Dagster source asset** — in
-  `packages/pipeline/src/lex_agents_pipeline/assets/sources.py`, add a new asset following the
-  pattern of the existing `boe_raw` and `eur_lex_raw` assets. Adapter stubs are already prepared
-  in `packages/pipeline/src/lex_agents_pipeline/adapters/`.
+      `packages/pipeline/src/lex_agents_pipeline/assets/sources.py`, add a new asset following the
+      pattern of the existing `boe_raw` and `eur_lex_raw` assets. Adapter stubs are already prepared
+      in `packages/pipeline/src/lex_agents_pipeline/adapters/`.
 
 - [ ] **(c) Run ingest sample** — ingest a small fixture corpus first:
+
   ```bash
   dagster asset materialize --select <source>_raw <source>_canonical
   # Verify: curl http://localhost:6333/collections/lex_agents_v1/points/count
   ```
 
 - [ ] **(d) Validate GREEN gate** — confirm at least 10 documents indexed with expected chunk count
-  and no verification failures. Do not proceed to production indexing until GREEN gate passes.
+      and no verification failures. Do not proceed to production indexing until GREEN gate passes.
 
 - [ ] **(e) Update `docs/sources/`** — add a source metadata file with: maintainer, license type,
-  update frequency, and coverage scope.
+      update frequency, and coverage scope.
 
 - [ ] **(f) Update `docs/limitations.md`** — move the source from "Fuentes en desarrollo" to the
-  appropriate section (or remove the limitation note if now fully covered).
+      appropriate section (or remove the limitation note if now fully covered).
 
 Open a PR with the changes. CODEOWNERS requires review before merge.
 

@@ -1,11 +1,11 @@
 # ADR 0028 — Mitigaciones por ausencia de validación experta externa
 
-| Campo      | Valor                     |
-| ---------- | ------------------------- |
-| Status     | Accepted                  |
-| Date       | 2026-05-12                |
-| Authors    | lex-agents team           |
-| Supersedes | —                         |
+| Campo      | Valor                      |
+| ---------- | -------------------------- |
+| Status     | Accepted                   |
+| Date       | 2026-05-12                 |
+| Authors    | lex-agents team            |
+| Supersedes | —                          |
 | Relates to | ADR 0009, 0014, 0021, 0027 |
 
 ---
@@ -90,12 +90,12 @@ This is an asynchronous process — it does not block query delivery.
 The query router explicitly rejects four pattern categories with a structured degraded response
 rather than attempting a low-confidence answer:
 
-| Category | Pattern examples | Degraded response |
-|---|---|---|
-| **Jurisdicción no soportada** | "derecho chino", "ley federal USA" | Declares unsupported jurisdiction; lists supported ones. |
-| **Rama jurídica fuera de alcance** | "derecho de familia", "herencias" | Declares branch out of scope; lists active branches. |
-| **Solicitud de actuación procesal** | "redacta el escrito", "presenta demanda" | Declares no autonomous procedural action; recommends qualified lawyer. |
-| **Consulta sin base normativa indexada** | highly specific facts with no regulatory anchor | Declares inability to ground the answer; lists available sources. |
+| Category                                 | Pattern examples                                | Degraded response                                                      |
+| ---------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------- |
+| **Jurisdicción no soportada**            | "derecho chino", "ley federal USA"              | Declares unsupported jurisdiction; lists supported ones.               |
+| **Rama jurídica fuera de alcance**       | "derecho de familia", "herencias"               | Declares branch out of scope; lists active branches.                   |
+| **Solicitud de actuación procesal**      | "redacta el escrito", "presenta demanda"        | Declares no autonomous procedural action; recommends qualified lawyer. |
+| **Consulta sin base normativa indexada** | highly specific facts with no regulatory anchor | Declares inability to ground the answer; lists available sources.      |
 
 Rejected queries are logged with `rejection_reason` for audit purposes. False rejections are
 monitored and can trigger prompt evolution via the reflection pipeline.

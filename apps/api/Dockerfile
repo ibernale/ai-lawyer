@@ -13,6 +13,7 @@ COPY packages/ingest/pyproject.toml packages/ingest/
 COPY packages/pipeline/pyproject.toml packages/pipeline/
 COPY packages/memory/pyproject.toml packages/memory/
 COPY packages/evals_advanced/pyproject.toml packages/evals_advanced/
+COPY packages/audit/pyproject.toml packages/audit/
 COPY apps/api/pyproject.toml apps/api/
 COPY evals/pyproject.toml evals/
 RUN uv sync --frozen --no-dev --package lex-agents-api

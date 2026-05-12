@@ -7,13 +7,13 @@
 
 ## 1. Jurisdicciones soportadas
 
-| Jurisdicción | Nivel de cobertura | Notas |
-|---|---|---|
-| **España (ES)** | Completa | BOE indexado (leyes, RD, circulares BdE). Fuente principal. |
-| **Unión Europea (EU)** | Completa | EUR-Lex indexado (reglamentos, directivas, decisiones BCE/EBA/ESMA). |
-| **Brasil (BR)** | Parcial | INLABS-DOU en integración parcial (LGPD, regulación BACEN básica). Planner anota "asesoría local recomendada" para normas no indexadas. |
-| **México (MX)** | Parcial | SIDOF-DOF en integración parcial (CNBV básica). Cobertura incompleta; planner anota limitación. |
-| **Reino Unido (UK)** | Insuficiente | Sin fuentes primarias indexadas. Solo referencias cruzadas desde EUR-Lex (pre-Brexit). Consultas UK retornan degraded response con aviso explícito. |
+| Jurisdicción           | Nivel de cobertura | Notas                                                                                                                                               |
+| ---------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **España (ES)**        | Completa           | BOE indexado (leyes, RD, circulares BdE). Fuente principal.                                                                                         |
+| **Unión Europea (EU)** | Completa           | EUR-Lex indexado (reglamentos, directivas, decisiones BCE/EBA/ESMA).                                                                                |
+| **Brasil (BR)**        | Parcial            | INLABS-DOU en integración parcial (LGPD, regulación BACEN básica). Planner anota "asesoría local recomendada" para normas no indexadas.             |
+| **México (MX)**        | Parcial            | SIDOF-DOF en integración parcial (CNBV básica). Cobertura incompleta; planner anota limitación.                                                     |
+| **Reino Unido (UK)**   | Insuficiente       | Sin fuentes primarias indexadas. Solo referencias cruzadas desde EUR-Lex (pre-Brexit). Consultas UK retornan degraded response con aviso explícito. |
 
 Cualquier jurisdicción no listada arriba es **explícitamente rechazada** por el detector de consultas no soportadas.
 
@@ -40,12 +40,12 @@ derecho de la competencia, derecho concursal, propiedad intelectual, derecho de 
 El detector de consultas no soportadas rechaza explícitamente cuatro categorías de patrones con una
 respuesta degradada estructurada. No se intenta una respuesta de baja confianza.
 
-| Categoría | Ejemplos de consultas rechazadas | Respuesta degradada |
-|---|---|---|
-| **Jurisdicción no soportada** | "¿Cuál es la ley aplicable en China?", "Derecho federal de EE.UU.", "Ley bancaria suiza" | Declara la jurisdicción como no soportada; lista las jurisdicciones disponibles. |
-| **Rama jurídica fuera de alcance** | "Derecho de herencias", "Custodia de menores", "Derecho fiscal corporativo", "Propiedad intelectual" | Declara la rama como fuera de alcance; lista las ramas activas. |
-| **Solicitud de actuación procesal** | "Redacta el escrito de demanda", "Presenta el recurso", "Firma el contrato", "Actúa como mi abogado" | Declara que la plataforma no realiza actuaciones procesales autónomas; recomienda abogado cualificado. |
-| **Consulta sin base normativa indexada** | Hechos muy específicos sin anclaje regulatorio conocido, preguntas de estrategia legal pura | Declara incapacidad de fundamentar la respuesta; lista las fuentes disponibles. |
+| Categoría                                | Ejemplos de consultas rechazadas                                                                     | Respuesta degradada                                                                                    |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **Jurisdicción no soportada**            | "¿Cuál es la ley aplicable en China?", "Derecho federal de EE.UU.", "Ley bancaria suiza"             | Declara la jurisdicción como no soportada; lista las jurisdicciones disponibles.                       |
+| **Rama jurídica fuera de alcance**       | "Derecho de herencias", "Custodia de menores", "Derecho fiscal corporativo", "Propiedad intelectual" | Declara la rama como fuera de alcance; lista las ramas activas.                                        |
+| **Solicitud de actuación procesal**      | "Redacta el escrito de demanda", "Presenta el recurso", "Firma el contrato", "Actúa como mi abogado" | Declara que la plataforma no realiza actuaciones procesales autónomas; recomienda abogado cualificado. |
+| **Consulta sin base normativa indexada** | Hechos muy específicos sin anclaje regulatorio conocido, preguntas de estrategia legal pura          | Declara incapacidad de fundamentar la respuesta; lista las fuentes disponibles.                        |
 
 Las consultas rechazadas se registran con `rejection_reason` para auditoría y mejora continua.
 

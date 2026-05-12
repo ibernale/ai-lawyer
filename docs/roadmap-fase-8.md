@@ -90,6 +90,7 @@ L (Phase 2: ~6 weeks jurista time + iterative engineering).
 
 **What it is:** After CGPJ formal authorization (P2), the CENDOJ integration is upgraded from
 development mode to production:
+
 - `CENDOJ_DAILY_QUOTA` hard cap is removed.
 - Full jurisprudencia index is built (Tribunal Supremo, Audiencias Provinciales, Tribunal
   Constitucional relevant chambers).
@@ -209,6 +210,7 @@ storage backend selected and reviewed; user deletion flow implemented and tested
 
 **What it is:** Migration from the current Docker Compose + local deployment to a Santander
 corporate infrastructure deployment:
+
 - **SSO Santander**: replace current JWT username/password auth with Santander corporate SSO
   (SAML or OIDC). Remove `AUTH_USERS_JSON` env var; user management via corporate directory.
 - **IT security review**: formal IT security review of the platform by Santander IT Security
@@ -233,14 +235,14 @@ if approved: hardware + model serving + performance validation).
 
 Fase 8 is considered complete when ALL of the following are met:
 
-| Criterion | Target | Gate |
-|---|---|---|
-| Expert-validated dataset | ≥ 100 golden cases reviewed by external jurista | P1 + item 2 |
-| CENDOJ producción | CGPJ authorization received; full jurisprudencia index active | P2 + item 3 |
-| At least 1 commercial DB | Aranzadi, La Ley, or Tirant integrated and GREEN-gated | P3 + item 4 |
-| Confidence calibration | Brier score < 0.15 on held-out validated cases | Item 6 |
-| Corporate SSO | Santander SSO replaces username/password auth | Item 9 |
-| IT security review | Formal sign-off from Santander IT Security | Item 9 |
+| Criterion                | Target                                                        | Gate        |
+| ------------------------ | ------------------------------------------------------------- | ----------- |
+| Expert-validated dataset | ≥ 100 golden cases reviewed by external jurista               | P1 + item 2 |
+| CENDOJ producción        | CGPJ authorization received; full jurisprudencia index active | P2 + item 3 |
+| At least 1 commercial DB | Aranzadi, La Ley, or Tirant integrated and GREEN-gated        | P3 + item 4 |
+| Confidence calibration   | Brier score < 0.15 on held-out validated cases                | Item 6      |
+| Corporate SSO            | Santander SSO replaces username/password auth                 | Item 9      |
+| IT security review       | Formal sign-off from Santander IT Security                    | Item 9      |
 
 Items 5 (drafting agents), 7 (agentes proactivos), 8 (memoria episódica), and on-prem inference
 (item 9 sub-item) are Fase 8 stretch goals — desirable but not blocking Fase 8 completion.

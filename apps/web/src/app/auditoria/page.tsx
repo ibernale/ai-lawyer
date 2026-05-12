@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  getAuditSample,
-  listAuditSamples,
-  submitAuditReview,
-} from "@/lib/api";
+import { getAuditSample, listAuditSamples, submitAuditReview } from "@/lib/api";
 import type { AuditSample, AuditStatus, AuditVerdict } from "@/lib/api";
 
 const STATUS_LABELS: Record<AuditStatus, string> = {
@@ -20,24 +16,23 @@ const STATUS_COLORS: Record<AuditStatus, string> = {
   reviewed: "bg-green-100 text-green-800 border-green-200",
 };
 
-const VERDICT_OPTIONS: { value: AuditVerdict; label: string; cls: string }[] =
-  [
-    {
-      value: "correcto",
-      label: "✅ Correcto",
-      cls: "border-green-200 text-green-800 hover:bg-green-50 data-[active=true]:bg-green-100",
-    },
-    {
-      value: "dudoso",
-      label: "❓ Dudoso",
-      cls: "border-amber-200 text-amber-800 hover:bg-amber-50 data-[active=true]:bg-amber-100",
-    },
-    {
-      value: "incorrecto",
-      label: "❌ Incorrecto",
-      cls: "border-red-200 text-red-800 hover:bg-red-50 data-[active=true]:bg-red-100",
-    },
-  ];
+const VERDICT_OPTIONS: { value: AuditVerdict; label: string; cls: string }[] = [
+  {
+    value: "correcto",
+    label: "✅ Correcto",
+    cls: "border-green-200 text-green-800 hover:bg-green-50 data-[active=true]:bg-green-100",
+  },
+  {
+    value: "dudoso",
+    label: "❓ Dudoso",
+    cls: "border-amber-200 text-amber-800 hover:bg-amber-50 data-[active=true]:bg-amber-100",
+  },
+  {
+    value: "incorrecto",
+    label: "❌ Incorrecto",
+    cls: "border-red-200 text-red-800 hover:bg-red-50 data-[active=true]:bg-red-100",
+  },
+];
 
 export default function AuditoriaPage() {
   const [statusFilter, setStatusFilter] = useState<AuditStatus | "all">(
@@ -111,9 +106,7 @@ export default function AuditoriaPage() {
                   : "border-input hover:bg-muted"
               }`}
             >
-              {s === "all"
-                ? "Todos"
-                : (STATUS_LABELS[s as AuditStatus] ?? s)}
+              {s === "all" ? "Todos" : (STATUS_LABELS[s as AuditStatus] ?? s)}
             </button>
           ))}
           <button
@@ -140,7 +133,9 @@ export default function AuditoriaPage() {
                 <th className="px-3 py-2 text-left font-semibold">Consulta</th>
                 <th className="px-3 py-2 text-left font-semibold">Rama</th>
                 <th className="px-3 py-2 text-left font-semibold">Depth</th>
-                <th className="px-3 py-2 text-left font-semibold">Muestreado</th>
+                <th className="px-3 py-2 text-left font-semibold">
+                  Muestreado
+                </th>
                 <th className="px-3 py-2 text-left font-semibold">Estado</th>
                 <th className="px-3 py-2 text-left font-semibold">Veredicto</th>
                 <th className="px-3 py-2"></th>
