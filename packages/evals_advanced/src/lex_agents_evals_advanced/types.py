@@ -103,6 +103,10 @@ class FailedCluster:
     failed_cases: list[FailedCase]
     common_gaps: list[str]
     """Recurrent gaps across cases identified by failure analyzer."""
+    priority_score: float = 0.0
+    """Composite priority: audit-incorrecto(3) + user-feedback-incorrecto(2) + LeMAJ(1)."""
+    audit_incorrecto_count: int = 0
+    feedback_incorrecto_count: int = 0
 
 
 @dataclass

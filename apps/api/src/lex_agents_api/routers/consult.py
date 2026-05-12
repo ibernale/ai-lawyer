@@ -17,6 +17,7 @@ from lex_agents_agents.orchestrator import (
     Orchestrator,
     OrchestratorDeps,
 )
+from lex_agents_agents.routing.unsupported_detector import detect_unsupported
 from lex_agents_ingest.embedder import BgeM3Embedder
 from lex_agents_rag.assembler import ContextAssembler
 from lex_agents_rag.query_rewriter import LegalQueryRewriter
@@ -29,7 +30,7 @@ from qdrant_client import QdrantClient
 
 from lex_agents_api.auth import CurrentUser, require_auth
 from lex_agents_api.db import ConsultationRecord, ConsultationStore
-from lex_agents_api.metrics import record_query
+from lex_agents_api.metrics import record_query, record_unsupported_query
 from lex_agents_api.middleware import get_correlation_id
 from lex_agents_api.settings import Settings, get_settings
 
@@ -52,8 +53,16 @@ class ConsultRequestBody(BaseModel):
     query: str = Field(min_length=10, max_length=4000)
     jurisdiction_hint: str | None = None
     jurisdictions: list[str] | None = None
-    output_type: str | None = None
+    output_type: str | None = None  # dictamen|nota|memo_comite|analisis_riesgo|analisis_comparativo
     depth: str | None = None  # "shallow" | "standard" | "deep"
+
+    @field_validator("output_type")
+    @classmethod
+    def validate_output_type(cls, v: str | None) -> str | None:
+        _VALID = {"dictamen", "nota", "memo_comite", "analisis_riesgo", "analisis_comparativo"}
+        if v is not None and v not in _VALID:
+            raise ValueError(f"output_type must be one of {_VALID}")
+        return v
 
     @field_validator("query")
     @classmethod
@@ -220,6 +229,24 @@ async def consult(
         depth=body.depth,  # type: ignore[arg-type]
     )
 
+    # Short-circuit for queries outside supported scope (no RAG/LLM needed)
+    detection = detect_unsupported(body.query)
+    if detection.detected:
+        record_unsupported_query(detection.pattern or "unknown")
+        degraded_trace = correlation_id or req.query[:8]
+        degraded = ConsultResponse(
+            trace_id=degraded_trace,
+            answer=detection.degraded_response or "",
+            citations=[],
+            verification=None,
+            query_rewritten=body.query,
+            routing={"branch": "unsupported", "pattern": detection.pattern},
+            metadata={},
+            depth_used="none",
+        )
+        background_tasks.add_task(_persist, store, degraded_trace, body.query, degraded)
+        return degraded
+
     resp = await orchestrator.run(req)
 
     # Override trace_id with correlation_id for consistency
@@ -237,6 +264,7 @@ async def consult(
         judge_verdict=resp.judge_verdict,
         cost_breakdown_by_agent=resp.cost_breakdown_by_agent,
         branch_answers=resp.branch_answers,
+        comparative_output=resp.comparative_output,
     )
 
     record_query(

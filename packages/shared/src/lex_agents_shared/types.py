@@ -1,4 +1,4 @@
-"""Shared domain types — placeholder, to be completed in Fase 2."""
+"""Shared domain types."""
 
 from __future__ import annotations
 
@@ -43,6 +43,7 @@ class CitationMapping(BaseModel):
     hierarchy_path: str
     fragment_text: str
     fragment_offset: int = 0
+    citation_type: Literal["normativa", "jurisprudencia"] = "normativa"
 
 
 # ---------------------------------------------------------------------------
@@ -102,3 +103,83 @@ class AggregateVerificationReport(BaseModel):
     overall_uncited_claims: list[str]
     # overall_status = "red" if any branch is red,
     # "amber" if any amber + no red, "green" if all green
+
+
+# ---------------------------------------------------------------------------
+# Comparative law types (Fase 7.3 — ADR 0027)
+# ---------------------------------------------------------------------------
+
+RiskLevel = Literal["low", "medium", "high"]
+CoverageLevel = Literal["full", "partial", "insufficient"]
+
+
+class JurisdictionEntry(BaseModel):
+    """Analysis for one jurisdiction within a comparative dimension."""
+
+    text: str | None = Field(
+        default=None,
+        description="Analysis text with [REF:n] citations. None when coverage is insufficient.",
+    )
+    refs: list[int] = Field(
+        default_factory=list,
+        description="[REF:n] indices supporting this cell.",
+    )
+    coverage: CoverageLevel = "full"
+    note: str | None = Field(
+        default=None,
+        description="Optional note, e.g. 'Consult local LGPD counsel'.",
+    )
+
+
+class ComparativeDimension(BaseModel):
+    """One row of the comparative pivot table (a legal dimension across jurisdictions)."""
+
+    name: str = Field(description="Dimension name, e.g. 'Transferencia internacional de datos'")
+    by_jurisdiction: dict[str, JurisdictionEntry] = Field(
+        default_factory=dict,
+        description="Keyed by jurisdiction code (ES, EU, BR, MX, UK).",
+    )
+
+
+class Divergence(BaseModel):
+    """A normative divergence identified between two or more jurisdictions."""
+
+    dimension: str
+    description: str
+    jurisdictions_involved: list[str]
+    severity: RiskLevel = "medium"
+
+
+class CoverageGap(BaseModel):
+    """Explicit declaration of insufficient coverage for a jurisdiction."""
+
+    jurisdiction: str
+    reason: str
+    recommendation: str
+
+
+class ComparativeResponse(BaseModel):
+    """Structured output for multi-jurisdiction comparative analysis (ADR 0027).
+
+    Produced exclusively by ComparativeSynthesizer.
+    Never mixed with monojurisdictional ConsultResponse prose.
+    """
+
+    trace_id: str
+    issue: str = Field(description="Synthesized comparative question")
+    jurisdictions_compared: list[str] = Field(min_length=2)
+    dimensions: list[ComparativeDimension] = Field(default_factory=list)
+    divergences: list[Divergence] = Field(default_factory=list)
+    common_ground: list[str] = Field(default_factory=list)
+    risk_differential: dict[str, RiskLevel] = Field(
+        default_factory=dict,
+        description="Risk level per jurisdiction. All compared jurisdictions must appear.",
+    )
+    risk_rationale: str = Field(
+        default="",
+        description="Mandatory explanation of the risk differential.",
+    )
+    coverage_gaps: list[CoverageGap] = Field(default_factory=list)
+    citations: list[CitationMapping] = Field(default_factory=list)
+    verification_status: Literal["green", "amber", "red"] = "amber"
+    synthesised_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

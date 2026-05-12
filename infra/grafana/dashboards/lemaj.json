@@ -235,6 +235,45 @@
       ],
       "title": "Nightly run cost (USD)",
       "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 18 },
+      "id": 200,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "sum(increase(user_feedback_total{verdict=\"incorrecto\"}[7d]))",
+          "legendFormat": "casos con feedback incorrecto últimos 7 días",
+          "refId": "A"
+        }
+      ],
+      "title": "Reflexión: casos priorizados por feedback",
+      "type": "stat"
     }
   ],
   "refresh": "5m",

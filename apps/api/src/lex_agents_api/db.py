@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 import aiosqlite
@@ -110,3 +110,93 @@ def _row_to_record(row: aiosqlite.Row) -> ConsultationRecord:
         latency_ms=row["latency_ms"],
         cost_estimate_usd=row["cost_estimate_usd"],
     )
+
+
+# ---------------------------------------------------------------------------
+# User feedback store
+# ---------------------------------------------------------------------------
+
+_CREATE_FEEDBACK_TABLE = """
+CREATE TABLE IF NOT EXISTS user_feedback (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    trace_id TEXT NOT NULL,
+    verdict TEXT NOT NULL,
+    notes TEXT,
+    created_at TEXT NOT NULL
+);
+"""
+
+_INSERT_FEEDBACK = """
+INSERT INTO user_feedback (trace_id, verdict, notes, created_at)
+VALUES (?, ?, ?, ?)
+"""
+
+
+class FeedbackRecord(BaseModel):
+    id: int | None = None
+    trace_id: str
+    verdict: str  # aceptable | dudoso | incorrecto
+    notes: str | None = None
+    created_at: datetime
+
+
+class FeedbackStore:
+    def __init__(self, db_path: str) -> None:
+        self._db_path = db_path
+
+    async def init(self) -> None:
+        Path(self._db_path).parent.mkdir(parents=True, exist_ok=True)
+        async with aiosqlite.connect(self._db_path) as db:
+            await db.execute(_CREATE_FEEDBACK_TABLE)
+            await db.commit()
+
+    async def save(self, trace_id: str, verdict: str, notes: str | None) -> None:
+        async with aiosqlite.connect(self._db_path) as db:
+            await db.execute(
+                _INSERT_FEEDBACK,
+                (trace_id, verdict, notes, datetime.now(UTC).isoformat()),
+            )
+            await db.commit()
+        logger.debug("feedback_saved", trace_id=trace_id, verdict=verdict)
+
+    async def list_recent(self, limit: int = 50) -> list[FeedbackRecord]:
+        async with aiosqlite.connect(self._db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT * FROM user_feedback ORDER BY created_at DESC LIMIT ?",
+                (limit,),
+            ) as cursor:
+                rows = await cursor.fetchall()
+        return [
+            FeedbackRecord(
+                id=row["id"],
+                trace_id=row["trace_id"],
+                verdict=row["verdict"],
+                notes=row["notes"],
+                created_at=datetime.fromisoformat(row["created_at"]),
+            )
+            for row in rows
+        ]
+
+    async def list_negative(self, since_days: int = 30) -> list[FeedbackRecord]:
+        """Return feedback with verdict='incorrecto' in the last N days."""
+        from datetime import timedelta
+
+        cutoff = (datetime.now(UTC) - timedelta(days=since_days)).isoformat()
+        async with aiosqlite.connect(self._db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT * FROM user_feedback WHERE verdict = 'incorrecto' AND created_at >= ? ORDER BY created_at DESC",
+                (cutoff,),
+            ) as cursor:
+                rows = await cursor.fetchall()
+        return [
+            FeedbackRecord(
+                id=row["id"],
+                trace_id=row["trace_id"],
+                verdict=row["verdict"],
+                notes=row["notes"],
+                created_at=datetime.fromisoformat(row["created_at"]),
+            )
+            for row in rows
+        ]

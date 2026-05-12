@@ -1,9 +1,16 @@
-"""Failure analyzer — identifies specialist branches with degraded LDP performance."""
+"""Failure analyzer — identifies specialist branches with degraded LDP performance.
+
+Priority model (highest first):
+  3 pts — audit sample marked 'incorrecto' by a human reviewer
+  2 pts — user feedback marked 'incorrecto'
+  1 pt  — LeMAJ LDP unsupported rate above threshold
+"""
 
 from __future__ import annotations
 
 import json
 from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -113,14 +120,70 @@ def _extract_gaps(ldp_verdicts: list[LDPVerdict]) -> list[str]:
     return gaps[:10]  # limit to 10 for prompt budget
 
 
-def analyze_failures(results_dir: Path) -> list[FailedCluster]:
+@dataclass
+class _ExternalSignal:
+    branch: str
+    source: str  # "audit" | "feedback"
+    count: int
+
+
+def _extract_branch_from_response_json(response_json: str) -> str:
+    """Best-effort branch extraction from a stored ConsultResponse JSON."""
+    try:
+        data: dict[str, Any] = json.loads(response_json)
+        routing = data.get("routing") or {}
+        branch: str = routing.get("branch", "unknown")
+        return branch
+    except Exception:
+        return "unknown"
+
+
+def _build_external_signals(
+    audit_negatives: list[dict[str, Any]],
+    feedback_negatives: list[dict[str, Any]],
+) -> dict[str, _ExternalSignal]:
+    """Aggregate audit + feedback negatives into per-branch signal counts."""
+    signals: dict[str, _ExternalSignal] = {}
+
+    for record in audit_negatives:
+        branch = record.get("branch") or _extract_branch_from_response_json(
+            record.get("response_json", "{}")
+        )
+        if branch not in signals:
+            signals[branch] = _ExternalSignal(branch=branch, source="audit", count=0)
+        signals[branch].count += 3  # audit-incorrecto: highest weight
+
+    for record in feedback_negatives:
+        branch = record.get("branch") or _extract_branch_from_response_json(
+            record.get("response_json", "{}")
+        )
+        if branch not in signals:
+            signals[branch] = _ExternalSignal(branch=branch, source="feedback", count=0)
+        signals[branch].count += 2  # user-feedback-incorrecto
+
+    return signals
+
+
+def analyze_failures(
+    results_dir: Path,
+    audit_negatives: list[dict[str, Any]] | None = None,
+    feedback_negatives: list[dict[str, Any]] | None = None,
+) -> list[FailedCluster]:
     """Identify failing specialist branches from a nightly eval+LeMAJ run.
 
-    A case fails if ldp_unsupported_rate > 0.15 OR concept_coverage < 0.60.
-    Results are grouped by specialist branch.
+    A case fails if ldp_unsupported_rate > 0.15 OR concept_coverage < 0.60,
+    OR the branch has negative audit/feedback signals.
+
+    Priority scoring (per cluster):
+      +3 per audit sample marked 'incorrecto'
+      +2 per user feedback marked 'incorrecto'
+      +1 per LeMAJ failed case
     """
     case_results = _load_case_results(results_dir)
     lemaj_verdicts = _load_lemaj_verdicts(results_dir)
+    external_signals = _build_external_signals(
+        audit_negatives or [], feedback_negatives or []
+    )
 
     by_branch: dict[str, list[FailedCase]] = defaultdict(list)
 
@@ -152,23 +215,57 @@ def analyze_failures(results_dir: Path) -> list[FailedCluster]:
             judge_reasoning=judge_reasoning,
         ))
 
+    # Also surface branches with external signals even if LeMAJ has no data
+    for branch in external_signals:
+        if branch not in by_branch:
+            by_branch[branch] = []
+
     clusters: list[FailedCluster] = []
     for branch, cases in by_branch.items():
-        # Aggregate common gaps across cases
         all_gaps: list[str] = []
         for case in cases:
             all_gaps.extend(case.judge_reasoning)
+
+        ext = external_signals.get(branch)
+        lemaj_score = float(len(cases))  # 1 pt per LeMAJ failed case
+        ext_score = float(ext.count) if ext else 0.0
+        priority = lemaj_score + ext_score
+
+        audit_count = sum(
+            1
+            for r in (audit_negatives or [])
+            if (r.get("branch") or _extract_branch_from_response_json(
+                r.get("response_json", "{}")
+            )) == branch
+        )
+        feedback_count = sum(
+            1
+            for r in (feedback_negatives or [])
+            if (r.get("branch") or _extract_branch_from_response_json(
+                r.get("response_json", "{}")
+            )) == branch
+        )
+
         clusters.append(FailedCluster(
             branch=branch,
             failed_cases=cases,
             common_gaps=all_gaps[:15],
+            priority_score=priority,
+            audit_incorrecto_count=audit_count,
+            feedback_incorrecto_count=feedback_count,
         ))
         logger.info(
             "failure_analyzer_cluster",
             branch=branch,
             n_failed=len(cases),
             n_gaps=len(all_gaps),
+            priority_score=priority,
+            audit_incorrecto=audit_count,
+            feedback_incorrecto=feedback_count,
         )
+
+    # Sort by priority descending — highest-priority branches first
+    clusters.sort(key=lambda c: c.priority_score, reverse=True)
 
     logger.info("failure_analyzer_done", n_clusters=len(clusters))
     return clusters

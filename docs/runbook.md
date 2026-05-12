@@ -284,3 +284,171 @@ Internal Slack: `#lex-agents-oncall`. Escalate to:
 2. **Anthropic API unavailable** → fallback: return cached consultation if trace_id known; otherwise 503
 3. **Qdrant data loss** → restore from snapshot (see above); re-index if no snapshot available
 4. **PII in logs** → verify `enable_pii_redaction=true` in prod (`ENV=prod` in `.env`); rotate affected logs
+
+---
+
+## Fase 7.4 operations
+
+### Revisar audit_samples pendientes
+
+The daily audit sampling job runs at 23:00 and writes 5 records to `audit_samples` with
+status `pending`. Review them asynchronously:
+
+1. Log into the internal UI: `http://localhost:3000/auditoria` (requires JWT auth).
+2. Filter by **Status = pending** using the dropdown at the top of the list.
+3. Open each record by clicking its row.
+4. Review:
+   - The original query.
+   - The full response as delivered.
+   - The citations panel and verification status (GREEN/AMBER/RED).
+5. Enter a verdict from the dropdown: `correcto` / `dudoso` / `incorrecto`.
+6. Add free-text notes in the **Notas** field (required for `dudoso` and `incorrecto` verdicts).
+7. Click **Guardar**. The record status changes to `reviewed`.
+8. Repeat for all pending records.
+
+Records marked `dudoso` or `incorrecto` are automatically prioritized by the reflection pipeline
+before the next LeMAJ nightly run (see ADR 0028 M5).
+
+---
+
+### Procesar feedback negativo hacia reflection
+
+User feedback events with verdict `dudoso` or `incorrecto` are stored in `feedback.db`. To trigger
+the reflection pipeline with feedback priority:
+
+```bash
+uv run python -m lex_agents_evals_advanced.reflection --feedback-priority
+```
+
+This invokes `FailureAnalyzer` with feedback signals as the primary input (before LeMAJ failures).
+Output is written to `evals/reports/reflection_<timestamp>.json`.
+
+Check the output:
+
+```bash
+ls -lt evals/reports/ | head -5
+cat evals/reports/reflection_<timestamp>.json | jq '.cases_analyzed, .prompt_proposals'
+```
+
+If `prompt_proposals > 0`, the pipeline has opened or is preparing a PR for prompt evolution.
+**PRs require human review before merge** (CODEOWNERS + ADR 0021 — no auto-merge).
+
+---
+
+### Levantar bloqueo CENDOJ
+
+If CENDOJ retrieval falls back silently (check `cendoj_fallback=true` in response metadata or
+`cendoj_quota_remaining` approaching zero):
+
+1. **Check current quota and usage:**
+
+   ```bash
+   # Check env var setting
+   grep CENDOJ_DAILY_QUOTA .env
+
+   # Check remaining quota via Prometheus metric
+   curl -s http://localhost:9090/metrics | grep cendoj_quota_remaining
+   ```
+
+2. **Do NOT raise the quota without authorization.** The cap is a compliance control (ADR 0028 M6).
+   Raising `CENDOJ_DAILY_QUOTA` without written CGPJ authorization confirmation is not permitted.
+
+3. **Escalate to the legal team** via `#lex-agents-oncall`:
+   - Include the current `cendoj_quota_remaining` value.
+   - Include the date and estimated daily usage from Grafana (CENDOJ Requests panel).
+   - Request confirmation of CGPJ authorization status before any quota change.
+
+4. **If authorization is confirmed in writing**, update `.env`:
+
+   ```bash
+   # Only after written legal team confirmation
+   CENDOJ_DAILY_QUOTA=<new_value>
+   ```
+
+   Then restart the API container:
+
+   ```bash
+   docker compose -f infra/docker-compose.yml restart api
+   ```
+
+5. Verify the new quota is reflected:
+
+   ```bash
+   curl -s http://localhost:9090/metrics | grep cendoj_quota_remaining
+   ```
+
+---
+
+### Activar DB comercial cuando llegue licencia
+
+When a commercial legal database license (Aranzadi, La Ley, or Tirant lo Blanch) is acquired,
+follow this checklist in order:
+
+- [ ] **(a) Configure env var** — add the API key or connection string to `.env`:
+
+  ```bash
+  # Example for Aranzadi
+  ARANZADI_API_KEY=<key>
+  ARANZADI_BASE_URL=<url>
+  ```
+
+- [ ] **(b) Create Dagster source asset** — in
+      `packages/pipeline/src/lex_agents_pipeline/assets/sources.py`, add a new asset following the
+      pattern of the existing `boe_raw` and `eur_lex_raw` assets. Adapter stubs are already prepared
+      in `packages/pipeline/src/lex_agents_pipeline/adapters/`.
+
+- [ ] **(c) Run ingest sample** — ingest a small fixture corpus first:
+
+  ```bash
+  dagster asset materialize --select <source>_raw <source>_canonical
+  # Verify: curl http://localhost:6333/collections/lex_agents_v1/points/count
+  ```
+
+- [ ] **(d) Validate GREEN gate** — confirm at least 10 documents indexed with expected chunk count
+      and no verification failures. Do not proceed to production indexing until GREEN gate passes.
+
+- [ ] **(e) Update `docs/sources/`** — add a source metadata file with: maintainer, license type,
+      update frequency, and coverage scope.
+
+- [ ] **(f) Update `docs/limitations.md`** — move the source from "Fuentes en desarrollo" to the
+      appropriate section (or remove the limitation note if now fully covered).
+
+Open a PR with the changes. CODEOWNERS requires review before merge.
+
+---
+
+### Añadir nueva rama jurídica
+
+Adding a new legal specialist branch requires 8 steps. Follow in order:
+
+1. **Create the specialist agent** in
+   `packages/agents/src/lex_agents_agents/specialists/<branch_name>.py`.
+   Follow the pattern of `regulatorio_bancario.py` — implement `run(query, context)` returning
+   `AgentResponse`. Use the `base_agent.py` types.
+
+2. **Add to branch classifier** — in `packages/agents/src/lex_agents_agents/router.py`, add
+   the new branch name to the `RoutingDecision` enum and update the router prompt to recognize
+   the new branch. Bump the prompt version in the YAML frontmatter.
+
+3. **Add prompt in `docs/prompts/`** — create
+   `docs/prompts/especialistas/<branch_name>/v1.md` with YAML frontmatter (model, temperature,
+   version) and the full specialist prompt body. Follow the 6-section format used by
+   `regulatorio_bancario_ue_es/v1.md`.
+
+4. **Add eval cases** — add at least 5 golden cases to `evals/golden_dataset/` covering the
+   new branch. Include at least 1 shallow, 2 standard, and 1 deep case.
+
+5. **Wire to planner** — in
+   `packages/agents/src/lex_agents_agents/planner.py`, add the new branch to the planner's
+   available branches list and update the planner prompt to include the branch description.
+
+6. **Update router_v1 enum** — in `apps/api/routers/consult.py`, add the new branch name to
+   the `BranchEnum` (or equivalent) used for request validation and response typing.
+
+7. **Update `docs/`** — update `docs/architecture.md` (component map + Mermaid graph),
+   `docs/limitations.md` (Ramas jurídicas activas section), and `docs/runbook.md` if new
+   operational procedures are needed for the branch.
+
+8. **Open PR** — include: specialist implementation, prompt file, eval cases, router update,
+   planner update, and doc updates. CODEOWNERS requires review before merge. Do not merge
+   until LeMAJ passes with the new eval cases included.
