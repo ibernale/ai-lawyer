@@ -18,7 +18,7 @@ from lex_agents_rag.query_rewriter import LegalQueryRewriter
 from lex_agents_rag.reranker import BaseReranker
 from lex_agents_rag.retriever import HybridRetriever, SearchFilters
 from lex_agents_shared.anthropic_client import AnthropicClientWrapper
-from lex_agents_shared.types import CitationMapping, VerificationReport
+from lex_agents_shared.types import CitationMapping, ComparativeResponse, VerificationReport
 from opentelemetry import trace
 from pydantic import BaseModel, Field
 
@@ -63,6 +63,7 @@ class ConsultResponse(BaseModel):
     judge_verdict: dict[str, Any] | None = None
     cost_breakdown_by_agent: dict[str, float] = Field(default_factory=dict)
     branch_answers: dict[str, str] = Field(default_factory=dict)
+    comparative_output: ComparativeResponse | None = None
 
 
 @dataclass
@@ -170,7 +171,12 @@ class OrchestratorV2:
                 t.branch: r.answer_text
                 for t, r in zip(plan.sub_tasks, responses)
             }
-            agent_resp = self._coordinator.synthesize(responses, plan, trace_id)
+            if plan.output_type == "analisis_comparativo" and len(responses) >= 2:
+                agent_resp = await self._coordinator.synthesize_comparative(
+                    responses, plan, trace_id
+                )
+            else:
+                agent_resp = self._coordinator.synthesize(responses, plan, trace_id)
 
         verification = await self._verify(trace_id, agent_resp, assembled)
         agent_resp.verification = verification
@@ -252,7 +258,12 @@ class OrchestratorV2:
                         t.branch: r.answer_text
                         for t, r in zip(plan.sub_tasks, responses)
                     }
-                    final_resp = self._coordinator.synthesize(responses, plan, trace_id)
+                    if plan.output_type == "analisis_comparativo" and len(responses) >= 2:
+                        final_resp = await self._coordinator.synthesize_comparative(
+                            responses, plan, trace_id
+                        )
+                    else:
+                        final_resp = self._coordinator.synthesize(responses, plan, trace_id)
                 else:
                     final_branch_answers = {}
                     final_resp = responses[0]
@@ -264,7 +275,10 @@ class OrchestratorV2:
 
         if final_resp is None:
             if responses:
-                final_resp = responses[0] if len(responses) == 1 else self._coordinator.synthesize(responses, plan, trace_id)
+                if plan.output_type == "analisis_comparativo" and len(responses) >= 2:
+                    final_resp = await self._coordinator.synthesize_comparative(responses, plan, trace_id)
+                else:
+                    final_resp = responses[0] if len(responses) == 1 else self._coordinator.synthesize(responses, plan, trace_id)
             else:
                 return self._out_of_scope(trace_id, req.query, "deep", plan)
 
@@ -403,4 +417,5 @@ class OrchestratorV2:
             judge_verdict=judge_verdict,
             cost_breakdown_by_agent=cost_breakdown or {},
             branch_answers=branch_answers or {},
+            comparative_output=final.comparative_output,
         )
