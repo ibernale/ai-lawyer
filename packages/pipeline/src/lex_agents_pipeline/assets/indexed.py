@@ -12,6 +12,7 @@ from typing import Any
 
 import structlog
 from dagster import (
+    AssetCheckExecutionContext,
     AssetCheckResult,
     AssetExecutionContext,
     Output,
@@ -132,7 +133,7 @@ fca_indexed = _make_indexed_asset("fca", "fca")
 
 
 @asset_check(asset=boe_indexed, name="boe_qdrant_collection_exists")
-def boe_qdrant_collection_exists(context: AssetExecutionContext) -> AssetCheckResult:
+def boe_qdrant_collection_exists(context: AssetCheckExecutionContext) -> AssetCheckResult:
     """Verify the Qdrant collection was created and has points."""
     qdrant_url = os.environ.get("QDRANT_URL", "http://localhost:6333")
     try:
