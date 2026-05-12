@@ -10,6 +10,11 @@ from lex_agents_rag.retriever import RankedChunk
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
+try:
+    from lex_agents_shared.observability import get_observer as _get_lf_observer
+except ImportError:
+    _get_lf_observer = None  # type: ignore[assignment]
+
 
 class AssembledContext(BaseModel):
     context_text: str
@@ -45,4 +50,15 @@ class ContextAssembler:
 
         context_text = "\n\n".join(parts)
         logger.debug("context_assembled", n_chunks=len(chunks), context_len=len(context_text))
+
+        if _get_lf_observer is not None:
+            _lf = _get_lf_observer()
+            sources = list({m.source_id for m in mappings})
+            span = _lf.start_span(
+                "rag.context_assemble",
+                input={"n_chunks": len(chunks)},
+                metadata={"sources": sources, "context_len": len(context_text)},
+            )
+            _lf.end_span(span, output={"n_citations": len(mappings), "sources": sources})
+
         return AssembledContext(context_text=context_text, citation_mapping=mappings)

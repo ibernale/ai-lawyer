@@ -1,0 +1,63 @@
+# Langfuse evaluator configuration — versionado en git (ADR 0030)
+# Apply via: make langfuse-push-config
+# Evaluators run asynchronously over traces; they never block the request path.
+
+evaluators:
+  - name: hallucination_score
+    type: llm
+    model: claude-haiku-4-5-20251001
+    sampling: 1.0
+    prompt: |
+      Eres un evaluador de calidad jurídica. Analiza si la respuesta contiene
+      afirmaciones normativas NO soportadas por las fuentes citadas [REF:N].
+
+      Respuesta del sistema:
+      {{output}}
+
+      Devuelve un JSON: {"score": <0.0-1.0>, "reason": "<breve explicación>"}
+      donde 1.0 = sin alucinaciones detectadas, 0.0 = alucinación clara presente.
+    output_variable: score
+    description: "Detecta afirmaciones normativas sin soporte en citas"
+
+  - name: caveat_presence
+    type: model_based
+    model: claude-haiku-4-5-20251001
+    sampling: 1.0
+    prompt: |
+      La respuesta siguiente, ¿incluye algún aviso explícito de que se trata de
+      un borrador asistido por IA que requiere validación humana cualificada?
+
+      Respuesta:
+      {{output}}
+
+      Devuelve JSON: {"score": <0 o 1>, "reason": "<cita literal del aviso si existe>"}
+      donde 1 = aviso presente, 0 = aviso ausente.
+    output_variable: score
+    description: "Verifica que la respuesta incluye el aviso IA obligatorio"
+
+  - name: citation_completeness
+    type: model_based
+    model: claude-haiku-4-5-20251001
+    sampling: 0.5
+    prompt: |
+      Cuenta cuántas afirmaciones normativas clave hace la respuesta y cuántas
+      tienen cita [REF:N] adjunta.
+
+      Respuesta:
+      {{output}}
+
+      Devuelve JSON: {"score": <0.0-1.0>, "cited": <int>, "total_claims": <int>}
+      donde score = cited / total_claims (o 1.0 si total_claims=0).
+    output_variable: score
+    description: "Ratio de afirmaciones normativas con cita sobre el total"
+
+  - name: verification_status_score
+    type: metadata
+    field: "metadata.verification_status"
+    mapping:
+      green: 1.0
+      amber: 0.5
+      red: 0.0
+    default: null
+    sampling: 1.0
+    description: "Mapea el VerificationReport.status a score numérico"

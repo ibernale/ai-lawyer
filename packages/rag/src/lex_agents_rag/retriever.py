@@ -13,6 +13,11 @@ from qdrant_client.http.models import FieldCondition, Filter, MatchValue, Range,
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
+try:
+    from lex_agents_shared.observability import get_observer as _get_lf_observer
+except ImportError:
+    _get_lf_observer = None  # type: ignore[assignment]
+
 _DENSE_VECTOR = "dense"
 _SPARSE_VECTOR = "sparse"
 
@@ -93,6 +98,7 @@ class HybridRetriever:
 
         merged = self._rrf(list(dense_hits), list(sparse_hits))
         top = merged[:k_rrf]
+        top_score = top[0].score if top else 0.0
 
         logger.debug(
             "hybrid_search",
@@ -101,6 +107,19 @@ class HybridRetriever:
             sparse_hits=len(sparse_hits),
             merged=len(top),
         )
+
+        if _get_lf_observer is not None:
+            _lf = _get_lf_observer()
+            span = _lf.start_span(
+                "rag.hybrid_search",
+                input={"query_len": len(query), "k_dense": k_dense, "k_sparse": k_sparse},
+                metadata={"collection": self._collection},
+            )
+            _lf.end_span(span, output={
+                "num_results": len(top), "top_score": round(top_score, 4),
+                "dense_hits": len(dense_hits), "sparse_hits": len(sparse_hits),
+            })
+
         return top
 
     # ------------------------------------------------------------------

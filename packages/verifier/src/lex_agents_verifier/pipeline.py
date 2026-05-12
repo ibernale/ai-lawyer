@@ -21,6 +21,11 @@ from .llm_verifier import LLMVerifier
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
+try:
+    from lex_agents_shared.observability import get_observer as _get_lf_observer
+except ImportError:
+    _get_lf_observer = None  # type: ignore[assignment]
+
 
 class VerifierPipeline:
     """Full verification pipeline: extraction → heuristic → LLM fallback."""
@@ -37,6 +42,14 @@ class VerifierPipeline:
         branch: str = "",
     ) -> VerificationReport:
         """Run the full verification pipeline and return a VerificationReport."""
+        _lf_span = None
+        if _get_lf_observer is not None:
+            _lf = _get_lf_observer()
+            _lf_span = _lf.start_span(
+                "verify.pipeline",
+                input={"response_id": response_id, "n_citations": len(citations)},
+                metadata={"branch": branch},
+            )
 
         # Step 1: Extract normative claims
         extractor = ClaimExtractor()
@@ -125,6 +138,17 @@ class VerifierPipeline:
             llm_calls_made=llm_calls_made,
             status=status,
         )
+
+        if _lf_span is not None and _get_lf_observer is not None:
+            _lf = _get_lf_observer()
+            _lf.end_span(_lf_span, output={
+                "status": status,
+                "claims_total": claims_total,
+                "claims_passed": claims_passed,
+                "claims_failed": claims_failed,
+                "llm_calls_made": llm_calls_made,
+                "broken_refs": len(broken_refs),
+            })
 
         return VerificationReport(
             response_id=response_id,
