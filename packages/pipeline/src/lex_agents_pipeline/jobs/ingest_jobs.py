@@ -62,14 +62,12 @@ ingest_fca_job = define_asset_job(
 # Re-index without re-fetching (for model/prompt changes)
 reindex_all_job = define_asset_job(
     name="reindex_all_job",
-    selection=AssetSelection.groups(
-        "boe", "eurlex", "aepd", "edpb", "bde", "eba", "esma", "legislation_uk", "fca"
-    ).downstream_of_assets(
+    selection=AssetSelection.assets(
         "boe_contextualized", "eurlex_contextualized",
         "aepd_contextualized", "edpb_contextualized", "bde_contextualized",
         "eba_contextualized", "esma_contextualized",
         "legislation_uk_contextualized", "fca_contextualized",
-    ),
+    ).downstream(),
     description="Re-embed and re-index all documents without re-fetching raw (for model changes)",
 )
 
