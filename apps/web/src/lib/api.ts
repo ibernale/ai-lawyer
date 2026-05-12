@@ -140,6 +140,53 @@ export type VerificationReport = {
   status: "green" | "amber" | "red";
 };
 
+// ---------------------------------------------------------------------------
+// Comparative law types (ADR 0027)
+// ---------------------------------------------------------------------------
+
+export type CoverageLevel = "full" | "partial" | "insufficient";
+export type RiskLevel = "low" | "medium" | "high";
+
+export type JurisdictionEntry = {
+  text: string | null;
+  refs: number[];
+  coverage: CoverageLevel;
+  note: string | null;
+};
+
+export type ComparativeDimension = {
+  name: string;
+  by_jurisdiction: Record<string, JurisdictionEntry>;
+};
+
+export type Divergence = {
+  dimension: string;
+  description: string;
+  jurisdictions_involved: string[];
+  severity: RiskLevel;
+};
+
+export type CoverageGap = {
+  jurisdiction: string;
+  reason: string;
+  recommendation: string;
+};
+
+export type ComparativeResponse = {
+  trace_id: string;
+  issue: string;
+  jurisdictions_compared: string[];
+  dimensions: ComparativeDimension[];
+  divergences: Divergence[];
+  common_ground: string[];
+  risk_differential: Record<string, RiskLevel>;
+  risk_rationale: string;
+  coverage_gaps: CoverageGap[];
+  citations: CitationMapping[];
+  verification_status: "green" | "amber" | "red";
+  synthesised_at: string;
+};
+
 export type ConsultResponse = {
   trace_id: string;
   answer: string;
@@ -172,6 +219,7 @@ export type ConsultResponse = {
   } | null;
   cost_breakdown_by_agent?: Record<string, number>;
   branch_answers?: Record<string, string>;
+  comparative_output?: ComparativeResponse | null;
 };
 
 export type ConsultationSummary = {
@@ -216,6 +264,10 @@ export async function listConsultations(
   limit = 20,
 ): Promise<ConsultationSummary[]> {
   return apiFetch<ConsultationSummary[]>(`/api/v1/consult?limit=${limit}`);
+}
+
+export function getComparativeExportUrl(traceId: string): string {
+  return `${API_BASE}/api/v1/consult/${traceId}/export/comparative`;
 }
 
 // ---------------------------------------------------------------------------

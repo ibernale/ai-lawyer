@@ -9,6 +9,7 @@ import type {
   ConsultResponse,
   VerificationReport,
 } from "@/lib/api";
+import { ComparativeView } from "@/components/ComparativeView";
 
 const API_BASE =
   typeof window === "undefined"
@@ -639,6 +640,8 @@ export function ResponseView({
     );
   }
 
+  const isComparative = !!response.comparative_output;
+
   return (
     <div className="space-y-4">
       {/* Verification banner */}
@@ -661,6 +664,15 @@ export function ResponseView({
           branchAnswers={response.branch_answers!}
           citations={response.citations}
           onChipClick={setActiveCitation}
+        />
+      )}
+
+      {/* Comparative view (structured pivot table) */}
+      {response.comparative_output && (
+        <ComparativeView
+          comparative={response.comparative_output}
+          traceId={response.trace_id}
+          onCitationClick={setActiveCitation}
         />
       )}
 
@@ -705,6 +717,16 @@ export function ResponseView({
           >
             ↓ Exportar Word
           </button>
+          {isComparative && (
+            <a
+              href={`${API_BASE}/api/v1/consult/${response.trace_id}/export/comparative`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded border border-input px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
+            >
+              ↓ Exportar XLSX
+            </a>
+          )}
           <button
             onClick={() => setShowFeedback(true)}
             className="inline-flex items-center gap-1 rounded border border-input px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
