@@ -105,7 +105,9 @@ class TestFeedbackStore:
 @pytest.mark.asyncio
 class TestAuditStore:
     async def test_save_and_submit_review(self) -> None:
-        from lex_agents_audit.audit_store import AuditStore
+        from datetime import UTC, datetime
+
+        from lex_agents_audit.audit_store import AuditSampleRecord, AuditStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -113,13 +115,15 @@ class TestAuditStore:
         store = AuditStore(db_path)
         await store.init()
 
-        sample_id = await store.save(
+        record = AuditSampleRecord(
             trace_id="trace-audit-001",
             query="¿Qué es el RGPD?",
             response_json=json.dumps({"answer": "El RGPD es..."}),
             branch="datos_personales_rgpd",
             depth="standard",
+            sampled_at=datetime.now(UTC),
         )
+        sample_id = await store.save(record)
         assert isinstance(sample_id, int)
         assert sample_id > 0
 
@@ -149,14 +153,19 @@ class TestAuditStore:
         store = AuditStore(db_path)
         await store.init()
 
+        from datetime import UTC, datetime
+
+        from lex_agents_audit.audit_store import AuditSampleRecord
+
         for verdict in ("correcto", "incorrecto", "dudoso", "incorrecto"):
-            sid = await store.save(
+            sid = await store.save(AuditSampleRecord(
                 trace_id=f"trace-{verdict}-{id(verdict)}",
                 query="test",
                 response_json="{}",
                 branch="regulatorio_bancario_ue_es",
                 depth="shallow",
-            )
+                sampled_at=datetime.now(UTC),
+            ))
             await store.submit_review(
                 sample_id=sid,
                 reviewer="tester",

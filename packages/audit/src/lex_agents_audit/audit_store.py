@@ -69,9 +69,10 @@ class AuditStore:
             await db.commit()
         logger.info("audit_store_initialized", db_path=self._db_path)
 
-    async def save(self, record: AuditSampleRecord) -> None:
+    async def save(self, record: AuditSampleRecord) -> int:
+        """Insert a new audit sample and return its auto-generated integer ID."""
         async with aiosqlite.connect(self._db_path) as db:
-            await db.execute(
+            cursor = await db.execute(
                 _INSERT,
                 (
                     record.trace_id,
@@ -83,7 +84,9 @@ class AuditStore:
                 ),
             )
             await db.commit()
-        logger.info("audit_sample_saved", trace_id=record.trace_id)
+            row_id: int = cursor.lastrowid  # type: ignore[assignment]
+        logger.info("audit_sample_saved", trace_id=record.trace_id, id=row_id)
+        return row_id
 
     async def submit_review(
         self,
