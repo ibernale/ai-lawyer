@@ -4,7 +4,6 @@ DataVersion = embedder model name. When the model changes, all embedded
 and indexed assets re-materialize automatically.
 """
 
-from __future__ import annotations
 
 import hashlib
 import json

@@ -4,7 +4,6 @@ DataVersion = sha256 of contextualizer prompt file. When the prompt
 changes, all downstream embedded/indexed assets re-materialize.
 """
 
-from __future__ import annotations
 
 import hashlib
 import os

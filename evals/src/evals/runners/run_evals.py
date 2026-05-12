@@ -93,32 +93,40 @@ def load_weights(weights_path: Path | None = None) -> dict[str, float]:
 # ---------------------------------------------------------------------------
 
 def _build_orchestrator() -> Any:
-    """Construct Orchestrator from environment variables (no FastAPI dependency)."""
-    import anthropic
-    from lex_agents_agents.base_agent import AnthropicClientWrapper
-    from lex_agents_agents.orchestrator import Orchestrator, OrchestratorDeps
-    from lex_agents_agents.regulatorio_bancario import RegulatorioBancarioAgent
-    from lex_agents_agents.router import QueryRouter
+    """Construct OrchestratorV2 from environment variables (no FastAPI dependency)."""
+    import anthropic as _anthropic
+    from lex_agents_agents.core.orchestrator_v2 import OrchestratorDeps, OrchestratorV2
+    from lex_agents_rag.assembler import ContextAssembler
+    from lex_agents_rag.embedder import BgeM3Embedder
+    from lex_agents_rag.query_rewriter import LegalQueryRewriter
+    from lex_agents_rag.reranker import RerankerConfig, make_reranker
     from lex_agents_rag.retriever import HybridRetriever
+    from lex_agents_shared.anthropic_client import AnthropicClientWrapper
     from lex_agents_verifier.pipeline import VerifierPipeline
+    from qdrant_client import QdrantClient
 
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     qdrant_url = os.environ.get("QDRANT_URL", "http://localhost:6333")
+    collection = os.environ.get("QDRANT_COLLECTION", "lex_legal_docs")
 
-    raw_client = anthropic.Anthropic(api_key=api_key)
-    client = AnthropicClientWrapper(raw_client)
-    retriever = HybridRetriever(qdrant_url=qdrant_url)
-    router = QueryRouter(client)
-    specialist = RegulatorioBancarioAgent(client)
-    verifier = VerifierPipeline(anthropic_client=raw_client)
+    qdrant = QdrantClient(url=qdrant_url)
+    embedder = BgeM3Embedder()
+    retriever = HybridRetriever(qdrant_client=qdrant, embedder=embedder, collection=collection)
+    reranker = make_reranker(RerankerConfig(enabled=False))
+    query_rewriter = LegalQueryRewriter(anthropic_client=_anthropic.Anthropic(api_key=api_key))
+    assembler = ContextAssembler()
+    client = AnthropicClientWrapper(api_key=api_key)
+    verifier = VerifierPipeline(anthropic_client=client)
 
     deps = OrchestratorDeps(
-        router=router,
-        specialist=specialist,
         retriever=retriever,
+        reranker=reranker,
+        query_rewriter=query_rewriter,
+        assembler=assembler,
+        client=client,
         verifier=verifier,
     )
-    return Orchestrator(deps=deps)
+    return OrchestratorV2(deps)
 
 
 # ---------------------------------------------------------------------------
@@ -130,7 +138,7 @@ async def _run_case(
     case: dict[str, Any],
     weights: dict[str, float],
 ) -> CaseResult:
-    from lex_agents_agents.orchestrator import ConsultRequest
+    from lex_agents_agents.core.orchestrator_v2 import ConsultRequest
 
     case_id: str = case.get("id", "unknown")
     branch_expected: str = case.get("branch", "")
@@ -145,17 +153,17 @@ async def _run_case(
         jurisdiction: list[str] = case.get("jurisdiction", [])
         request = ConsultRequest(
             query=query,
-            jurisdiction=jurisdiction if jurisdiction else None,
+            jurisdiction_hint=",".join(jurisdiction) if jurisdiction else None,
         )
         response = await orchestrator.run(request)
         latency_ms = (time.perf_counter() - t0) * 1000
 
         raw_response = response.model_dump() if hasattr(response, "model_dump") else {}
 
-        branch_actual: str = raw_response.get("branch", "")
+        branch_actual: str = raw_response.get("routing", {}).get("branch", "")
         routing_correct = branch_actual == branch_expected
 
-        answer_text: str = raw_response.get("answer_text", "")
+        answer_text: str = raw_response.get("answer", "")
         citations_raw: list[dict[str, Any]] = raw_response.get("citations", [])
 
         from lex_agents_shared.types import CitationMapping, VerificationReport
