@@ -52,8 +52,16 @@ class ConsultRequestBody(BaseModel):
     query: str = Field(min_length=10, max_length=4000)
     jurisdiction_hint: str | None = None
     jurisdictions: list[str] | None = None
-    output_type: str | None = None
+    output_type: str | None = None  # dictamen|nota|memo_comite|analisis_riesgo|analisis_comparativo
     depth: str | None = None  # "shallow" | "standard" | "deep"
+
+    @field_validator("output_type")
+    @classmethod
+    def validate_output_type(cls, v: str | None) -> str | None:
+        _VALID = {"dictamen", "nota", "memo_comite", "analisis_riesgo", "analisis_comparativo"}
+        if v is not None and v not in _VALID:
+            raise ValueError(f"output_type must be one of {_VALID}")
+        return v
 
     @field_validator("query")
     @classmethod
