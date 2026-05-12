@@ -18,6 +18,20 @@ from tenacity import (
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
+# Langfuse and PricingCalculator imported lazily to avoid hard dependency at module load
+_pricing_calculator: Any = None
+
+
+def _get_pricing_calculator() -> Any:
+    global _pricing_calculator
+    if _pricing_calculator is None:
+        try:
+            from lex_agents_shared.observability.pricing_calculator import PricingCalculator
+            _pricing_calculator = PricingCalculator()
+        except Exception:
+            pass
+    return _pricing_calculator
+
 # ---------------------------------------------------------------------------
 # Model constants — single source of truth for all packages
 # ---------------------------------------------------------------------------
@@ -103,9 +117,18 @@ class AnthropicClientWrapper:
     # ------------------------------------------------------------------
 
     def messages_create(self, **kwargs: Any) -> anthropic.types.Message:
-        """Call `client.messages.create` with retries and circuit breaker."""
+        """Call `client.messages.create` with retries and circuit breaker.
+
+        Optional Langfuse instrumentation kwargs (stripped before API call):
+          _lf_prompt_name: str     — prompt identifier for Langfuse
+          _lf_prompt_version: int  — prompt version for Langfuse
+        """
         if self._circuit.is_open():
             raise RuntimeError("Anthropic circuit breaker is OPEN — refusing request")
+
+        # Extract Langfuse metadata before passing to Anthropic API
+        lf_prompt_name: str = kwargs.pop("_lf_prompt_name", "")
+        lf_prompt_version: int = kwargs.pop("_lf_prompt_version", 0)
 
         @retry(
             retry=retry_if_exception_type(
@@ -118,9 +141,12 @@ class AnthropicClientWrapper:
         def _call() -> anthropic.types.Message:
             return self._client.messages.create(**kwargs)  # type: ignore[no-any-return]
 
+        t0 = time.monotonic()
         try:
             result = _call()
             self._circuit.record_success()
+            latency_ms = (time.monotonic() - t0) * 1000
+            self._record_generation(result, lf_prompt_name, lf_prompt_version, kwargs, latency_ms)
             return result
         except RetryError as exc:
             self._circuit.record_failure()
@@ -129,6 +155,61 @@ class AnthropicClientWrapper:
         except Exception:
             self._circuit.record_failure()
             raise
+
+    def _record_generation(
+        self,
+        result: anthropic.types.Message,
+        prompt_name: str,
+        prompt_version: int,
+        call_kwargs: dict[str, Any],
+        latency_ms: float,
+    ) -> None:
+        """Push generation metadata to Langfuse if a trace is active. Never raises."""
+        try:
+            from lex_agents_shared.observability.langfuse_client import get_observer
+            observer = get_observer()
+            if not observer._enabled:
+                return
+
+            usage = result.usage
+            in_tok = getattr(usage, "input_tokens", 0) or 0
+            out_tok = getattr(usage, "output_tokens", 0) or 0
+            cached_tok = getattr(usage, "cache_read_input_tokens", 0) or 0
+
+            calc = _get_pricing_calculator()
+            cost_usd = 0.0
+            if calc is not None:
+                cost_usd = calc.estimate(
+                    model=result.model,
+                    input_tokens=in_tok,
+                    output_tokens=out_tok,
+                    cached_tokens=cached_tok,
+                )
+
+            # Extract text content from response
+            output_text = ""
+            for block in result.content:
+                if hasattr(block, "text"):
+                    output_text = block.text
+                    break
+
+            messages: list[dict[str, Any]] = call_kwargs.get("messages", [])
+
+            observer.record_generation(
+                name=prompt_name or "llm_call",
+                model=result.model,
+                prompt_name=prompt_name,
+                prompt_version=prompt_version,
+                messages=messages,
+                output=output_text,
+                input_tokens=in_tok,
+                output_tokens=out_tok,
+                cached_tokens=cached_tok,
+                cost_usd=cost_usd,
+                latency_ms=latency_ms,
+            )
+        except Exception as exc:
+            logger.warning("anthropic_langfuse_record_failed", error=str(exc))
 
     @property
     def circuit_state(self) -> str:

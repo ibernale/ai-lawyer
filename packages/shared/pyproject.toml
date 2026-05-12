@@ -10,6 +10,8 @@ dependencies = [
     "anthropic>=0.34.0",
     "qdrant-client>=1.11.0",
     "tenacity>=8.5.0",
+    "langfuse>=2.0,<3",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]

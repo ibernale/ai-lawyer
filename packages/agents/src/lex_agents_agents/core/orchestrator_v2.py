@@ -33,6 +33,11 @@ from lex_agents_agents.shared.definition_of_done import BranchTask, PlannerOutpu
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 tracer = trace.get_tracer(__name__)
 
+try:
+    from lex_agents_shared.observability import get_observer as _get_lf_observer
+except ImportError:
+    _get_lf_observer = None  # type: ignore[assignment]
+
 _OUT_OF_SCOPE_ANSWER = (
     "La consulta planteada está fuera del ámbito de este sistema, "
     "que cubre regulación bancaria (UE+ES+UK), protección de datos (RGPD), "
@@ -90,6 +95,18 @@ class OrchestratorV2:
         log = logger.bind(trace_id=trace_id)
         depth = req.depth or "standard"
 
+        # Start Langfuse trace (no-op if Langfuse not configured)
+        _lf = _get_lf_observer() if _get_lf_observer is not None else None
+        if _lf is not None:
+            jurisdictions = (req.jurisdiction_hint or "").split(",") if req.jurisdiction_hint else []
+            _lf.start_trace(
+                trace_id=trace_id,
+                name="user_query",
+                input={"query": req.query, "depth": depth},
+                metadata={"output_type": req.output_type, "jurisdiction_hint": req.jurisdiction_hint},
+                tags=[f"depth:{depth}"] + [j.strip() for j in jurisdictions if j.strip()],
+            )
+
         with tracer.start_as_current_span("orchestrator_v2.run") as root_span:
             root_span.set_attribute("trace_id", trace_id)
             root_span.set_attribute("depth", depth)
@@ -106,6 +123,22 @@ class OrchestratorV2:
             root_span.set_attribute("latency_ms", total_ms)
             result.metadata["latency_ms"] = total_ms
             log.info("orchestrator_v2_complete", depth=depth, latency_ms=total_ms)
+
+            # End Langfuse trace with final metadata
+            if _lf is not None:
+                verification_status = (
+                    result.verification.status if result.verification else "unknown"
+                )
+                _lf.end_trace(
+                    output=result.answer,
+                    metadata={
+                        "depth_used": result.depth_used,
+                        "iterations": result.iterations,
+                        "latency_ms": total_ms,
+                        "cost_breakdown": result.cost_breakdown_by_agent,
+                        "verification_status": verification_status,
+                    },
+                )
             return result
 
     # ── Shallow path ────────────────────────────────────────────────────────
@@ -328,6 +361,14 @@ class OrchestratorV2:
                 citations=assembled.citation_mapping,
                 chunk_store=chunk_store,
             )
+            if result is not None and _get_lf_observer is not None:
+                _lf = _get_lf_observer()
+                score_map = {"green": 1.0, "amber": 0.5, "red": 0.0}
+                _lf.score_trace(
+                    "verification_status",
+                    value=score_map.get(result.status, 0.5),
+                    comment=result.status,
+                )
             return result
 
     @staticmethod

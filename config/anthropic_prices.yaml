@@ -1,0 +1,34 @@
+# Anthropic model pricing — USD per million tokens (MTok)
+# version: 1.0
+# updated: 2026-05-12
+# source: https://www.anthropic.com/pricing
+# Changes via PR only — this file is the source of truth for cost estimation (ADR 0031).
+
+models:
+  claude-opus-4-7:
+    input_per_mtok: 15.00
+    output_per_mtok: 75.00
+    cached_per_mtok: 1.50        # cache read (10% of input price)
+    cache_write_per_mtok: 18.75  # cache write (125% of input price)
+
+  claude-sonnet-4-6:
+    input_per_mtok: 3.00
+    output_per_mtok: 15.00
+    cached_per_mtok: 0.30
+    cache_write_per_mtok: 3.75
+
+  claude-haiku-4-5-20251001:
+    input_per_mtok: 0.80
+    output_per_mtok: 4.00
+    cached_per_mtok: 0.08
+    cache_write_per_mtok: 1.00
+
+  # Fallback for unknown models — use highest price to be conservative
+  _default:
+    input_per_mtok: 15.00
+    output_per_mtok: 75.00
+    cached_per_mtok: 1.50
+    cache_write_per_mtok: 18.75
+
+discounts:
+  batch_api: 0.50  # 50% discount when using Batch API

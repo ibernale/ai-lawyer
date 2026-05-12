@@ -13,7 +13,9 @@ PYTHON  := $(UV) run python
         eval eval-quick dev dev-detached down logs \
         build-images ingest-sample ingest-real ingest-all dagster-ui \
         qdrant-shell db-reset db-show grafana \
-        validate-knowledge procedural-edit
+        validate-knowledge procedural-edit \
+        langfuse-up langfuse-bootstrap langfuse-otlp-auth langfuse-push-config langfuse-logs \
+        prompts-sync
 
 # ─── Help ─────────────────────────────────────────────────────────────────────
 help: ## Show this help
@@ -136,3 +138,23 @@ db-show: ## Show recent consultations from SQLite history
 
 grafana: ## Open Grafana dashboard in browser
 	open http://localhost:3001
+
+# ─── Langfuse ─────────────────────────────────────────────────────────────────
+langfuse-up: ## Start Langfuse services (postgres, worker, web)
+	$(DOCKER) $(DC_FILE) up -d langfuse-postgres langfuse-worker langfuse-web
+
+langfuse-bootstrap: langfuse-up ## Start Langfuse and wait until healthy, then print connection info
+	@echo "Waiting for Langfuse to be ready..."
+	$(PYTHON) scripts/langfuse_bootstrap.py
+
+langfuse-otlp-auth: ## Print base64(LANGFUSE_PUBLIC_KEY:LANGFUSE_SECRET_KEY) for LANGFUSE_OTLP_BASIC_AUTH
+	@python3 -c "import base64,os; pk=os.getenv('LANGFUSE_PUBLIC_KEY',''); sk=os.getenv('LANGFUSE_SECRET_KEY',''); print(base64.b64encode(f'{pk}:{sk}'.encode()).decode())"
+
+langfuse-push-config: ## Push SDK/project config to Langfuse via API
+	$(PYTHON) scripts/langfuse_push_config.py
+
+langfuse-logs: ## Tail logs from Langfuse web and worker containers
+	$(DOCKER) $(DC_FILE) logs -f langfuse-web langfuse-worker
+
+prompts-sync: ## Push docs/prompts/ to Langfuse Prompt Management (requires LANGFUSE_* env vars)
+	$(UV) run python scripts/prompts_sync.py --direction push

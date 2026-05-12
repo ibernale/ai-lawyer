@@ -16,6 +16,12 @@ exporters:
     endpoint: jaeger:4317
     tls:
       insecure: true
+  otlp/langfuse:
+    endpoint: "http://langfuse-web:3000/api/public/otel/v1/traces"
+    headers:
+      Authorization: "Basic ${LANGFUSE_OTLP_BASIC_AUTH}"
+    tls:
+      insecure: true
   debug:
     verbosity: detailed
 
@@ -24,4 +30,4 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp/jaeger, debug]
+      exporters: [otlp/jaeger, otlp/langfuse, debug]

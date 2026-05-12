@@ -131,6 +131,70 @@ services:
       - backend
     restart: unless-stopped
 
+  langfuse-postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: langfuse
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: ${LANGFUSE_DB_PASSWORD:-changeme}
+    volumes:
+      - langfuse-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - backend
+
+  langfuse-worker:
+    image: langfuse/langfuse-worker:latest
+    restart: unless-stopped
+    depends_on:
+      langfuse-postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://langfuse:${LANGFUSE_DB_PASSWORD:-changeme}@langfuse-postgres:5432/langfuse
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-changeme-32-chars-minimum-secret}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-00000000-0000-0000-0000-000000000000}
+      SALT: ${LANGFUSE_SALT:-changeme-32-chars-minimum-salt00}
+      TELEMETRY_ENABLED: "false"
+    networks:
+      - backend
+
+  langfuse-web:
+    image: langfuse/langfuse:latest
+    restart: unless-stopped
+    depends_on:
+      langfuse-postgres:
+        condition: service_healthy
+      langfuse-worker:
+        condition: service_started
+    ports:
+      - "${LANGFUSE_PORT:-3003}:3000"
+    environment:
+      DATABASE_URL: postgresql://langfuse:${LANGFUSE_DB_PASSWORD:-changeme}@langfuse-postgres:5432/langfuse
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-changeme-32-chars-nextauth-secret}
+      NEXTAUTH_URL: http://localhost:${LANGFUSE_PORT:-3003}
+      SALT: ${LANGFUSE_SALT:-changeme-32-chars-minimum-salt00}
+      TELEMETRY_ENABLED: "false"
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_ADMIN_EMAIL:-admin@lex-agents.local}
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_ADMIN_PASSWORD:-changeme-admin-pw}
+      LANGFUSE_INIT_USER_NAME: "Admin"
+      LANGFUSE_INIT_ORG_NAME: "lex-agents"
+      LANGFUSE_INIT_PROJECT_NAME: "lex-agents-dev"
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-00000000-0000-0000-0000-000000000000}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-changeme-32-chars-minimum-secret}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/api/public/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - backend
+
 networks:
   backend:
     driver: bridge
@@ -141,3 +205,4 @@ volumes:
   qdrant_storage:
   grafana_data:
   dagster_home:
+  langfuse-pgdata:

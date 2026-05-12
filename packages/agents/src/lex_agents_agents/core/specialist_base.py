@@ -10,6 +10,7 @@ from typing import ClassVar
 import structlog
 from lex_agents_rag.assembler import AssembledContext
 from lex_agents_shared.anthropic_client import MODEL_OPUS, AnthropicClientWrapper
+from lex_agents_shared.observability import PricingCalculator
 from opentelemetry import trace
 
 from lex_agents_agents.base_agent import AgentMetadata, AgentResponse, BaseAgent
@@ -19,8 +20,7 @@ from lex_agents_agents.shared.definition_of_done import BranchTask
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 tracer = trace.get_tracer(__name__)
 
-_INPUT_TOKEN_COST_PER_M = 15.0
-_OUTPUT_TOKEN_COST_PER_M = 75.0
+_pricing = PricingCalculator()
 
 
 class BaseSpecialist(BaseAgent):
@@ -94,9 +94,7 @@ class BaseSpecialist(BaseAgent):
             latency = (time.monotonic() - t0) * 1000
             in_tok = resp.usage.input_tokens
             out_tok = resp.usage.output_tokens
-            cost = (in_tok / 1_000_000 * _INPUT_TOKEN_COST_PER_M) + (
-                out_tok / 1_000_000 * _OUTPUT_TOKEN_COST_PER_M
-            )
+            cost = _pricing.estimate(MODEL_OPUS, input_tokens=in_tok, output_tokens=out_tok)
 
             span.set_attribute("tokens.in", in_tok)
             span.set_attribute("tokens.out", out_tok)
