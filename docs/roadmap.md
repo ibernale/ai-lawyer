@@ -1,6 +1,6 @@
 # Roadmap — lex-agents
 
-Estado a 2026-05-11. Actualizar tras cada release.
+Estado a 2026-05-12. Actualizar tras cada release.
 
 ---
 
@@ -161,6 +161,81 @@ Cada una tiene un gate explícito que debe cumplirse antes de iniciar la impleme
 - Opción de despliegue con modelos on-premise para datos clasificados.
 - **Gate:** requisitos de residencia de datos definidos por regulación aplicable; viabilidad técnica evaluada.
 - Candidatos: modelos open-source fine-tuned + vLLM / LM Studio.
+
+---
+
+---
+
+## Fase 8 — Capa de control y observabilidad operacional
+
+> **Objetivo:** construir la infraestructura de gobierno necesaria para defender el sistema ante
+> un comité y operarlo con seguridad. Fase 8 **no añade capacidades jurídicas nuevas**.
+
+### Gate de entrada
+
+- v0.3.0 mergeado y CI verde.
+- ADRs 0030–0035 aprobados (esta fase 8.0 los firma).
+- Al menos un ciclo de LeMAJ nightly sin alertas críticas.
+
+### Sub-fases
+
+#### Fase 8.0 — Planificación (este documento)
+
+- ADR 0030: Langfuse OSS self-hosted como plataforma LLM-observability.
+- ADR 0031: Cost tracking end-to-end (Anthropic API + estimación local + reconciliación diaria).
+- ADR 0032: Kill switch global + component kill switches + feature flags (SQLite + API REST).
+- ADR 0033: Modelo de roles viewer/operator/admin, JWT + campo `role`, compatible con SSO OIDC futuro.
+- ADR 0034: Política de retención escalonada (traces 90d, Prometheus 365d, audit trail indefinido).
+- ADR 0035: Tabla `audit_trail` append-only con cadena de hashes SHA-256.
+
+#### Fase 8.1 — Infraestructura de observabilidad
+
+- Desplegar Langfuse OSS en `docker-compose.dev.yml`.
+- Integrar SDK Langfuse en OrchestratorV2, especialistas y LeMAJ.
+- Crear `config/anthropic_prices.yaml` (tabla de precios versionada).
+- Job nightly de sync con Anthropic Usage API (`ANTHROPIC_ADMIN_KEY`).
+- Dashboard Grafana: coste por agente/modelo/día.
+
+#### Fase 8.2 — Kill switches y persistencia
+
+- Implementar tabla `system_state` y API `GET/PUT /api/v1/admin/state`.
+- Implementar tabla `audit_trail` con triggers append-only y cadena de hashes.
+- Implementar tabla `users` en `data/users.db` + `make admin-bootstrap`.
+- Job nightly: verificación de integridad de `audit_trail` + alerta si cadena rota.
+- Job nightly: eliminación de `audit_samples` > 365 días.
+- Backup periódico de `audit_trail` a almacenamiento separado.
+- Crear `docs/legal/data-retention.md` para revisión DPO.
+
+#### Fase 8.3 — Operations Center (frontend)
+
+- Nueva sección `/admin` en Next.js (solo rol `admin`).
+- Panel de kill switches: tabla con estado de cada componente, botón toggle + campo reason.
+- Panel de feature flags: lista editable con descripción y valor actual.
+- Panel de usuarios: crear, desactivar, cambiar rol.
+- Panel de costes: gráfico diario, desglose por agente/modelo, alerta de presupuesto.
+
+#### Fase 8.4 — Audit trail UI y export
+
+- Vista `/admin/audit` filtrable por actor, action_type, target, fechas.
+- Diff visual de `before_state` / `after_state` para cada registro.
+- Exportación CSV/JSON con meta-audit del propio export.
+- Botón "Verificar integridad" que ejecuta `verify_chain()` y muestra resultado.
+
+#### Fase 8.5 — Hardening y release v0.4.0
+
+- Verificación `active=1` en cada request (no solo en login) para usuarios desactivados.
+- Tests de integración: kill switch → API devuelve 503, flag toggle → comportamiento cambia.
+- Prueba de penetración interna (auth bypass, inyección en reason, IDOR en audit trail).
+- CHANGELOG v0.4.0 + tag + release.
+
+### Gate de salida Fase 8
+
+- Kill switch global funciona en < 1s desde PUT hasta primera consulta rechazada.
+- `audit_trail` append-only demostrado: `UPDATE` y `DELETE` lanzan `ABORT`.
+- Verificación de integridad de cadena pasa sobre 1000+ registros de prueba.
+- Todos los roles: viewer, operator, admin probados con tests de integración.
+- Langfuse UI muestra session replay de al menos 3 consultas reales.
+- CI verde en rama antes de merge a main.
 
 ---
 
