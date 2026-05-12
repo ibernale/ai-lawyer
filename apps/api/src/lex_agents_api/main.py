@@ -35,6 +35,8 @@ from lex_agents_api.routers import health as health_router
 from lex_agents_api.routers import rag as rag_router
 from lex_agents_api.routers.audit_trail import router as audit_trail_router
 from lex_agents_api.routers.governance import router as governance_router
+from lex_agents_api.routers.ops import router as ops_router
+from lex_agents_api.routers.system import router as system_router
 from lex_agents_api.settings import get_settings
 from lex_agents_api.tracing import configure_tracing
 
@@ -114,6 +116,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     except ImportError:
         logger.warning("lex_agents_audit_audit_trail_not_available")
 
+    # Kill switches & feature flags (ADR-0032)
+    try:
+        from lex_agents_admin.state import SystemStateManager, set_system_state_manager
+        ssm = SystemStateManager(settings.governance_db_path)
+        await ssm.init()
+        set_system_state_manager(ssm)
+    except ImportError:
+        logger.warning("lex_agents_admin_state_not_available")
+
     yield
 
     logger.info("shutdown")
@@ -169,6 +180,8 @@ def create_app() -> FastAPI:
     app.include_router(audit_router.router)    # /api/v1/audit
     app.include_router(governance_router)      # /api/v1/admin/governance/*
     app.include_router(audit_trail_router)     # /api/v1/admin/audit-trail/*
+    app.include_router(system_router)          # /api/v1/admin/system/*
+    app.include_router(ops_router)             # /api/v1/admin/agents, /rag, /memory, /sources
 
     # Prometheus metrics — /metrics (no auth, internal scrape only)
     Instrumentator(

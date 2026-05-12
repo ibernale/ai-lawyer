@@ -88,6 +88,10 @@ known-first-party = ["shared", "agents", "rag", "verifier", "ingest"]
 "apps/api/src/lex_agents_api/routers/governance.py" = ["S607"]
 # audit_trail — WHERE clause is built from literal strings only, not user input
 "packages/audit/src/lex_agents_audit/audit_trail.py" = ["S608"]
+# consult router — except-pass is intentional: SSM is optional, failure must not block consult
+"apps/api/src/lex_agents_api/routers/consult.py" = ["S110"]
+# ops router — except-pass is intentional: SSM is optional, failure returns degraded data
+"apps/api/src/lex_agents_api/routers/ops.py" = ["S110"]
 # prompt_proposer uses en dash in legal text strings
 "packages/evals_advanced/src/lex_agents_evals_advanced/reflection/prompt_proposer.py" = ["RUF001"]
 

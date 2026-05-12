@@ -218,6 +218,17 @@ async def consult(
     if not settings.agents_package_enabled:
         raise HTTPException(status_code=503, detail="Agents package disabled")
 
+    try:
+        from lex_agents_admin.state import get_system_state_manager
+        ssm = get_system_state_manager()
+        if ssm and await ssm.is_killed("global"):
+            reason = await ssm.get_kill_reason("global") or "Sistema pausado por administración"
+            raise HTTPException(503, detail={"code": "SYSTEM_KILLED", "reason": reason})
+    except HTTPException:
+        raise
+    except Exception:
+        pass
+
     correlation_id = get_correlation_id()
     jurisdiction_hint = body.jurisdiction_hint
     if body.jurisdictions:
