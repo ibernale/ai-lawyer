@@ -155,7 +155,7 @@ async def get_rag_status(
         for col in collections_resp.collections:
             try:
                 detail = client.get_collection(col.name)
-                count = detail.vectors_count or 0
+                count = detail.indexed_vectors_count or 0
                 schema_keys = list((detail.payload_schema or {}).keys())
             except Exception:
                 count = 0
@@ -206,11 +206,11 @@ async def list_procedural_patterns(
     return rows
 
 
-@router.get("/memory/semantic/{filename}", response_model=dict)
+@router.get("/memory/semantic/{filename}", response_model=dict[str, str])
 async def get_semantic_file(
     filename: str,
     user: Annotated[CurrentUser, Depends(_admin_only)],
-) -> dict:
+) -> dict[str, str]:
     if ".." in filename or "/" in filename:
         raise HTTPException(400, "invalid filename")
     path = os.path.join("docs", "memory", "semantic", filename)
