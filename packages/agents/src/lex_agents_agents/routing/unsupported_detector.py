@@ -31,7 +31,7 @@ _PATTERNS: list[tuple[str, str]] = [
     (
         "estrategia",
         r"(?i)\b("
-        r"(c[oó]mo|qu[eé])\s+(defender|recurrir|impugnar|alegar|plantear\s+la\s+defensa)"
+        r"(c[oó]mo|qu[eé])\s+(?:\w+\s+)?(defender|recurrir|impugnar|alegar|plantear\s+la\s+defensa)"
         r"|estrategia\s+(procesal|de\s+defensa|judicial|de\s+litigaci[oó]n)"
         r"|c[oó]mo\s+(ganar|evitar\s+(que\s+)?me\s+(condenen?|sancionen?|embarguen?))"
         r"|qu[eé]\s+(alegaciones?|recursos?|escritos?)\s+(presentar|interponer|formular)"

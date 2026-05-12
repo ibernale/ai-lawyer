@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal, get_args
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException
+from lex_agents_audit.audit_store import AuditSampleRecord, AuditStore
 from pydantic import BaseModel
 
-from lex_agents_audit.audit_store import AuditSampleRecord, AuditStore, AuditVerdict
 from lex_agents_api.auth import CurrentUser, require_auth
 from lex_agents_api.metrics import record_audit_pending, record_audit_reviewed
 from lex_agents_api.settings import Settings, get_settings
@@ -49,8 +49,9 @@ async def list_audit_samples(
     _user: CurrentUser = Depends(require_auth),
     store: AuditStore = Depends(_get_audit_store),
 ) -> list[dict[str, Any]]:
-    valid_statuses = {"pending", "reviewing", "reviewed"}
-    typed_status = status if status in valid_statuses else None  # type: ignore[assignment]
+    AuditStatusLiteral = Literal["pending", "reviewing", "reviewed"]
+    valid_statuses = set(get_args(AuditStatusLiteral))
+    typed_status: AuditStatusLiteral | None = status if status in valid_statuses else None  # type: ignore[assignment]
     records = await store.list_by_status(status=typed_status, limit=limit)
     pending_count = await store.count_pending()
     record_audit_pending(pending_count)

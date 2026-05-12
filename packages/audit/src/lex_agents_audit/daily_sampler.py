@@ -51,6 +51,7 @@ async def run_daily_sample(
         try:
             data: dict[str, Any] = json.loads(row["response_json"])
         except Exception:
+            logger.debug("daily_sampler_skip_bad_json", trace_id=row["trace_id"])
             continue
         branch = str(data.get("routing", {}).get("branch", "unknown"))
         depth = str(data.get("depth_used", "standard"))
@@ -66,7 +67,7 @@ async def run_daily_sample(
         key = strata[i % len(strata)]
         pool = pools.get(key, [])
         if pool:
-            chosen = random.choice(pool)
+            chosen = random.choice(pool)  # noqa: S311 — non-crypto sampling
             selected.append(chosen)
             pool.remove(chosen)
         i += 1
