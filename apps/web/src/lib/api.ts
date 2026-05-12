@@ -271,6 +271,62 @@ export function getComparativeExportUrl(traceId: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Feedback types
+// ---------------------------------------------------------------------------
+
+export type FeedbackVerdict = "aceptable" | "dudoso" | "incorrecto";
+
+export type FeedbackRecord = {
+  id: number;
+  trace_id: string;
+  verdict: FeedbackVerdict;
+  notes: string | null;
+  created_at: string;
+};
+
+// ---------------------------------------------------------------------------
+// Audit types
+// ---------------------------------------------------------------------------
+
+export type AuditStatus = "pending" | "reviewing" | "reviewed";
+export type AuditVerdict = "correcto" | "dudoso" | "incorrecto";
+
+export type AuditSample = {
+  id: number;
+  trace_id: string;
+  query: string;
+  branch: string;
+  depth: string;
+  sampled_at: string;
+  status: AuditStatus;
+  reviewer: string | null;
+  review_notes: string | null;
+  review_verdict: AuditVerdict | null;
+};
+
+export async function listAuditSamples(
+  status?: AuditStatus,
+): Promise<AuditSample[]> {
+  const qs = status ? `?status=${status}` : "";
+  return apiFetch<AuditSample[]>(`/api/v1/audit${qs}`);
+}
+
+export async function getAuditSample(id: number): Promise<AuditSample> {
+  return apiFetch<AuditSample>(`/api/v1/audit/${id}`);
+}
+
+export async function submitAuditReview(
+  id: number,
+  verdict: AuditVerdict,
+  notes: string,
+): Promise<{ status: string }> {
+  return apiFetch<{ status: string }>(`/api/v1/audit/${id}/review`, {
+    method: "PUT",
+    body: JSON.stringify({ verdict, notes }),
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Document types
 // ---------------------------------------------------------------------------
 

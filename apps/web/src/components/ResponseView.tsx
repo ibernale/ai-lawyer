@@ -10,6 +10,8 @@ import type {
   VerificationReport,
 } from "@/lib/api";
 import { ComparativeView } from "@/components/ComparativeView";
+import { CaveatBanner } from "@/components/CaveatBanner";
+import { FeedbackWidget } from "@/components/FeedbackWidget";
 
 const API_BASE =
   typeof window === "undefined"
@@ -619,6 +621,9 @@ export function ResponseView({
 
   return (
     <div className="space-y-4">
+      {/* Reinforced caveat banner (ADR 0028) */}
+      <CaveatBanner citations={response.citations} />
+
       {/* Verification banner */}
       {response.verification && (
         <VerificationBanner report={response.verification} />
@@ -710,6 +715,9 @@ export function ResponseView({
           </button>
         </div>
       </div>
+
+      {/* Quick feedback widget */}
+      <FeedbackWidget traceId={response.trace_id} />
 
       {/* Metadata panel */}
       {metaExpanded && (

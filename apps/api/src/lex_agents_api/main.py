@@ -17,7 +17,8 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import Response
 
-from lex_agents_api.db import ConsultationStore
+from lex_agents_audit.audit_store import AuditStore
+from lex_agents_api.db import ConsultationStore, FeedbackStore
 from lex_agents_api.exceptions import (
     LexAgentsError,
     lex_agents_exception_handler,
@@ -28,6 +29,8 @@ from lex_agents_api.middleware import CorrelationIdMiddleware, SecurityHeadersMi
 from lex_agents_api.routers import auth as auth_router
 from lex_agents_api.routers import consult as consult_router
 from lex_agents_api.routers import export as export_router
+from lex_agents_api.routers import audit as audit_router
+from lex_agents_api.routers import feedback as feedback_router
 from lex_agents_api.routers import health as health_router
 from lex_agents_api.routers import rag as rag_router
 from lex_agents_api.settings import get_settings
@@ -93,6 +96,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     store = ConsultationStore(settings.consultation_db_path)
     await store.init()
 
+    feedback_store = FeedbackStore(settings.consultation_db_path)
+    await feedback_store.init()
+
+    audit_store = AuditStore(settings.consultation_db_path)
+    await audit_store.init()
+
     yield
 
     logger.info("shutdown")
@@ -143,7 +152,9 @@ def create_app() -> FastAPI:
     app.include_router(health_router.router)  # GET /health, /version — public
     app.include_router(rag_router.router)     # /api/v1/rag/* — auth required
     app.include_router(consult_router.router) # /api/v1/consult/* — auth required
-    app.include_router(export_router.router)  # /api/v1/consult/{id}/export, /feedback
+    app.include_router(export_router.router)   # /api/v1/consult/{id}/export, /feedback
+    app.include_router(feedback_router.router) # /api/v1/feedback
+    app.include_router(audit_router.router)    # /api/v1/audit
 
     # Prometheus metrics — /metrics (no auth, internal scrape only)
     Instrumentator(

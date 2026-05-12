@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
+import { CaveatFooterNote } from "@/components/CaveatBanner";
 
 export const metadata: Metadata = {
   title: "lex-agents — Consulta jurídica asistida",
@@ -9,10 +10,12 @@ export const metadata: Metadata = {
 };
 
 const NAV_ITEMS = [
-  { label: "Regulatorio bancario UE+ES", active: true, href: "/" },
+  { label: "Consulta", active: true, href: "/consulta" },
+  { label: "Documentos", active: true, href: "/documentos" },
+  { label: "Histórico", active: true, href: "/historico" },
+  { label: "Auditoría", active: true, href: "/auditoria" },
   { label: "Laboral", active: false },
   { label: "Contencioso", active: false },
-  { label: "Societario", active: false },
 ] as const;
 
 export default function RootLayout({
@@ -74,6 +77,9 @@ export default function RootLayout({
           {/* Main content */}
           <main className="flex-1 p-6">{children}</main>
         </div>
+
+        {/* MVP caveat note — visible on all pages */}
+        <CaveatFooterNote />
 
         {/* Footer — permanent legal disclaimer */}
         <LegalDisclaimer />
