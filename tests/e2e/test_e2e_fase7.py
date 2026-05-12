@@ -283,10 +283,13 @@ class TestComparativeOutputWiring:
         )
 
         mock_agent_resp = AgentResponse(
+            trace_id="trace-comp-001",
             answer_text="Análisis comparativo: datos biométricos. Borrador asistido por IA; requiere validación humana cualificada.",
             citations=[],
+            verification=None,
             query_rewritten="test query",
             metadata=AgentMetadata(
+                trace_id="trace-comp-001",
                 prompt_name="test",
                 prompt_version=1,
                 prompt_hash="abc123",
@@ -329,7 +332,7 @@ class TestComparativeOutputWiring:
                     BranchTask(id="T1", branch="regulatorio_bancario_ue_es", priority=1, weight=0.5, query="test"),
                     BranchTask(id="T2", branch="datos_personales_rgpd", priority=2, weight=0.5, query="test"),
                 ],
-                definition_of_done=DefinitionOfDone(required_sections=[], citation_required=True, caveat_required=True),
+                definition_of_done=DefinitionOfDone(),
             )
             MockPlanner.return_value.plan.return_value = plan
             MockCoordinator.return_value.run_parallel = AsyncMock(
