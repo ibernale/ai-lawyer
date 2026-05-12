@@ -14,6 +14,7 @@ from typing import Any
 
 import structlog
 from dagster import (
+    AssetCheckExecutionContext,
     AssetCheckResult,
     AssetExecutionContext,
     DataVersion,
@@ -140,7 +141,7 @@ def boe_raw(context: AssetExecutionContext) -> Output[dict[str, Any]]:
 
 
 @asset_check(asset=boe_raw, name="boe_raw_has_documents")
-def boe_raw_has_documents(context: AssetExecutionContext) -> AssetCheckResult:
+def boe_raw_has_documents(context: AssetCheckExecutionContext) -> AssetCheckResult:
     raw_dir = _DATA_DIR / "raw" / "boe"
     count = len(list(raw_dir.glob("*.xml"))) if raw_dir.exists() else 0
     return AssetCheckResult(passed=count > 0, metadata={"xml_count": count})
@@ -171,7 +172,7 @@ def eurlex_raw(context: AssetExecutionContext) -> Output[dict[str, Any]]:
 
 
 @asset_check(asset=eurlex_raw, name="eurlex_raw_has_documents")
-def eurlex_raw_has_documents(context: AssetExecutionContext) -> AssetCheckResult:
+def eurlex_raw_has_documents(context: AssetCheckExecutionContext) -> AssetCheckResult:
     raw_dir = _DATA_DIR / "raw" / "eurlex"
     count = len(list(raw_dir.glob("*.xml"))) if raw_dir.exists() else 0
     return AssetCheckResult(passed=count > 0, metadata={"xml_count": count})
