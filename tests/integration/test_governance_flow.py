@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from lex_agents_audit.audit_trail import AuditTrailManager
 
 

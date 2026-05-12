@@ -286,6 +286,7 @@ def _record_proposal_in_governance_db(
     try:
         import asyncio
         import os
+
         from lex_agents_audit.audit_trail import AuditTrailManager
 
         governance_db = os.getenv("GOVERNANCE_DB_PATH", "data/governance.db")

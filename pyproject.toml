@@ -71,7 +71,7 @@ known-first-party = ["shared", "agents", "rag", "verifier", "ingest"]
 # CLI entry points use print
 "packages/evals_advanced/src/**/__main__.py" = ["T20"]
 # reflection pipeline: subprocess and print are intentional
-"packages/evals_advanced/src/lex_agents_evals_advanced/reflection/*.py" = ["S607", "S110", "S112", "T20", "RUF001"]
+"packages/evals_advanced/src/lex_agents_evals_advanced/reflection/*.py" = ["S607", "S110", "S112", "T20", "RUF001", "RUF006"]
 # adversarial perturbations use Cyrillic lookalikes intentionally and random for test perturbations
 "packages/evals_advanced/src/lex_agents_evals_advanced/adversarial/perturbations.py" = ["S311", "RUF001", "RUF003"]
 # panel.py uses forward type reference with type: ignore

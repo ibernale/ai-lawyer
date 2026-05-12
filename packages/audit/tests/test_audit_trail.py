@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import pytest
 import aiosqlite
-
-from lex_agents_audit.audit_trail import AuditTrailManager, ChainVerificationResult
+import pytest
+from lex_agents_audit.audit_trail import AuditTrailManager
 
 
 @pytest.fixture
