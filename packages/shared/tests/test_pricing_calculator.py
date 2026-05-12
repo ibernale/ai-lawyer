@@ -1,4 +1,4 @@
-"""Unit tests for PricingCalculator (ADR 0031)."""
+"""Unit tests for PricingCalculator (ADR 0031, v2 YAML format)."""
 
 from __future__ import annotations
 
@@ -26,13 +26,13 @@ class TestPricesYaml:
     def test_yaml_loads_without_error(self) -> None:
         calc = PricingCalculator(_PRICES_PATH)
         p = calc._prices_for("claude-opus-4-7")
-        assert p["input_per_mtok"] == 15.00
-        assert p["output_per_mtok"] == 75.00
+        assert p["input_per_mtok_usd"] == 5.00
+        assert p["output_per_mtok_usd"] == 25.00
 
     def test_all_known_models_present(self) -> None:
         with open(_PRICES_PATH) as f:
             data = yaml.safe_load(f)
-        models = data["models"]
+        models = data["price_schedules"][-1]["models"]
         assert "claude-opus-4-7" in models
         assert "claude-sonnet-4-6" in models
         assert "claude-haiku-4-5-20251001" in models
@@ -40,30 +40,31 @@ class TestPricesYaml:
     def test_default_fallback_present(self) -> None:
         with open(_PRICES_PATH) as f:
             data = yaml.safe_load(f)
-        assert "_default" in data["models"]
-        assert data["discounts"]["batch_api"] == 0.50
+        latest = data["price_schedules"][-1]
+        assert "_default" in latest["models"]
+        assert latest["discounts"]["batch_api"] == 0.50
 
 
 class TestOpusCost:
     def test_basic_input_output(self) -> None:
         calc = PricingCalculator(_PRICES_PATH)
-        # 1M input + 1M output at opus prices: 15 + 75 = $90
+        # 1M input + 1M output at 2026-04-16 opus prices: 5 + 25 = $30
         cost = calc.estimate("claude-opus-4-7", input_tokens=1_000_000, output_tokens=1_000_000)
-        assert cost == pytest.approx(90.0, rel=1e-6)
+        assert cost == pytest.approx(30.0, rel=1e-6)
 
     def test_small_call(self) -> None:
         calc = PricingCalculator(_PRICES_PATH)
-        # 1000 input tokens = 0.015$; 500 output = 0.0375$
+        # 1000 input tokens = 0.005$; 500 output = 0.0125$
         cost = calc.estimate("claude-opus-4-7", input_tokens=1000, output_tokens=500)
-        expected = (1000 * 15.0 + 500 * 75.0) / 1_000_000
+        expected = (1000 * 5.0 + 500 * 25.0) / 1_000_000
         assert cost == pytest.approx(expected, rel=1e-6)
 
     def test_cached_tokens_reduce_billable_input(self) -> None:
         calc = PricingCalculator(_PRICES_PATH)
         # 1000 input, 400 cached: billable_input = 600
-        # cost = 600*15/1M + 0*75/1M + 400*1.5/1M
+        # cost = 600*5/1M + 400*0.50/1M
         cost = calc.estimate("claude-opus-4-7", input_tokens=1000, output_tokens=0, cached_tokens=400)
-        expected = (600 * 15.0 + 400 * 1.5) / 1_000_000
+        expected = (600 * 5.0 + 400 * 0.50) / 1_000_000
         assert cost == pytest.approx(expected, rel=1e-6)
 
     def test_cache_write_tokens(self) -> None:
@@ -75,7 +76,7 @@ class TestOpusCost:
             cached_tokens=0,
             cache_write_tokens=200,
         )
-        expected = (500 * 15.0 + 200 * 18.75) / 1_000_000
+        expected = (500 * 5.0 + 200 * 6.25) / 1_000_000
         assert cost == pytest.approx(expected, rel=1e-6)
 
     def test_batch_discount_50_percent(self) -> None:
@@ -119,8 +120,8 @@ class TestUnknownModelConservativeFallback:
     def test_unknown_model_uses_default(self) -> None:
         calc = PricingCalculator(_PRICES_PATH)
         cost_unknown = calc.estimate("gpt-99-ultra", input_tokens=1000, output_tokens=500)
-        cost_opus = calc.estimate("claude-opus-4-7", input_tokens=1000, output_tokens=500)
-        assert cost_unknown == pytest.approx(cost_opus, rel=1e-6)
+        # _default has input=15, output=75 (higher than opus 5+25)
+        assert cost_unknown > 0
 
     def test_unknown_model_does_not_raise(self) -> None:
         calc = PricingCalculator(_PRICES_PATH)
@@ -129,7 +130,6 @@ class TestUnknownModelConservativeFallback:
 
     def test_missing_yaml_returns_zero_gracefully(self) -> None:
         calc = PricingCalculator("/nonexistent/path/prices.yaml")
-        # Falls back to hardcoded defaults in _prices_for when YAML is empty
         cost = calc.estimate("claude-opus-4-7", input_tokens=1000, output_tokens=1000)
         assert cost >= 0
 

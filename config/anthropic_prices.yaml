@@ -1,34 +1,36 @@
 # Anthropic model pricing — USD per million tokens (MTok)
-# version: 1.0
-# updated: 2026-05-12
-# source: https://www.anthropic.com/pricing
+# version: 2.0
+# format: price_schedules — sorted by effective_from ascending
 # Changes via PR only — this file is the source of truth for cost estimation (ADR 0031).
+# To add a price change: append a new entry to price_schedules with the new effective_from date.
 
-models:
-  claude-opus-4-7:
-    input_per_mtok: 15.00
-    output_per_mtok: 75.00
-    cached_per_mtok: 1.50        # cache read (10% of input price)
-    cache_write_per_mtok: 18.75  # cache write (125% of input price)
+price_schedules:
+  - effective_from: "2026-04-16"
+    models:
+      claude-opus-4-7:
+        input_per_mtok_usd: 5.00
+        output_per_mtok_usd: 25.00
+        cached_read_per_mtok_usd: 0.50    # cache read (10% of input price)
+        cache_write_per_mtok_usd: 6.25    # cache write (125% of input price)
 
-  claude-sonnet-4-6:
-    input_per_mtok: 3.00
-    output_per_mtok: 15.00
-    cached_per_mtok: 0.30
-    cache_write_per_mtok: 3.75
+      claude-sonnet-4-6:
+        input_per_mtok_usd: 3.00
+        output_per_mtok_usd: 15.00
+        cached_read_per_mtok_usd: 0.30
+        cache_write_per_mtok_usd: 3.75
 
-  claude-haiku-4-5-20251001:
-    input_per_mtok: 0.80
-    output_per_mtok: 4.00
-    cached_per_mtok: 0.08
-    cache_write_per_mtok: 1.00
+      claude-haiku-4-5-20251001:
+        input_per_mtok_usd: 0.80
+        output_per_mtok_usd: 4.00
+        cached_read_per_mtok_usd: 0.08
+        cache_write_per_mtok_usd: 1.00
 
-  # Fallback for unknown models — use highest price to be conservative
-  _default:
-    input_per_mtok: 15.00
-    output_per_mtok: 75.00
-    cached_per_mtok: 1.50
-    cache_write_per_mtok: 18.75
+      # Conservative fallback for models not yet in this table
+      _default:
+        input_per_mtok_usd: 15.00
+        output_per_mtok_usd: 75.00
+        cached_read_per_mtok_usd: 1.50
+        cache_write_per_mtok_usd: 18.75
 
-discounts:
-  batch_api: 0.50  # 50% discount when using Batch API
+    discounts:
+      batch_api: 0.50  # 50% discount when using Batch API

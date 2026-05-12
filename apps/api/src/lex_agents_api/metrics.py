@@ -80,6 +80,17 @@ if _PROMETHEUS_AVAILABLE:
         ["branch"],
     )
 
+    # FinOps cost tracking (ADR 0031)
+    COST_ESTIMATE_HOURLY = Gauge(
+        "cost_estimate_hourly_usd",
+        "Estimated cost accumulated in the current hour",
+        ["agent", "model"],
+    )
+    COST_RECONCILIATION_DRIFT = Gauge(
+        "cost_reconciliation_drift_pct",
+        "Absolute drift % from the last daily reconciliation run",
+    )
+
 
 def record_query(depth: str, branch: str, cost_usd: float) -> None:
     """Record depth, branch, and cost metrics for a completed query."""

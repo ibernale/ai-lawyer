@@ -194,6 +194,16 @@ fca_handbook_weekly_schedule = _make_schedule(
 )
 
 # ---------------------------------------------------------------------------
+# FinOps cost sync — daily 06:00 UTC
+# ---------------------------------------------------------------------------
+
+cost_sync_schedule = ScheduleDefinition(
+    job_name="finops_cost_sync_job",
+    cron_schedule="0 6 * * *",  # 06:00 UTC daily
+    default_status=DefaultScheduleStatus.RUNNING,
+)
+
+# ---------------------------------------------------------------------------
 # Exported list — add to Definitions in definitions.py
 # ---------------------------------------------------------------------------
 
@@ -207,4 +217,8 @@ all_schedules = [
     esma_qa_weekly_schedule,
     legislation_gov_uk_weekly_schedule,
     fca_handbook_weekly_schedule,
+    cost_sync_schedule,
 ]
+
+# Alias used by definitions.py lazy import
+ALL_SCHEDULES = all_schedules

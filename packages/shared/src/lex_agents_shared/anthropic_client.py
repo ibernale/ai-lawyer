@@ -211,6 +211,42 @@ class AnthropicClientWrapper:
         except Exception as exc:
             logger.warning("anthropic_langfuse_record_failed", error=str(exc))
 
+        # LocalCostTracker hook — fire-and-forget, never raises
+        try:
+            from lex_agents_finops.local_tracker import get_local_tracker
+            tracker = get_local_tracker()
+            if tracker is not None:
+                import asyncio
+                usage = result.usage
+                in_tok = getattr(usage, "input_tokens", 0) or 0
+                out_tok = getattr(usage, "output_tokens", 0) or 0
+                cached_tok = getattr(usage, "cache_read_input_tokens", 0) or 0
+                calc = _get_pricing_calculator()
+                cost_usd = calc.estimate(
+                    model=result.model,
+                    input_tokens=in_tok,
+                    output_tokens=out_tok,
+                    cached_tokens=cached_tok,
+                ) if calc else 0.0
+                coro = tracker.record(
+                    agent_name=prompt_name or "unknown",
+                    model=result.model,
+                    branch="",
+                    operation_type="consultation",
+                    estimated_cost_usd=cost_usd,
+                    input_tokens=in_tok,
+                    output_tokens=out_tok,
+                )
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(coro)
+                except RuntimeError:
+                    asyncio.run(coro)
+        except ImportError:
+            pass  # lex-agents-finops not installed — skip silently
+        except Exception as exc:
+            logger.warning("anthropic_local_tracker_failed", error=str(exc))
+
     @property
     def circuit_state(self) -> str:
         return self._circuit.state.value

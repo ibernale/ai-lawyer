@@ -71,6 +71,13 @@ reindex_all_job = define_asset_job(
     description="Re-embed and re-index all documents without re-fetching raw (for model changes)",
 )
 
+# FinOps cost sync + reconciliation
+finops_cost_sync_job = define_asset_job(
+    "finops_cost_sync_job",
+    selection=AssetSelection.groups("finops"),
+    description="Fetch Anthropic hourly usage/cost data and reconcile against local estimates",
+)
+
 # Convenience: all sources at once
 ingest_all_job = define_asset_job(
     name="ingest_all_job",
@@ -86,4 +93,5 @@ ALL_JOBS = [
     ingest_eba_job, ingest_esma_job,
     ingest_legislation_uk_job, ingest_fca_job,
     ingest_all_job, reindex_all_job,
+    finops_cost_sync_job,
 ]

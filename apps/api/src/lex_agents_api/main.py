@@ -102,6 +102,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     audit_store = AuditStore(settings.consultation_db_path)
     await audit_store.init()
 
+    # FinOps cost tracking (ADR 0031)
+    try:
+        from lex_agents_finops.cost_store import CostStore
+        from lex_agents_finops.local_tracker import LocalCostTracker, set_local_tracker
+        cost_store = CostStore(settings.cost_db_path)
+        await cost_store.init()
+        local_tracker = LocalCostTracker(cost_store)
+        set_local_tracker(local_tracker)
+        logger.info("cost_tracking_initialized", db_path=settings.cost_db_path)
+    except ImportError:
+        logger.warning("lex_agents_finops_not_installed_cost_tracking_disabled")
+
     yield
 
     logger.info("shutdown")
@@ -155,6 +167,9 @@ def create_app() -> FastAPI:
     app.include_router(export_router.router)   # /api/v1/consult/{id}/export, /feedback
     app.include_router(feedback_router.router) # /api/v1/feedback
     app.include_router(audit_router.router)    # /api/v1/audit
+
+    from lex_agents_api.routers.cost import router as cost_router
+    app.include_router(cost_router)            # /api/v1/admin/cost/*
 
     # Prometheus metrics — /metrics (no auth, internal scrape only)
     Instrumentator(

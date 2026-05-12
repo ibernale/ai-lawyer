@@ -120,6 +120,22 @@ def require_auth(
         ) from exc
 
 
+def require_role(*roles: str):
+    """FastAPI dependency factory that gates access to specific roles.
+
+    Usage:
+        user: CurrentUser = Depends(require_role("operator", "admin"))
+    """
+    async def _check(user: CurrentUser = Depends(require_auth)) -> CurrentUser:
+        if user.role not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Role '{user.role}' is not authorised for this endpoint",
+            )
+        return user
+    return _check
+
+
 # ---------------------------------------------------------------------------
 # Token endpoint handler (called from auth router)
 # ---------------------------------------------------------------------------

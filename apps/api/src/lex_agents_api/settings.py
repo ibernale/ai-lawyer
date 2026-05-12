@@ -55,6 +55,9 @@ class Settings(BaseSettings):
 
     # Consultation history
     consultation_db_path: str = "data/consultations.db"
+
+    # FinOps cost tracking (ADR 0031)
+    cost_db_path: str = "data/cost.db"
     agents_package_enabled: bool = True
 
     # Build metadata (injected by Dockerfile ARG → ENV)

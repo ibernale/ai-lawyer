@@ -41,6 +41,19 @@ try:
 except ImportError:
     pass
 
+try:
+    from lex_agents_pipeline.assets.admin.cost_sync import (
+        anthropic_cost_sync,
+        cost_reconciliation_daily,
+        cost_positive_if_local_active,
+        usage_report_not_empty,
+    )
+    _finops_assets = [anthropic_cost_sync, cost_reconciliation_daily]
+    _finops_checks = [usage_report_not_empty, cost_positive_if_local_active]
+except ImportError:
+    _finops_assets = []
+    _finops_checks = []
+
 # ---------------------------------------------------------------------------
 # Resources
 # ---------------------------------------------------------------------------
@@ -71,8 +84,9 @@ defs = Definitions(
         + ALL_CONTEXTUALIZED_ASSETS
         + ALL_EMBEDDED_ASSETS
         + ALL_INDEXED_ASSETS
+        + _finops_assets
     ),
-    asset_checks=ALL_RAW_CHECKS + ALL_INDEXED_CHECKS,
+    asset_checks=ALL_RAW_CHECKS + ALL_INDEXED_CHECKS + _finops_checks,
     resources=_resources,
     jobs=ALL_JOBS,
     schedules=_schedules,

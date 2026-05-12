@@ -11,6 +11,7 @@ members = [
     "packages/memory",
     "packages/audit",
     "evals",
+    "packages/finops",
 ]
 
 [tool.uv.sources]
@@ -24,6 +25,7 @@ lex-agents-pipeline = { workspace = true }
 lex-agents-evals-advanced = { workspace = true }
 lex-agents-memory = { workspace = true }
 lex-agents-audit = { workspace = true }
+lex-agents-finops = { workspace = true }
 
 # ─── Shared ruff config (inherited by all packages) ───────────────────────────
 [tool.ruff]
@@ -148,7 +150,7 @@ ignore_errors = true
 # ─── Shared pytest config ─────────────────────────────────────────────────────
 [tool.pytest.ini_options]
 testpaths = ["apps", "packages", "evals", "tests"]
-pythonpath = ["apps/api/src", "packages/agents/src", "packages/rag/src", "packages/verifier/src", "packages/ingest/src", "packages/shared/src", "packages/memory/src", "packages/evals_advanced/src", "evals/src"]
+pythonpath = ["apps/api/src", "packages/agents/src", "packages/rag/src", "packages/verifier/src", "packages/ingest/src", "packages/shared/src", "packages/memory/src", "packages/evals_advanced/src", "packages/finops/src", "evals/src"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
@@ -161,3 +163,8 @@ markers = [
     "e2e: end-to-end pipeline tests (mocked API, real logic)",
 ]
 asyncio_mode = "auto"
+
+[dependency-groups]
+dev = [
+    "lex-agents-finops",
+]
