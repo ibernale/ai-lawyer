@@ -140,6 +140,53 @@ export type VerificationReport = {
   status: "green" | "amber" | "red";
 };
 
+// ---------------------------------------------------------------------------
+// Comparative law types (ADR 0027)
+// ---------------------------------------------------------------------------
+
+export type CoverageLevel = "full" | "partial" | "insufficient";
+export type RiskLevel = "low" | "medium" | "high";
+
+export type JurisdictionEntry = {
+  text: string | null;
+  refs: number[];
+  coverage: CoverageLevel;
+  note: string | null;
+};
+
+export type ComparativeDimension = {
+  name: string;
+  by_jurisdiction: Record<string, JurisdictionEntry>;
+};
+
+export type Divergence = {
+  dimension: string;
+  description: string;
+  jurisdictions_involved: string[];
+  severity: RiskLevel;
+};
+
+export type CoverageGap = {
+  jurisdiction: string;
+  reason: string;
+  recommendation: string;
+};
+
+export type ComparativeResponse = {
+  trace_id: string;
+  issue: string;
+  jurisdictions_compared: string[];
+  dimensions: ComparativeDimension[];
+  divergences: Divergence[];
+  common_ground: string[];
+  risk_differential: Record<string, RiskLevel>;
+  risk_rationale: string;
+  coverage_gaps: CoverageGap[];
+  citations: CitationMapping[];
+  verification_status: "green" | "amber" | "red";
+  synthesised_at: string;
+};
+
 export type ConsultResponse = {
   trace_id: string;
   answer: string;
@@ -172,6 +219,7 @@ export type ConsultResponse = {
   } | null;
   cost_breakdown_by_agent?: Record<string, number>;
   branch_answers?: Record<string, string>;
+  comparative_output?: ComparativeResponse | null;
 };
 
 export type ConsultationSummary = {
@@ -216,4 +264,107 @@ export async function listConsultations(
   limit = 20,
 ): Promise<ConsultationSummary[]> {
   return apiFetch<ConsultationSummary[]>(`/api/v1/consult?limit=${limit}`);
+}
+
+export function getComparativeExportUrl(traceId: string): string {
+  return `${API_BASE}/api/v1/consult/${traceId}/export/comparative`;
+}
+
+// ---------------------------------------------------------------------------
+// Document types
+// ---------------------------------------------------------------------------
+
+export type UploadResponse = {
+  doc_id: string;
+  filename: string;
+  sha256: string;
+  mime_type: string;
+  segment_count: number;
+  page_count: number | null;
+  expires_at: string;
+};
+
+export type AnalysisResponse = {
+  doc_id: string;
+  trace_id: string;
+  filename: string;
+  mode: string;
+  analysis_text: string;
+  segment_count: number;
+  verification_status: "green" | "amber" | "red";
+  analysed_at: string;
+};
+
+export type CompareResponse = {
+  doc_ids: string[];
+  trace_id: string;
+  diff_text: string;
+  verification_status: "green" | "amber" | "red";
+  analysed_at: string;
+};
+
+export type AnalysisMode =
+  | "resumen_ejecutivo"
+  | "analisis_clausulas"
+  | "riesgos"
+  | "comparativa";
+
+// ---------------------------------------------------------------------------
+// Document API functions
+// ---------------------------------------------------------------------------
+
+export async function uploadDocument(file: File): Promise<UploadResponse> {
+  const token =
+    typeof window !== "undefined"
+      ? (sessionStorage.getItem("lex_agents_token") ?? (await getToken()))
+      : null;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/v1/documents/upload`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+  return res.json() as Promise<UploadResponse>;
+}
+
+export async function analyzeDocument(
+  docId: string,
+  query = "Analiza este documento.",
+  mode: AnalysisMode = "riesgos",
+): Promise<AnalysisResponse> {
+  return apiFetch<AnalysisResponse>(`/api/v1/documents/${docId}/analyze`, {
+    method: "POST",
+    body: JSON.stringify({ query, mode }),
+  });
+}
+
+export async function compareDocuments(
+  docIds: [string, string],
+  query = "Compara estos dos documentos.",
+): Promise<CompareResponse> {
+  return apiFetch<CompareResponse>("/api/v1/documents/compare", {
+    method: "POST",
+    body: JSON.stringify({ doc_ids: docIds, query }),
+  });
+}
+
+export async function deleteDocument(docId: string): Promise<void> {
+  const token =
+    typeof window !== "undefined"
+      ? (sessionStorage.getItem("lex_agents_token") ?? (await getToken()))
+      : null;
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  await fetch(`${API_BASE}/api/v1/documents/${docId}`, {
+    method: "DELETE",
+    headers,
+  });
 }
