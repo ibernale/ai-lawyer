@@ -4,7 +4,6 @@ The domain= payload field is set here per source (ADR 0010: single
 collection, domain filter for per-branch retrieval).
 """
 
-from __future__ import annotations
 
 import json
 import os

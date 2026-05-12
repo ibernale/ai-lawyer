@@ -6,7 +6,6 @@ Assets are idempotent: documents whose checksum matches the stored
 version are skipped.
 """
 
-from __future__ import annotations
 
 import asyncio
 import os

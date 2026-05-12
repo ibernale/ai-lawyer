@@ -5,7 +5,6 @@ DataVersion = sha256 of concatenated canonical checksums → changes when
 any underlying document changes.
 """
 
-from __future__ import annotations
 
 import hashlib
 import os

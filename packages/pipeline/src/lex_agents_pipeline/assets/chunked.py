@@ -4,7 +4,6 @@ DataVersion = hash of LegalChunker config + canonical checksum.
 When max_tokens or overlap changes, all downstream assets re-materialize.
 """
 
-from __future__ import annotations
 
 import hashlib
 import os
