@@ -12,6 +12,7 @@ from lex_agents_shared.types import CitationMapping
 from opentelemetry import trace
 
 from lex_agents_agents.base_agent import AgentMetadata, AgentResponse
+from lex_agents_agents.core.comparative_synthesizer import ComparativeSynthesizer
 from lex_agents_agents.prompt_loader import load_prompt
 from lex_agents_agents.routing.branch_classifier import get_specialist_class
 from lex_agents_agents.shared.definition_of_done import BranchTask, PlannerOutput
@@ -89,6 +90,41 @@ class CrossJurisdictionCoordinator:
                 )
             logger.info("coordinator_parallel_done", n_responses=len(responses))
             return responses
+
+    async def synthesize_comparative(
+        self,
+        responses: list[AgentResponse],
+        planner_output: PlannerOutput,
+        trace_id: str,
+    ) -> AgentResponse:
+        """Produce a ComparativeResponse for analisis_comparativo output_type (ADR 0027).
+
+        Returns an AgentResponse whose comparative_output field is populated.
+        The answer_text field contains a short prose summary for backward-compat clients.
+        """
+        comparative_synthesizer = ComparativeSynthesizer(self._client)
+        comparative = await comparative_synthesizer.synthesize(responses, planner_output, trace_id)
+
+        # Build a brief prose summary for clients that only read answer_text.
+        juris_str = ", ".join(comparative.jurisdictions_compared)
+        n_dims = len(comparative.dimensions)
+        n_divs = len(comparative.divergences)
+        summary = (
+            f"Análisis comparativo: {comparative.issue}\n\n"
+            f"Jurisdicciones: {juris_str} · {n_dims} dimensiones · {n_divs} divergencias.\n\n"
+            "Consulte el campo comparative_output para la tabla completa."
+        )
+
+        merged_citations = self._merge_citations(responses)
+        return AgentResponse(
+            trace_id=trace_id,
+            answer_text=summary,
+            citations=merged_citations,
+            verification=None,
+            metadata=responses[0].metadata,
+            query_rewritten=responses[0].query_rewritten,
+            comparative_output=comparative,
+        )
 
     def synthesize(
         self,

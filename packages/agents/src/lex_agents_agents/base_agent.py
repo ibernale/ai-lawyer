@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
 from lex_agents_rag.assembler import AssembledContext
-from lex_agents_shared.types import CitationMapping, VerificationReport
+from lex_agents_shared.types import CitationMapping, ComparativeResponse, VerificationReport
 
 
 @dataclass
@@ -30,6 +30,7 @@ class AgentResponse:
     verification: VerificationReport | None
     metadata: AgentMetadata
     query_rewritten: str
+    comparative_output: ComparativeResponse | None = None
 
 
 @dataclass
