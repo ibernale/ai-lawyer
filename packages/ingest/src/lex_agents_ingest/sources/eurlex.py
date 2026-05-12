@@ -48,11 +48,13 @@ class EurlexSource(Source):
     async def list_documents(self) -> list[str]:
         """Return hardcoded sample EUR-Lex CELEX document IDs."""
         return [
-            "32013R0575",
+            "32013R0575",  # CRR — expected by golden dataset BANK-EU-001
             "32013L0036",
             "32013R1024",
+            "32019R0876",  # CRR II — expected by golden dataset BANK-EU-013
             "32019R2033",
             "32019L2034",
+            "32024R1623",  # CRR III — expected by golden dataset BANK-EU-021
         ]
 
     async def _resolve_via_sparql(self, doc_id: str) -> str | None:
