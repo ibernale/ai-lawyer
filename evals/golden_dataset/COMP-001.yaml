@@ -25,8 +25,8 @@ expected:
     - "LGPD"
     - "BCR o cláusulas tipo"
   must_cite_any_of:
-    - {type: regulation, celex: "32016R0679", articles: ["9", "46", "47"]}
-    - {type: ley, source: boe, keyword: "LOPDGDD"}
+    - { type: regulation, celex: "32016R0679", articles: ["9", "46", "47"] }
+    - { type: ley, source: boe, keyword: "LOPDGDD" }
   risk_differential:
     BR: high
     ES: low

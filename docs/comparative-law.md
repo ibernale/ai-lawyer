@@ -42,20 +42,21 @@ POST /api/v1/consult
 
 El campo `comparative_output` de `ConsultResponse` contiene:
 
-| Campo | Descripción |
-|---|---|
-| `issue` | Pregunta comparativa sintetizada |
-| `jurisdictions_compared` | Lista de códigos ISO de jurisdicción |
-| `dimensions` | Lista de dimensiones jurídicas (filas de la tabla) |
-| `divergences` | Conflictos normativos identificados con severidad |
-| `common_ground` | Principios que aplican igual en todas las jurisdicciones |
-| `risk_differential` | Nivel de riesgo por jurisdicción (`low/medium/high`) |
-| `risk_rationale` | Justificación del diferencial de riesgo |
-| `coverage_gaps` | Jurisdicciones con cobertura parcial o insuficiente |
-| `citations` | Citas renumeradas secuencialmente |
-| `verification_status` | `green / amber / red` |
+| Campo                    | Descripción                                              |
+| ------------------------ | -------------------------------------------------------- |
+| `issue`                  | Pregunta comparativa sintetizada                         |
+| `jurisdictions_compared` | Lista de códigos ISO de jurisdicción                     |
+| `dimensions`             | Lista de dimensiones jurídicas (filas de la tabla)       |
+| `divergences`            | Conflictos normativos identificados con severidad        |
+| `common_ground`          | Principios que aplican igual en todas las jurisdicciones |
+| `risk_differential`      | Nivel de riesgo por jurisdicción (`low/medium/high`)     |
+| `risk_rationale`         | Justificación del diferencial de riesgo                  |
+| `coverage_gaps`          | Jurisdicciones con cobertura parcial o insuficiente      |
+| `citations`              | Citas renumeradas secuencialmente                        |
+| `verification_status`    | `green / amber / red`                                    |
 
 Cada **dimensión** tiene una entrada por jurisdicción con:
+
 - `text`: análisis textual (null si cobertura insuficiente)
 - `refs`: índices `[REF:n]` aplicables
 - `coverage`: `full | partial | insufficient`
@@ -65,16 +66,16 @@ Cada **dimensión** tiene una entrada por jurisdicción con:
 
 ## Cobertura por jurisdicción
 
-| Jurisdicción | Estado | Fuentes indexadas |
-|---|---|---|
-| ES | FULL | BOE (Boletín Oficial del Estado) |
-| EU | FULL | EUR-Lex, AEPD, EDPB, EBA, ESMA |
-| UK | PARTIAL | legislation.gov.uk, FCA (post-Brexit, en evolución) |
-| BR | PARTIAL | INLABS-DOU (cobertura LGPD parcial) |
-| MX | PARTIAL | SIDOF-DOF (CNBV parcialmente indexado) |
-| PL | FULL | EUR-Lex (directivas transpuestas) |
-| PT | FULL | EUR-Lex (directivas transpuestas) |
-| AR, DE, CH, US | INSUFICIENTE | No indexadas en v0.2.0 |
+| Jurisdicción   | Estado       | Fuentes indexadas                                   |
+| -------------- | ------------ | --------------------------------------------------- |
+| ES             | FULL         | BOE (Boletín Oficial del Estado)                    |
+| EU             | FULL         | EUR-Lex, AEPD, EDPB, EBA, ESMA                      |
+| UK             | PARTIAL      | legislation.gov.uk, FCA (post-Brexit, en evolución) |
+| BR             | PARTIAL      | INLABS-DOU (cobertura LGPD parcial)                 |
+| MX             | PARTIAL      | SIDOF-DOF (CNBV parcialmente indexado)              |
+| PL             | FULL         | EUR-Lex (directivas transpuestas)                   |
+| PT             | FULL         | EUR-Lex (directivas transpuestas)                   |
+| AR, DE, CH, US | INSUFICIENTE | No indexadas en v0.2.0                              |
 
 `PARTIAL` implica que el sistema declara la limitación en `coverage_gaps` y recomienda verificación por asesoría local. **Nunca se inventa contenido para cobertura insuficiente.**
 
@@ -101,6 +102,7 @@ GET /api/v1/consult/{trace_id}/export/comparative
 ```
 
 El fichero generado contiene cuatro hojas:
+
 - **Análisis comparativo** — tabla pivot con formato condicional por cobertura
 - **Divergencias** — lista con severidad codificada por color
 - **Riesgo diferencial** — tabla + rationale completo

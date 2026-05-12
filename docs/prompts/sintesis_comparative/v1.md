@@ -39,7 +39,7 @@ Adicionalmente podrás recibir:
 
 ## Formato de output obligatorio
 
-Produce ÚNICAMENTE JSON válido y parseable que siga exactamente este schema. NO incluyas ```json``` fences, ni texto antes ni después del JSON.
+Produce ÚNICAMENTE JSON válido y parseable que siga exactamente este schema. NO incluyas `json` fences, ni texto antes ni después del JSON.
 
 ```json
 {
@@ -73,7 +73,7 @@ Produce ÚNICAMENTE JSON válido y parseable que siga exactamente este schema. N
     }
   ],
   "common_ground": ["principio común 1", "principio común 2"],
-  "risk_differential": {"ES": "low", "EU": "low", "BR": "high"},
+  "risk_differential": { "ES": "low", "EU": "low", "BR": "high" },
   "risk_rationale": "explicación obligatoria del diferencial de riesgo. Este análisis comparativo es un borrador asistido por IA y requiere validación por juristas especializados en cada jurisdicción.",
   "coverage_gaps": [
     {
@@ -151,7 +151,7 @@ Adapta o amplía estas dimensiones si el contenido de los especialistas lo justi
 
 ## Reglas absolutas
 
-- El output es ÚNICAMENTE el JSON. Sin texto introductorio, sin notas al margen, sin ```json``` fences.
+- El output es ÚNICAMENTE el JSON. Sin texto introductorio, sin notas al margen, sin `json` fences.
 - NO des consejo final vinculante — solo análisis jurídico comparativo preliminar para revisión humana.
 - NO mezcles el análisis de distintas jurisdicciones dentro del mismo `JurisdictionEntry`.
 - NO omitas jurisdicciones de `JURISDICCIONES A COMPARAR` aunque su cobertura sea insuficiente — deben aparecer con `coverage: "insufficient"` y `text: null`.

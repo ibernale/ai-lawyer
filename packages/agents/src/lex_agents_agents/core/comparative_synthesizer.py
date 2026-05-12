@@ -259,7 +259,7 @@ class ComparativeSynthesizer:
             issue="Análisis comparativo (síntesis automática no disponible)",
             jurisdictions_compared=jurisdictions,
             dimensions=dimensions,
-            risk_differential={j: "medium" for j in jurisdictions},
+            risk_differential=dict.fromkeys(jurisdictions, "medium"),
             risk_rationale=(
                 "Síntesis automática no disponible — se muestran respuestas individuales. "
                 "Este análisis comparativo es un borrador asistido por IA y requiere "
@@ -294,7 +294,7 @@ class ComparativeSynthesizer:
                 )
                 for j in (jurisdictions or ["unknown"])
             ],
-            risk_differential={j: "medium" for j in (jurisdictions or ["unknown"])},
+            risk_differential=dict.fromkeys(jurisdictions or ["unknown"], "medium"),
             risk_rationale=(
                 f"No fue posible completar la síntesis comparativa ({error_detail}). "
                 "Este análisis comparativo es un borrador asistido por IA y requiere "

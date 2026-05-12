@@ -189,7 +189,11 @@ function PivotTable({
                       key={j}
                       className={`px-3 py-2 align-top border-b border-l border-border/50 cursor-pointer hover:brightness-95 transition-all ${coverageCellClass(entry.coverage)}`}
                       onClick={() =>
-                        setActiveCell({ entry, jurisdiction: j, dimensionName: dim.name })
+                        setActiveCell({
+                          entry,
+                          jurisdiction: j,
+                          dimensionName: dim.name,
+                        })
                       }
                     >
                       {isInsufficient ? (
@@ -366,7 +370,12 @@ export function ComparativeView({
     },
     { id: "risk" as const, label: "Riesgo diferencial" },
     ...(comparative.coverage_gaps.length > 0
-      ? [{ id: "gaps" as const, label: `Lagunas (${comparative.coverage_gaps.length})` }]
+      ? [
+          {
+            id: "gaps" as const,
+            label: `Lagunas (${comparative.coverage_gaps.length})`,
+          },
+        ]
       : []),
   ];
 
@@ -405,7 +414,8 @@ export function ComparativeView({
             </span>
           ))}
           <span className="text-xs text-muted-foreground self-center">
-            · {comparative.dimensions.length} dimensiones · {comparative.divergences.length} divergencias
+            · {comparative.dimensions.length} dimensiones ·{" "}
+            {comparative.divergences.length} divergencias
           </span>
         </div>
       </div>

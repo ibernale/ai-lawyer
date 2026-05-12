@@ -103,13 +103,13 @@ ConsultRequest(output_type="analisis_comparativo")
 
 ## Jurisdicciones comparables en v1
 
-| Jurisdicción | Cobertura | Fuentes |
-|---|---|---|
-| EU | Full | EUR-Lex, EDPB, EBA, ESMA |
-| ES | Full | BOE, AEPD, BdE |
-| UK | Partial | legislation.gov.uk, FCA |
-| BR | Partial | INLABS-DOU (AMBER) |
-| MX | Partial | SIDOF-DOF (AMBER) |
+| Jurisdicción | Cobertura | Fuentes                  |
+| ------------ | --------- | ------------------------ |
+| EU           | Full      | EUR-Lex, EDPB, EBA, ESMA |
+| ES           | Full      | BOE, AEPD, BdE           |
+| UK           | Partial   | legislation.gov.uk, FCA  |
+| BR           | Partial   | INLABS-DOU (AMBER)       |
+| MX           | Partial   | SIDOF-DOF (AMBER)        |
 
 ---
 
@@ -134,4 +134,3 @@ ConsultRequest(output_type="analisis_comparativo")
 ## Implementación
 
 **Fase 7.3** — implementación completa (ver PR correspondiente).
-

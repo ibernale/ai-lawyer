@@ -13,8 +13,8 @@ from docx import Document
 from docx.shared import Pt, RGBColor
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl import Workbook  # type: ignore[import-untyped]
+from openpyxl.styles import Alignment, Font, PatternFill  # type: ignore[import-untyped]
 from pydantic import BaseModel
 
 from lex_agents_api.auth import CurrentUser, require_auth
@@ -141,7 +141,7 @@ def _build_comparative_xlsx(comparative: dict[str, Any], query: str) -> bytes:
 
     # ── Sheet 1: Pivot table ────────────────────────────────────────────────
     ws_pivot = wb.active
-    ws_pivot.title = "Análisis comparativo"  # type: ignore[assignment]
+    ws_pivot.title = "Análisis comparativo"
 
     jurisdictions: list[str] = comparative.get("jurisdictions_compared", [])
     dimensions: list[dict[str, Any]] = comparative.get("dimensions", [])
