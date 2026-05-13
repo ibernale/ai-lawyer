@@ -25,6 +25,8 @@ services:
       - "8000:8000"
     env_file:
       - ../.env
+    volumes:
+      - hf_cache:/home/appuser/.cache/huggingface
     depends_on:
       qdrant:
         condition: service_healthy
@@ -142,3 +144,4 @@ volumes:
   qdrant_storage:
   grafana_data:
   dagster_home:
+  hf_cache:

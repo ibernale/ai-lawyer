@@ -129,15 +129,19 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     # In-app notifications (ADR-0035)
     try:
+        import asyncio
+
         from lex_agents_audit.notifications import NotificationManager, set_notification_manager
         notif_mgr = NotificationManager(settings.governance_db_path)
         await notif_mgr.init()
         set_notification_manager(notif_mgr)
         # Wire kill-switch events → notifications
         if ssm is not None:
-            def _on_ssm_event(event: str, payload: object) -> None:
-                import asyncio
+            # Capture the running event loop at startup time (avoids the
+            # deprecated asyncio.get_event_loop() inside a sync callback).
+            _loop = asyncio.get_running_loop()
 
+            def _on_ssm_event(event: str, payload: object) -> None:
                 from lex_agents_audit.notifications import get_notification_manager
                 nm = get_notification_manager()
                 if nm is None:
@@ -160,11 +164,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                 else:
                     return
                 try:
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        _task = asyncio.ensure_future(coro)  # noqa: RUF006
-                    else:
-                        loop.run_until_complete(coro)
+                    asyncio.run_coroutine_threadsafe(coro, _loop)
                 except Exception as exc:
                     logger.warning("notification_create_failed", error=str(exc))
             ssm.subscribe(_on_ssm_event)

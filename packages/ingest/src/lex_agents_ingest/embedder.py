@@ -26,7 +26,7 @@ class BgeM3Embedder:
     def __init__(
         self,
         model_name: str = "BAAI/bge-m3",
-        batch_size: int = 32,
+        batch_size: int = 8,
     ) -> None:
         self._model_name = model_name
         self._batch_size = batch_size
@@ -37,10 +37,16 @@ class BgeM3Embedder:
             from sentence_transformers import SentenceTransformer  # type: ignore[import-untyped]
 
             logger.info("bge_m3_loading", model=self._model_name)
-            self._model = SentenceTransformer(
+            model = SentenceTransformer(
                 self._model_name,
                 trust_remote_code=True,  # type: ignore[call-arg]
             )
+            # BGE-M3 supports up to 8192 tokens but allocating attention
+            # matrices at full length with any meaningful batch size exhausts
+            # memory on commodity hardware.  512 tokens captures the relevant
+            # chunk context for retrieval while staying well within limits.
+            model.max_seq_length = 512
+            self._model = model
             logger.info("bge_m3_loaded", model=self._model_name)
         return self._model
 
@@ -61,7 +67,7 @@ class BgeM3Embedder:
             batch = texts[i : i + self._batch_size]
             outputs = model.encode(  # type: ignore[union-attr]
                 batch,
-                batch_size=len(batch),
+                batch_size=self._batch_size,
                 normalize_embeddings=True,
             )
 

@@ -27,6 +27,7 @@ from fastapi.testclient import TestClient
 os.environ.setdefault("JWT_SECRET", "test-secret-key-for-e2e-admin-flow-32ch")
 os.environ.setdefault("AUTH_USERS_JSON", "[]")
 os.environ["AUTH_ENABLED"] = "false"
+os.environ["NOTIFICATION_WEBHOOK_SECRET"] = "test-webhook-secret-e2e"
 
 
 # ---------------------------------------------------------------------------
@@ -325,8 +326,11 @@ class TestAdminFlow:
 
 
 # ---------------------------------------------------------------------------
-# Notification ingest webhook (admin-only)
+# Notification ingest webhook (static bearer secret, not JWT)
 # ---------------------------------------------------------------------------
+
+_WEBHOOK_SECRET = "test-webhook-secret-e2e"
+_WEBHOOK_HEADERS = {"Authorization": f"Bearer {_WEBHOOK_SECRET}"}
 
 
 @pytest.mark.e2e
@@ -343,6 +347,7 @@ class TestNotificationIngest:
                 "body": "Container unhealthy for 6 minutes",
                 "correlation_id": "grafana-abc123",
             },
+            headers=_WEBHOOK_HEADERS,
         )
         assert resp.status_code == 204
 
@@ -357,13 +362,15 @@ class TestNotificationIngest:
                 "title": "T",
                 "body": "B",
             },
+            headers=_WEBHOOK_HEADERS,
         )
         assert resp.status_code == 422
 
-    def test_ingest_requires_admin_role(
-        self, operator_client: TestClient
+    def test_ingest_requires_webhook_secret(
+        self, admin_client: TestClient
     ) -> None:
-        resp = operator_client.post(
+        """Request without webhook secret is rejected (401), regardless of JWT role."""
+        resp = admin_client.post(
             "/api/v1/admin/notifications/ingest",
             json={
                 "source": "grafana",
@@ -371,5 +378,16 @@ class TestNotificationIngest:
                 "title": "T",
                 "body": "B",
             },
+            # No Authorization header
+        )
+        assert resp.status_code == 401
+
+    def test_ingest_wrong_secret_rejected(
+        self, admin_client: TestClient
+    ) -> None:
+        resp = admin_client.post(
+            "/api/v1/admin/notifications/ingest",
+            json={"source": "grafana", "category": "info", "title": "T", "body": "B"},
+            headers={"Authorization": "Bearer wrong-secret"},
         )
         assert resp.status_code == 403

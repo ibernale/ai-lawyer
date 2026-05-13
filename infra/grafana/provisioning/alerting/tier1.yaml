@@ -15,6 +15,9 @@ groups:
         condition: A
         data:
           - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
             datasourceUid: prometheus
             model:
               expr: 'up{job=~"qdrant|api|dagster"} == 0'
@@ -42,6 +45,9 @@ groups:
         condition: A
         data:
           - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
             datasourceUid: prometheus
             model:
               expr: 'up{job="qdrant"} == 0'
@@ -69,6 +75,9 @@ groups:
         condition: A
         data:
           - refId: A
+            relativeTimeRange:
+              from: 86400
+              to: 0
             datasourceUid: prometheus
             model:
               expr: >
@@ -99,6 +108,9 @@ groups:
         condition: A
         data:
           - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
             datasourceUid: prometheus
             model:
               expr: "lex_cendoj_quota_blocked == 1"
@@ -126,6 +138,9 @@ groups:
         condition: A
         data:
           - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
             datasourceUid: prometheus
             model:
               expr: >

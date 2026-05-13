@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { StatusBadge } from "@/components/status-badge";
 import { getHealth } from "@/lib/api";
 import type { HealthResponse } from "@/lib/api";

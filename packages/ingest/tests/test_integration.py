@@ -50,12 +50,12 @@ class TestFullPipelineBoeFixture:
             anthropic_mock.messages.create.return_value = ctx_resp
             contextualizer = Contextualizer(anthropic_mock, cache_dir=tmpdir + "/ctx")
 
-            # Mock embedder
+            # Mock embedder — return one EmbeddingResult per text in the batch
             embedder = MagicMock()
             from lex_agents_ingest.embedder import EmbeddingResult
-            embedder.embed_batch.return_value = [
+            embedder.embed_batch.side_effect = lambda texts: [
                 EmbeddingResult(dense=[0.1] * 1024, sparse={1: 0.5})
-                for _ in range(100)
+                for _ in texts
             ]
 
             # Real Qdrant

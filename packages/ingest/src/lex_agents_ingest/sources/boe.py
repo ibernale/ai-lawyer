@@ -79,15 +79,18 @@ class BoeSource(Source):
 
             fecha_el = meta.find("fecha_publicacion")
             if fecha_el is not None and fecha_el.text:
-                try:
-                    pub_date = datetime.strptime(
-                        fecha_el.text.strip(), "%d/%m/%Y"
-                    ).date()
-                except ValueError:
+                raw_date = fecha_el.text.strip()
+                for fmt in ("%Y%m%d", "%d/%m/%Y"):
+                    try:
+                        pub_date = datetime.strptime(raw_date, fmt).date()
+                        break
+                    except ValueError:
+                        continue
+                else:
                     logger.warning(
                         "boe.date_parse_failed",
                         source_id=raw.source_id,
-                        raw_date=fecha_el.text,
+                        raw_date=raw_date,
                     )
 
             rango_el = meta.find("rango")
@@ -99,23 +102,48 @@ class BoeSource(Source):
 
         texto_el = root.find("texto")
         if texto_el is not None:
-            for articulo in texto_el.findall("articulo"):
-                num = articulo.get("num", "")
-                marginales_el = articulo.find("marginales")
-                art_title = (
-                    marginales_el.text.strip()
-                    if marginales_el is not None and marginales_el.text
-                    else ""
-                )
-                hierarchy.append(
-                    HierarchyNode(level="articulo", number=num, title=art_title)
-                )
-                parts: list[str] = []
-                for parrafo in articulo.findall("parrafo"):
-                    if parrafo.text:
-                        parts.append(parrafo.text.strip())
-                if parts:
-                    texts.append("\n".join(parts))
+            # Try nested <articulo> structure first (older BOE format)
+            articulos = texto_el.findall("articulo")
+            if articulos:
+                for articulo in articulos:
+                    num = articulo.get("num", "")
+                    marginales_el = articulo.find("marginales")
+                    art_title = (
+                        marginales_el.text.strip()
+                        if marginales_el is not None and marginales_el.text
+                        else ""
+                    )
+                    hierarchy.append(
+                        HierarchyNode(level="articulo", number=num, title=art_title)
+                    )
+                    parts: list[str] = []
+                    for parrafo in articulo.findall("parrafo"):
+                        if parrafo.text:
+                            parts.append(parrafo.text.strip())
+                    if parts:
+                        texts.append("\n".join(parts))
+            else:
+                # Modern BOE format: flat <p class="..."> elements
+                art_buf: list[str] = []
+                for p_el in texto_el.iter("p"):
+                    css_class = p_el.get("class", "")
+                    # Collect all text content; normalize non-breaking spaces
+                    raw_text = "".join(p_el.itertext()).replace("\xa0", " ").strip()
+                    if not raw_text:
+                        continue
+                    if css_class in ("articulo", "titulo_articulo"):
+                        # Flush previous article buffer
+                        if art_buf:
+                            texts.append("\n".join(art_buf))
+                            art_buf = []
+                        hierarchy.append(
+                            HierarchyNode(level="articulo", number="", title=raw_text)
+                        )
+                        art_buf.append(raw_text)
+                    else:
+                        art_buf.append(raw_text)
+                if art_buf:
+                    texts.append("\n".join(art_buf))
 
         full_text = "\n\n".join(texts)
 
