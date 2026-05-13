@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { ResponseView } from "@/components/ResponseView";
+import { ErrorBanner } from "@/components/ui/error-banner";
 import { consultQuery, getConsultation } from "@/lib/api";
 import type { ConsultResponse } from "@/lib/api";
 
@@ -258,11 +259,7 @@ export default function ConsultaPage({
           </div>
         </form>
 
-        {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            {error}
-          </div>
-        )}
+        {error && <ErrorBanner message={error} />}
 
         {response && (
           <ResponseView

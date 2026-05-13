@@ -1,7 +1,11 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { listConsultations } from "@/lib/api";
 import type { ConsultationSummary } from "@/lib/api";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
+import { ErrorBanner } from "@/components/ui/error-banner";
 
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { bg: string; text: string; label: string }> = {
@@ -24,16 +28,31 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export default async function HistoricoPage() {
-  let records: ConsultationSummary[] = [];
-  let fetchError: string | null = null;
+export default function HistoricoPage() {
+  const [records, setRecords] = useState<ConsultationSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  try {
-    records = await listConsultations(20);
-  } catch (e) {
-    fetchError =
-      e instanceof Error ? e.message : "Error al cargar el historial";
+  async function load() {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await listConsultations(50);
+      setRecords(data);
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "No se pudieron cargar las consultas. Inténtalo de nuevo.",
+      );
+    } finally {
+      setLoading(false);
+    }
   }
+
+  useEffect(() => {
+    void load();
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -44,33 +63,53 @@ export default async function HistoricoPage() {
               Histórico de consultas
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Últimas {records.length} consultas realizadas
+              {loading
+                ? "Cargando…"
+                : error
+                  ? "No se pudieron cargar las consultas"
+                  : `${records.length} consulta${records.length !== 1 ? "s" : ""} registrada${records.length !== 1 ? "s" : ""}`}
             </p>
           </div>
-          <Link
-            href="/consulta"
-            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            Nueva consulta
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={load}
+              disabled={loading}
+              className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50 transition-colors"
+            >
+              ↻ Actualizar
+            </button>
+            <Link
+              href="/consulta"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Nueva consulta
+            </Link>
+          </div>
         </header>
 
-        {fetchError && (
-          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            {fetchError}
+        {error && (
+          <ErrorBanner message={error} onRetry={load} />
+        )}
+
+        {loading && (
+          <div className="flex items-center justify-center py-16">
+            <span className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <span className="ml-3 text-sm text-muted-foreground">
+              Cargando historial…
+            </span>
           </div>
         )}
 
-        {records.length === 0 && !fetchError && (
+        {!loading && !error && records.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-12">
             No hay consultas registradas todavía.{" "}
             <Link href="/consulta" className="text-primary underline">
-              Realizar primera consulta
+              Realiza tu primera consulta
             </Link>
           </p>
         )}
 
-        {records.length > 0 && (
+        {!loading && records.length > 0 && (
           <div className="overflow-hidden rounded-lg border border-border">
             <table className="w-full text-sm">
               <thead>
@@ -105,7 +144,10 @@ export default async function HistoricoPage() {
                         minute: "2-digit",
                       })}
                     </td>
-                    <td className="px-4 py-3 max-w-xs truncate" title={r.query}>
+                    <td
+                      className="px-4 py-3 max-w-xs truncate"
+                      title={r.query}
+                    >
                       {r.query}
                     </td>
                     <td className="px-4 py-3">

@@ -9,6 +9,68 @@ const API_BASE =
     : (process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:8000");
 
 // ---------------------------------------------------------------------------
+// Error types
+// ---------------------------------------------------------------------------
+
+/** User-facing error with a Spanish message and a machine-readable code. */
+export class ApiError extends Error {
+  constructor(
+    public readonly code: string,
+    message: string,
+    public readonly status?: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+function _statusMessage(status: number, detail?: string): string {
+  // Special-case SYSTEM_KILLED before generic 503
+  if (status === 503 && detail?.includes("SYSTEM_KILLED")) {
+    return "El sistema está temporalmente desactivado por un administrador. Contacta con el equipo de operaciones.";
+  }
+  switch (status) {
+    case 400:
+      return "La petición no es válida. Revisa los datos introducidos.";
+    case 401:
+      return "Tu sesión ha caducado. Recarga la página para volver a autenticarte.";
+    case 403:
+      return "No tienes permiso para realizar esta acción.";
+    case 404:
+      return "El recurso solicitado no existe o aún no está disponible.";
+    case 413:
+      return "El contenido enviado es demasiado grande (límite: 64 KB).";
+    case 422:
+      return detail
+        ? `Datos no válidos: ${detail}`
+        : "Los datos enviados no son correctos. Revisa el formulario.";
+    case 429:
+      return "Demasiadas peticiones seguidas. Espera un momento e inténtalo de nuevo.";
+    case 500:
+      return "Error interno del servidor. El equipo técnico ha sido notificado.";
+    case 503:
+      return "El servicio no está disponible en este momento. Inténtalo de nuevo en unos segundos.";
+    default:
+      return `Error del servidor (${status}). Inténtalo de nuevo o contacta con soporte.`;
+  }
+}
+
+async function _parseErrorDetail(res: Response): Promise<string | undefined> {
+  try {
+    const body = (await res.clone().json()) as {
+      detail?: string | { code?: string; message?: string };
+    };
+    if (typeof body.detail === "string") return body.detail;
+    if (typeof body.detail === "object" && body.detail !== null) {
+      return body.detail.message ?? body.detail.code;
+    }
+  } catch {
+    // not JSON
+  }
+  return undefined;
+}
+
+// ---------------------------------------------------------------------------
 // Types (mirroring FastAPI response models)
 // ---------------------------------------------------------------------------
 
@@ -77,33 +139,64 @@ async function getToken(): Promise<string | null> {
 // ---------------------------------------------------------------------------
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const isAuthEndpoint =
+  const isPublicEndpoint =
     path.startsWith("/health") || path.startsWith("/version");
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(init?.headers as Record<string, string>),
   };
 
-  if (!isAuthEndpoint && typeof window !== "undefined") {
+  if (!isPublicEndpoint && typeof window !== "undefined") {
     const token = await getToken();
     if (token) headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+  } catch {
+    throw new ApiError(
+      "NETWORK_ERROR",
+      "No se puede conectar con el servidor. Asegúrate de que los servicios están activos (`make dev`).",
+    );
+  }
 
   if (res.status === 401 && typeof window !== "undefined") {
     // Token expired — re-fetch and retry once
-    const token = await fetchToken();
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-      const retry = await fetch(`${API_BASE}${path}`, { ...init, headers });
-      if (!retry.ok)
-        throw new Error(`API error ${retry.status}: ${retry.statusText}`);
+    const newToken = await fetchToken();
+    if (newToken) {
+      headers["Authorization"] = `Bearer ${newToken}`;
+      let retry: Response;
+      try {
+        retry = await fetch(`${API_BASE}${path}`, { ...init, headers });
+      } catch {
+        throw new ApiError(
+          "NETWORK_ERROR",
+          "No se puede conectar con el servidor. Asegúrate de que los servicios están activos (`make dev`).",
+        );
+      }
+      if (!retry.ok) {
+        const detail = await _parseErrorDetail(retry);
+        throw new ApiError(
+          `HTTP_${retry.status}`,
+          _statusMessage(retry.status, detail),
+          retry.status,
+        );
+      }
+      if (retry.status === 204) return undefined as T;
       return retry.json() as Promise<T>;
     }
   }
 
-  if (!res.ok) throw new Error(`API error ${res.status}: ${res.statusText}`);
+  if (!res.ok) {
+    const detail = await _parseErrorDetail(res);
+    throw new ApiError(
+      `HTTP_${res.status}`,
+      _statusMessage(res.status, detail),
+      res.status,
+    );
+  }
+  if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 

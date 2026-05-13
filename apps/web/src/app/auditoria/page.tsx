@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getAuditSample, listAuditSamples, submitAuditReview } from "@/lib/api";
 import type { AuditSample, AuditStatus, AuditVerdict } from "@/lib/api";
+import { ErrorBanner } from "@/components/ui/error-banner";
 
 const STATUS_LABELS: Record<AuditStatus, string> = {
   pending: "Pendiente",
@@ -40,6 +41,7 @@ export default function AuditoriaPage() {
   );
   const [samples, setSamples] = useState<AuditSample[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<AuditSample | null>(null);
   const [fullRecord, setFullRecord] = useState<
     (AuditSample & { response_json?: string }) | null
@@ -51,11 +53,19 @@ export default function AuditoriaPage() {
 
   async function load() {
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await listAuditSamples(
         statusFilter === "all" ? undefined : statusFilter,
       );
       setSamples(data);
+    } catch (e) {
+      setLoadError(
+        e instanceof Error
+          ? e.message
+          : "No se pudieron cargar las muestras de auditoría. Inténtalo de nuevo.",
+      );
+      setSamples([]);
     } finally {
       setLoading(false);
     }
@@ -118,13 +128,20 @@ export default function AuditoriaPage() {
         </div>
       </div>
 
+      {loadError && (
+        <ErrorBanner message={loadError} onRetry={load} />
+      )}
+
       {loading ? (
-        <p className="text-sm text-muted-foreground">Cargando…</p>
-      ) : samples.length === 0 ? (
+        <div className="flex items-center gap-3 py-6">
+          <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span className="text-sm text-muted-foreground">Cargando muestras…</span>
+        </div>
+      ) : !loadError && samples.length === 0 ? (
         <p className="text-sm text-muted-foreground italic">
           No hay muestras con este estado.
         </p>
-      ) : (
+      ) : !loadError ? (
         <div className="rounded-lg border border-border overflow-hidden">
           <table className="w-full text-xs">
             <thead className="bg-muted/50">
@@ -190,7 +207,7 @@ export default function AuditoriaPage() {
             </tbody>
           </table>
         </div>
-      )}
+      ) : null}
 
       {/* Review panel */}
       {selected && (

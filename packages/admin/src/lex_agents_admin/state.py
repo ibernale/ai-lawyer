@@ -220,17 +220,16 @@ class SystemStateManager:
         if not reason.strip():
             raise ValueError("reason must not be empty")
         async with aiosqlite.connect(self._db_path) as db:
-            await db.execute(
-                """INSERT INTO kill_switches (target, engaged, engaged_at, engaged_by, reason)
-                   VALUES (?, 0, NULL, NULL, NULL)
-                   ON CONFLICT(target) DO UPDATE SET
-                       engaged=0, engaged_at=NULL, engaged_by=NULL, reason=NULL""",
+            cur = await db.execute(
+                "UPDATE kill_switches SET engaged=0, engaged_at=NULL, engaged_by=NULL, reason=NULL WHERE target=?",
                 (target,),
             )
+            if cur.rowcount == 0:
+                raise ValueError(f"unknown kill switch target: {target!r}")
             await db.commit()
         self._cache.pop(f"ks:{target}", None)
         self._cache.pop("ks:global", None)
-        self._notify("kill_switch.release", {"target": target, "actor": actor})
+        self._notify("kill_switch.release", {"target": target, "actor": actor, "reason": reason})
         logger.info("kill_switch_released", target=target, actor=actor)
 
     # ------------------------------------------------------------------
