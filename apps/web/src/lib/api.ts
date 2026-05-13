@@ -686,3 +686,32 @@ export const forceResync = (source: string, reason: string) =>
       body: JSON.stringify({ reason }),
     },
   );
+
+// ─── Notifications ─────────────────────────────────────────────────────────────
+
+export type NotificationRow = {
+  id: number;
+  source: string;
+  category: "critical" | "warning" | "info";
+  title: string;
+  body: string;
+  payload: string | null;
+  correlation_id: string | null;
+  created_at: string;
+  read_at: string | null;
+  read_by: string | null;
+};
+
+export const getNotificationsCount = () =>
+  apiFetch<{ unread: number }>("/api/v1/admin/notifications/count");
+
+export const listNotifications = (unreadOnly = false) =>
+  apiFetch<NotificationRow[]>(
+    `/api/v1/admin/notifications${unreadOnly ? "?unread_only=true" : ""}`,
+  );
+
+export const markNotificationRead = (id: number) =>
+  apiFetch<void>(`/api/v1/admin/notifications/${id}/read`, { method: "PUT" });
+
+export const markAllNotificationsRead = () =>
+  apiFetch<void>("/api/v1/admin/notifications/read-all", { method: "PUT" });

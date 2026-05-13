@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { getSystemState, setKillSwitch, type KillSwitchRow } from "@/lib/api";
+import { getSystemState, setKillSwitch, getNotificationsCount, type KillSwitchRow } from "@/lib/api";
+import { NotificationsDrawer } from "@/components/admin/NotificationsDrawer";
 
 const NAV = [
   { href: "/admin/ops", label: "Ops Center" },
@@ -89,6 +90,8 @@ export default function AdminLayout({
   const [globalKillEngaged, setGlobalKillEngaged] = useState(false);
   const [showKillDialog, setShowKillDialog] = useState(false);
   const [killBusy, setKillBusy] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     const r = getStoredRole();
@@ -108,8 +111,22 @@ export default function AdminLayout({
           setGlobalKillEngaged(global?.engaged ?? false);
         })
         .catch(() => {});
+      getNotificationsCount()
+        .then((data) => setUnreadCount(data.unread))
+        .catch(() => {});
     }
   }, [router]);
+
+  // Poll unread count every 30s
+  useEffect(() => {
+    if (!role || (role !== "operator" && role !== "admin")) return;
+    const interval = setInterval(() => {
+      getNotificationsCount()
+        .then((data) => setUnreadCount(data.unread))
+        .catch(() => {});
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [role]);
 
   async function handleKillSwitch(reason: string) {
     setShowKillDialog(false);
@@ -184,7 +201,34 @@ export default function AdminLayout({
               {role}
             </span>
           </span>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
+            {/* Bell icon */}
+            <button
+              onClick={() => setShowNotifications(true)}
+              className="relative p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors"
+              aria-label="Notifications"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-red-600 text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center leading-none">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {/* Kill switch */}
             {role === "admin" && (
               <button
                 onClick={() => setShowKillDialog(true)}
@@ -215,6 +259,13 @@ export default function AdminLayout({
           }
           onConfirm={handleKillSwitch}
           onCancel={() => setShowKillDialog(false)}
+        />
+      )}
+
+      {showNotifications && (
+        <NotificationsDrawer
+          onClose={() => setShowNotifications(false)}
+          onCountChange={setUnreadCount}
         />
       )}
     </div>

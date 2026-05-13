@@ -4,6 +4,7 @@ global:
 
 rule_files:
   - "/etc/prometheus/rules/pipeline_rules.yml"
+  - "/etc/prometheus/rules/alerting_rules.yml"
 
 scrape_configs:
   - job_name: "lex-agents-api"

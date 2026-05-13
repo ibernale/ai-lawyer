@@ -1,0 +1,50 @@
+groups:
+  - name: lex_api_alerts
+    interval: 60s
+    rules:
+      # -----------------------------------------------------------------------
+      # AuditSamplesPendingHigh
+      # Mirrors the Grafana tier2 alert so Prometheus fires even when
+      # Grafana is unavailable.
+      # Fires when the gauge exceeds 30 samples awaiting human review.
+      # -----------------------------------------------------------------------
+      - alert: AuditSamplesPendingHigh
+        expr: audit_samples_pending > 30
+        for: 0m
+        labels:
+          severity: warning
+          team: platform
+          tier: "2"
+        annotations:
+          summary: "Audit sample queue is above threshold ({{ $value }} pending)"
+          description: >
+            There are {{ $value }} audit samples pending human review,
+            exceeding the threshold of 30. Access /admin/audit to process them.
+            Runbook: https://github.com/ibernale/ai-lawyer/docs/runbooks/audit-samples-pending.md
+
+      # -----------------------------------------------------------------------
+      # VerificationRejectionRateHigh
+      # Mirrors the Grafana tier2 VerificationFailedRateHigh alert so
+      # Prometheus fires even when Grafana is unavailable.
+      # Fires when strict citation rejections exceed 10% of total queries
+      # over a 1-hour window.
+      # -----------------------------------------------------------------------
+      - alert: VerificationRejectionRateHigh
+        expr: >
+          (
+            increase(strict_citation_rejections_total[1h])
+            /
+            increase(legal_query_branch_total[1h])
+          ) > 0.1
+        for: 1h
+        labels:
+          severity: warning
+          team: platform
+          tier: "2"
+        annotations:
+          summary: "High strict citation rejection rate for branch {{ $labels.branch }}"
+          description: >
+            More than 10% of legal queries for branch '{{ $labels.branch }}'
+            are failing strict citation verification over the last hour.
+            Review recent prompts or chunked source quality.
+            Runbook: https://github.com/ibernale/ai-lawyer/docs/runbooks/verification-rejection-rate.md

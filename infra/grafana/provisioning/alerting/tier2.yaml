@@ -1,0 +1,131 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: lex-agents-tier2
+    folder: Lex-Agents Alerts
+    interval: 1m
+    rules:
+      # -----------------------------------------------------------------------
+      # LlmP95LatencyHigh
+      # Fires when the p95 document analysis latency exceeds 60 seconds
+      # over a 10-minute window.
+      # -----------------------------------------------------------------------
+      - uid: llm-p95-latency-high
+        title: LlmP95LatencyHigh
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: >
+                histogram_quantile(
+                  0.95,
+                  rate(document_analysis_latency_seconds_bucket[10m])
+                ) > 60
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+        noDataState: NoData
+        execErrState: Error
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p95 document analysis latency is above 60s"
+          description: >
+            The 95th percentile latency for document_analysis_latency_seconds
+            has exceeded 60 seconds for 10 minutes.
+            Mode: {{ $labels.mode }}. Check for slow LLM responses or
+            oversized documents.
+
+      # -----------------------------------------------------------------------
+      # VerificationFailedRateHigh
+      # Fires when strict citation rejections exceed 10% of total queries
+      # over a 1-hour window.
+      # -----------------------------------------------------------------------
+      - uid: verification-failed-rate-high
+        title: VerificationFailedRateHigh
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: >
+                increase(strict_citation_rejections_total[1h])
+                /
+                increase(legal_query_branch_total[1h])
+                > 0.1
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+        noDataState: NoData
+        execErrState: Error
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "High strict citation rejection rate"
+          description: >
+            More than 10% of legal queries are failing strict citation
+            verification over the last hour.
+            Branch: {{ $labels.branch }}. Review recent prompts or
+            chunked source quality.
+
+      # -----------------------------------------------------------------------
+      # AuditSamplesPendingHigh
+      # Fires when more than 30 audit samples are awaiting human review.
+      # -----------------------------------------------------------------------
+      - uid: audit-samples-pending-high
+        title: AuditSamplesPendingHigh
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: 'audit_samples_pending > 30'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+        noDataState: NoData
+        execErrState: Error
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Audit sample queue is above threshold ({{ $value }} pending)"
+          description: >
+            There are {{ $value }} audit samples pending human review,
+            exceeding the threshold of 30. Access /admin/audit to process them.
+
+      # -----------------------------------------------------------------------
+      # PromptEvolutionPRsPending
+      # Fires when more than 5 prompt-evolution PRs are awaiting merge.
+      # metric added when governance UI reports it
+      # -----------------------------------------------------------------------
+      - uid: prompt-evolution-prs-pending
+        title: PromptEvolutionPRsPending
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: 'lex_prompt_evolution_prs_pending > 5'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+        noDataState: NoData
+        execErrState: Error
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Too many prompt-evolution PRs pending ({{ $value }})"
+          description: >
+            {{ $value }} prompt-evolution pull requests are pending merge,
+            exceeding the threshold of 5. Review the governance queue to
+            avoid prompt drift accumulation.

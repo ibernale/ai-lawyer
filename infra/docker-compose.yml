@@ -86,6 +86,7 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/pipeline_rules.yml:/etc/prometheus/rules/pipeline_rules.yml:ro
+      - ./prometheus/alerting_rules.yml:/etc/prometheus/rules/alerting_rules.yml:ro
     ports:
       - "9090:9090"
     networks:
