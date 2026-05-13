@@ -583,3 +583,106 @@ export const exportAuditTrail = async (
   if (!res.ok) throw new Error(`Export failed: ${res.status}`);
   return res.blob();
 };
+
+// ─── System state (ADR-0032) ──────────────────────────────────────────────────
+
+export type FlagRow = {
+  key: string;
+  value: string;
+  updated_at: string;
+  updated_by: string;
+};
+
+export type KillSwitchRow = {
+  target: string;
+  engaged: boolean;
+  engaged_at: string | null;
+  engaged_by: string | null;
+  reason: string | null;
+};
+
+export type GlobalState = {
+  flags: FlagRow[];
+  kill_switches: KillSwitchRow[];
+};
+
+export const getSystemState = () =>
+  apiFetch<GlobalState>("/api/v1/admin/system/state");
+
+export const setFlag = (key: string, value: unknown, reason: string) =>
+  apiFetch<void>(`/api/v1/admin/system/flags/${encodeURIComponent(key)}`, {
+    method: "PUT",
+    body: JSON.stringify({ value, reason }),
+  });
+
+export const setKillSwitch = (
+  target: string,
+  engage: boolean,
+  reason: string,
+) =>
+  apiFetch<void>(`/api/v1/admin/system/kill/${encodeURIComponent(target)}`, {
+    method: "PUT",
+    body: JSON.stringify({ engage, reason }),
+  });
+
+// ─── Ops: agents ──────────────────────────────────────────────────────────────
+
+export type AgentStatus = {
+  name: string;
+  status: string;
+  current_prompt_version: string | null;
+  model: string;
+  kill_switch_engaged: boolean;
+  invocations_last_24h: number;
+  avg_latency_ms_last_24h: number | null;
+  cost_usd_last_24h: number;
+  last_error: string | null;
+};
+
+export const listAgents = () => apiFetch<AgentStatus[]>("/api/v1/admin/agents");
+
+// ─── Ops: RAG & Memory ────────────────────────────────────────────────────────
+
+export type CollectionInfo = {
+  name: string;
+  vectors_count: number;
+  payload_schema_keys: string[];
+};
+
+export type RagStatus = {
+  collections: CollectionInfo[];
+  total_vectors: number;
+};
+
+export type MemoryStatus = {
+  procedural_patterns_count: number;
+  semantic_files_count: number;
+};
+
+export type ProceduralPatternRow = {
+  filename: string;
+  content: string;
+};
+
+export const getRagStatus = () =>
+  apiFetch<RagStatus>("/api/v1/admin/rag/status");
+
+export const getMemoryStatus = () =>
+  apiFetch<MemoryStatus>("/api/v1/admin/memory/status");
+
+export const listProceduralPatterns = () =>
+  apiFetch<ProceduralPatternRow[]>("/api/v1/admin/memory/procedural");
+
+export const getSemanticFile = (filename: string) =>
+  apiFetch<{ filename: string; content: string }>(
+    `/api/v1/admin/memory/semantic/${encodeURIComponent(filename)}`,
+  );
+
+export const forceResync = (source: string, reason: string) =>
+  apiFetch<void>(
+    `/api/v1/admin/sources/${encodeURIComponent(source)}/force-resync`,
+    {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    },
+  );
