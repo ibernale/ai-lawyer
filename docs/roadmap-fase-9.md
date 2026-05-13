@@ -67,12 +67,12 @@ production-grade banking system deployed in Santander's infrastructure.
 
 Candidate sources (pending license acquisition):
 
-| Source          | Coverage                              | Integration method     |
-|-----------------|---------------------------------------|------------------------|
-| Aranzadi (TR)   | ES jurisprudencia, doctrina, legislación | REST API + webhook   |
-| La Ley (WK)     | ES + EU comprehensive                  | SOAP/REST API          |
-| Tirant lo Blanch| ES academic + practical               | REST API               |
-| EUR-Lex full    | EU full text (beyond free tier)       | SPARQL + bulk download |
+| Source           | Coverage                                 | Integration method     |
+| ---------------- | ---------------------------------------- | ---------------------- |
+| Aranzadi (TR)    | ES jurisprudencia, doctrina, legislación | REST API + webhook     |
+| La Ley (WK)      | ES + EU comprehensive                    | SOAP/REST API          |
+| Tirant lo Blanch | ES academic + practical                  | REST API               |
+| EUR-Lex full     | EU full text (beyond free tier)          | SPARQL + bulk download |
 
 Feature flag `source.aranzadi.enabled` already wired (runbook §3.6).
 
@@ -175,11 +175,11 @@ Feature flag `source.aranzadi.enabled` already wired (runbook §3.6).
 
 ## Phasing
 
-| Sprint | Capabilities                                  |
-|--------|-----------------------------------------------|
-| 9.1    | SSO + corporate deployment baseline            |
-| 9.2    | CENDOJ production + commercial source trial    |
-| 9.3    | Langfuse + expert validation dataset           |
-| 9.4    | ZDR + DMS integration                         |
-| 9.5    | Episodic memory + drafting agents              |
-| 9.6    | Multi-tenancy + external notifications         |
+| Sprint | Capabilities                                |
+| ------ | ------------------------------------------- |
+| 9.1    | SSO + corporate deployment baseline         |
+| 9.2    | CENDOJ production + commercial source trial |
+| 9.3    | Langfuse + expert validation dataset        |
+| 9.4    | ZDR + DMS integration                       |
+| 9.5    | Episodic memory + drafting agents           |
+| 9.6    | Multi-tenancy + external notifications      |

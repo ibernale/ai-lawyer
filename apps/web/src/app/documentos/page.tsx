@@ -11,37 +11,32 @@ import type { UploadResponse, AnalysisResponse, AnalysisMode } from "@/lib/api";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
 
-const ANALYSIS_MODES: { value: AnalysisMode; label: string; desc: string }[] =
-  [
-    {
-      value: "resumen_ejecutivo",
-      label: "Resumen ejecutivo",
-      desc: "Síntesis de los puntos clave del documento.",
-    },
-    {
-      value: "analisis_clausulas",
-      label: "Análisis de cláusulas",
-      desc: "Revisión detallada de cada cláusula con implicaciones legales.",
-    },
-    {
-      value: "riesgos",
-      label: "Análisis de riesgos",
-      desc: "Identificación de cláusulas problemáticas o riesgos legales.",
-    },
-    {
-      value: "comparativa",
-      label: "Comparativa",
-      desc: "Comparación entre dos documentos (requiere subir dos ficheros).",
-    },
-  ];
+const ANALYSIS_MODES: { value: AnalysisMode; label: string; desc: string }[] = [
+  {
+    value: "resumen_ejecutivo",
+    label: "Resumen ejecutivo",
+    desc: "Síntesis de los puntos clave del documento.",
+  },
+  {
+    value: "analisis_clausulas",
+    label: "Análisis de cláusulas",
+    desc: "Revisión detallada de cada cláusula con implicaciones legales.",
+  },
+  {
+    value: "riesgos",
+    label: "Análisis de riesgos",
+    desc: "Identificación de cláusulas problemáticas o riesgos legales.",
+  },
+  {
+    value: "comparativa",
+    label: "Comparativa",
+    desc: "Comparación entre dos documentos (requiere subir dos ficheros).",
+  },
+];
 
 type Doc = UploadResponse & { file: File };
 
-function VerificationBadge({
-  status,
-}: {
-  status: "green" | "amber" | "red";
-}) {
+function VerificationBadge({ status }: { status: "green" | "amber" | "red" }) {
   const cfg = {
     green: { cls: "bg-green-100 text-green-800", label: "Verificado" },
     amber: { cls: "bg-amber-100 text-amber-800", label: "Parcial" },
@@ -49,7 +44,9 @@ function VerificationBadge({
   };
   const { cls, label } = cfg[status];
   return (
-    <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${cls}`}>
+    <span
+      className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${cls}`}
+    >
       {label}
     </span>
   );
@@ -329,10 +326,7 @@ export default function DocumentosPage() {
 
             <button
               onClick={handleAnalyse}
-              disabled={
-                analysing ||
-                (mode !== "comparativa" && !selectedDocId)
-              }
+              disabled={analysing || (mode !== "comparativa" && !selectedDocId)}
               className="w-full rounded-md bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {analysing ? (
@@ -351,7 +345,9 @@ export default function DocumentosPage() {
         {result && (
           <section className="space-y-3">
             <div className="flex items-center gap-3">
-              <h2 className="text-base font-semibold">Resultado del análisis</h2>
+              <h2 className="text-base font-semibold">
+                Resultado del análisis
+              </h2>
               <VerificationBadge status={result.verification_status} />
               <span className="text-xs text-muted-foreground ml-auto">
                 {result.filename}

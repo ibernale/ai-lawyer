@@ -381,4 +381,3 @@ as JSON or CSV for external audit."
 
 > **Post-demo:** Show `docs/incident-response.md` as the structured playbook for the 5
 > most likely incidents. Mention RGPD Art. 33 (72h notification) is covered in IR-005.
-

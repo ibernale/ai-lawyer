@@ -85,7 +85,7 @@ groups:
           - refId: A
             datasourceUid: prometheus
             model:
-              expr: 'audit_samples_pending > 30'
+              expr: "audit_samples_pending > 30"
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200
@@ -113,7 +113,7 @@ groups:
           - refId: A
             datasourceUid: prometheus
             model:
-              expr: 'lex_prompt_evolution_prs_pending > 5'
+              expr: "lex_prompt_evolution_prs_pending > 5"
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200

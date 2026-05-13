@@ -23,6 +23,7 @@ response; cost must be estimated from token counts and published pricing.
 **Estimate cost from token counts at call time** and publish as Prometheus counters.
 
 Specifically:
+
 - After each Anthropic API call, compute `estimated_usd = (input_tokens × input_price + output_tokens × output_price)` using current published rates.
 - Publish as `lex_consultation_cost_usd_total{agent_id=...}` (Counter).
 - Include `cost_breakdown_by_agent` in `ConsultResponse` for per-consultation transparency.

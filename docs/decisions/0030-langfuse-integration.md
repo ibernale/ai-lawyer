@@ -13,6 +13,7 @@ metrics and traces but cannot introspect LLM-specific signals: token distributio
 prompt versions, evaluator scores, hallucination rates, per-trace cost attribution.
 
 Langfuse is the leading open-source LLM observability platform. It provides:
+
 - Trace ingestion via Python SDK or OpenAI-compatible wrapper
 - Evaluator pipeline integration
 - Prompt version management
@@ -25,10 +26,12 @@ Langfuse is the leading open-source LLM observability platform. It provides:
 
 **Adopt Langfuse v3 (self-hosted) as the LLM observability layer.** Integration
 is deferred to Fase 9 pending:
+
 1. Data residency review by DPO (no PII in traces — consult data is legal text, not personal data)
 2. Infrastructure provisioning for Langfuse Postgres + ClickHouse in corporate environment
 
 In the meantime:
+
 - `infra/langfuse/alert_config.py` defines the 4 planned alert rules as a dry-run template
 - The `notifications/ingest` endpoint is ready to receive Langfuse webhook alerts
 - OTel traces already contain correlation IDs for future Langfuse trace linking
@@ -37,12 +40,12 @@ In the meantime:
 
 ## Alert rules planned (dry-run in alert_config.py)
 
-| Rule                    | Trigger                                    |
-|-------------------------|--------------------------------------------|
-| `hallucination_score_low` | Hallucination score < 0.7 on > 5 traces/h|
-| `verification_red_rate`  | status=red > 10% of traces/h             |
-| `trace_cost_runaway`     | Estimated cost > threshold per trace      |
-| `evaluator_failure`      | Any evaluator returns error               |
+| Rule                      | Trigger                                   |
+| ------------------------- | ----------------------------------------- |
+| `hallucination_score_low` | Hallucination score < 0.7 on > 5 traces/h |
+| `verification_red_rate`   | status=red > 10% of traces/h              |
+| `trace_cost_runaway`      | Estimated cost > threshold per trace      |
+| `evaluator_failure`       | Any evaluator returns error               |
 
 ---
 

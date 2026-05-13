@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { getSystemState, setKillSwitch, getNotificationsCount, type KillSwitchRow } from "@/lib/api";
+import {
+  getSystemState,
+  setKillSwitch,
+  getNotificationsCount,
+  type KillSwitchRow,
+} from "@/lib/api";
 import { NotificationsDrawer } from "@/components/admin/NotificationsDrawer";
 
 const NAV = [

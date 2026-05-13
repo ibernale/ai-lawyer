@@ -101,7 +101,7 @@ groups:
           - refId: A
             datasourceUid: prometheus
             model:
-              expr: 'lex_cendoj_quota_blocked == 1'
+              expr: "lex_cendoj_quota_blocked == 1"
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200

@@ -44,14 +44,14 @@ curl http://localhost:8000/health
 
 Servicios disponibles tras `make dev`:
 
-| Servicio     | URL                         |
-|--------------|-----------------------------|
-| API          | http://localhost:8000       |
-| Web admin    | http://localhost:3000/admin |
-| Qdrant UI    | http://localhost:6333       |
-| Jaeger UI    | http://localhost:16686      |
-| Grafana      | http://localhost:3001       |
-| Prometheus   | http://localhost:9090       |
+| Servicio   | URL                         |
+| ---------- | --------------------------- |
+| API        | http://localhost:8000       |
+| Web admin  | http://localhost:3000/admin |
+| Qdrant UI  | http://localhost:6333       |
+| Jaeger UI  | http://localhost:16686      |
+| Grafana    | http://localhost:3001       |
+| Prometheus | http://localhost:9090       |
 
 ### 1.2 Bootstrap primer admin
 
@@ -492,32 +492,32 @@ URL: http://localhost:9090
 
 Métricas de negocio clave:
 
-| Métrica                              | Descripción                          |
-|--------------------------------------|--------------------------------------|
-| `lex_consultation_cost_usd_total`    | Coste acumulado USD                  |
-| `lex_consultation_duration_seconds`  | Latencia p50/p95 por agente          |
-| `lex_verification_status_total`      | Verificaciones por status (green/red)|
-| `lex_cendoj_quota_blocked`           | 1 si CENDOJ quota bloqueada          |
-| `lex_audit_samples_pending`          | Muestras pendientes de revisión      |
+| Métrica                             | Descripción                           |
+| ----------------------------------- | ------------------------------------- |
+| `lex_consultation_cost_usd_total`   | Coste acumulado USD                   |
+| `lex_consultation_duration_seconds` | Latencia p50/p95 por agente           |
+| `lex_verification_status_total`     | Verificaciones por status (green/red) |
+| `lex_cendoj_quota_blocked`          | 1 si CENDOJ quota bloqueada           |
+| `lex_audit_samples_pending`         | Muestras pendientes de revisión       |
 
 ### 7.4 Interpretar alertas Tier 1 (críticas)
 
-| Alerta                  | Trigger                               | Acción                               |
-|-------------------------|---------------------------------------|--------------------------------------|
-| `ServiceDown`           | Contenedor unhealthy > 5 min          | Ver §10.1, reiniciar contenedor      |
-| `AnthropicApiErrorRate` | Error rate API > 5% en 10 min         | Ver §10.2, comprobar cuota/incidente |
-| `QdrantUnavailable`     | Qdrant no responde > 2 min            | `docker compose restart qdrant`      |
-| `DailyCostSpike`        | Coste diario > 2× media 7d            | Ver §10.3, engage kill switch        |
-| `CendojQuotaBlocked`    | Gauge `lex_cendoj_quota_blocked==1`   | Ver §3.5                             |
+| Alerta                  | Trigger                             | Acción                               |
+| ----------------------- | ----------------------------------- | ------------------------------------ |
+| `ServiceDown`           | Contenedor unhealthy > 5 min        | Ver §10.1, reiniciar contenedor      |
+| `AnthropicApiErrorRate` | Error rate API > 5% en 10 min       | Ver §10.2, comprobar cuota/incidente |
+| `QdrantUnavailable`     | Qdrant no responde > 2 min          | `docker compose restart qdrant`      |
+| `DailyCostSpike`        | Coste diario > 2× media 7d          | Ver §10.3, engage kill switch        |
+| `CendojQuotaBlocked`    | Gauge `lex_cendoj_quota_blocked==1` | Ver §3.5                             |
 
 ### 7.5 Interpretar alertas Tier 2 (warning)
 
-| Alerta                       | Trigger                        | Acción                                    |
-|------------------------------|--------------------------------|-------------------------------------------|
-| `LlmP95LatencyHigh`          | p95 latencia > umbral 10 min   | Revisar prompts largos, tokens input      |
-| `VerificationFailedRateHigh` | Status=red > 10% en 1h         | Ver §10.4 (alucinaciones)                 |
-| `AuditSamplesPendingHigh`    | `audit_samples_pending > 30`   | Revisar muestras en `/admin/audit-trail`  |
-| `PromptEvolutionPRsPending`  | Proposals pendientes > 5       | Revisar en `/admin/governance`            |
+| Alerta                       | Trigger                      | Acción                                   |
+| ---------------------------- | ---------------------------- | ---------------------------------------- |
+| `LlmP95LatencyHigh`          | p95 latencia > umbral 10 min | Revisar prompts largos, tokens input     |
+| `VerificationFailedRateHigh` | Status=red > 10% en 1h       | Ver §10.4 (alucinaciones)                |
+| `AuditSamplesPendingHigh`    | `audit_samples_pending > 30` | Revisar muestras en `/admin/audit-trail` |
+| `PromptEvolutionPRsPending`  | Proposals pendientes > 5     | Revisar en `/admin/governance`           |
 
 ### 7.6 Reiniciar servicios de observabilidad
 

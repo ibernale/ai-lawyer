@@ -87,9 +87,7 @@ export default function HistoricoPage() {
           </div>
         </header>
 
-        {error && (
-          <ErrorBanner message={error} onRetry={load} />
-        )}
+        {error && <ErrorBanner message={error} onRetry={load} />}
 
         {loading && (
           <div className="flex items-center justify-center py-16">
@@ -144,10 +142,7 @@ export default function HistoricoPage() {
                         minute: "2-digit",
                       })}
                     </td>
-                    <td
-                      className="px-4 py-3 max-w-xs truncate"
-                      title={r.query}
-                    >
+                    <td className="px-4 py-3 max-w-xs truncate" title={r.query}>
                       {r.query}
                     </td>
                     <td className="px-4 py-3">

@@ -39,11 +39,11 @@ normally (`OK` in green).
 
 ## Top bar
 
-| Element              | Description                                        |
-|----------------------|----------------------------------------------------|
-| Username + role badge | Logged-in user and their role                    |
-| Bell icon            | Notification center — shows unread count badge     |
-| Global Kill Switch   | Admin-only button to engage/release global stop    |
+| Element               | Description                                     |
+| --------------------- | ----------------------------------------------- |
+| Username + role badge | Logged-in user and their role                   |
+| Bell icon             | Notification center — shows unread count badge  |
+| Global Kill Switch    | Admin-only button to engage/release global stop |
 
 ### Notification bell
 
@@ -62,12 +62,12 @@ Click the bell to open the **Notifications Drawer** (slides in from the right).
 
 Panels:
 
-| Panel            | What it shows                                       |
-|------------------|-----------------------------------------------------|
-| Agents           | Status of each agent, kill switch state, prompt version |
-| RAG / Memory     | Qdrant collection stats, index sizes                |
-| Sources          | Data source status from governance module           |
-| Cost breakdown   | Estimated costs by agent (last 24h)                 |
+| Panel          | What it shows                                           |
+| -------------- | ------------------------------------------------------- |
+| Agents         | Status of each agent, kill switch state, prompt version |
+| RAG / Memory   | Qdrant collection stats, index sizes                    |
+| Sources        | Data source status from governance module               |
+| Cost breakdown | Estimated costs by agent (last 24h)                     |
 
 ---
 
@@ -105,16 +105,16 @@ All decisions are logged in the audit trail with actor, timestamp, and reason.
 
 Shows a chronological log of all admin actions. Entries include:
 
-| Field         | Description                               |
-|---------------|-------------------------------------------|
-| `action_type` | `source.pause`, `kill_switch.engage`, etc.|
-| `actor`       | Username who performed the action         |
-| `actor_role`  | Role at the time of the action            |
-| `target_type` | `source`, `kill_switch`, `feature_flag`   |
-| `target_id`   | Specific target identifier                |
-| `reason`      | Free-text reason provided                 |
-| `timestamp`   | UTC ISO-8601                              |
-| `checksum`    | SHA-256 chain link for tamper detection   |
+| Field         | Description                                |
+| ------------- | ------------------------------------------ |
+| `action_type` | `source.pause`, `kill_switch.engage`, etc. |
+| `actor`       | Username who performed the action          |
+| `actor_role`  | Role at the time of the action             |
+| `target_type` | `source`, `kill_switch`, `feature_flag`    |
+| `target_id`   | Specific target identifier                 |
+| `reason`      | Free-text reason provided                  |
+| `timestamp`   | UTC ISO-8601                               |
+| `checksum`    | SHA-256 chain link for tamper detection    |
 
 The **Verify Chain** button runs `GET /api/v1/admin/audit-trail/verify`
 and displays whether the checksum chain is intact.
@@ -127,12 +127,12 @@ Accessed via the bell icon in the top bar.
 
 ### Filters
 
-| Filter   | Shows                                      |
-|----------|--------------------------------------------|
-| All      | All notifications                          |
-| Critical | Red-category (kill switch, service down)   |
-| Warning  | Amber-category (latency, verification)     |
-| Info     | Blue-category (routine events)             |
+| Filter   | Shows                                    |
+| -------- | ---------------------------------------- |
+| All      | All notifications                        |
+| Critical | Red-category (kill switch, service down) |
+| Warning  | Amber-category (latency, verification)   |
+| Info     | Blue-category (routine events)           |
 
 ### Actions
 
@@ -141,28 +141,28 @@ Accessed via the bell icon in the top bar.
 
 ### Sources
 
-| Source    | Trigger                                        |
-|-----------|------------------------------------------------|
-| `system`  | Kill switch events (automatic)                 |
-| `grafana` | Tier 1/2 alerts via webhook `POST /ingest`     |
-| `dagster` | Pipeline failure events via webhook            |
-| `langfuse` | Evaluation alerts (planned — see ADR-0030)   |
+| Source     | Trigger                                    |
+| ---------- | ------------------------------------------ |
+| `system`   | Kill switch events (automatic)             |
+| `grafana`  | Tier 1/2 alerts via webhook `POST /ingest` |
+| `dagster`  | Pipeline failure events via webhook        |
+| `langfuse` | Evaluation alerts (planned — see ADR-0030) |
 
 ---
 
 ## Role permissions matrix
 
-| Operation                      | user | operator | admin |
-|--------------------------------|:----:|:--------:|:-----:|
-| View Ops Center                |  ✗   |    ✓     |   ✓   |
-| View Governance                |  ✗   |    ✓     |   ✓   |
-| View Audit Trail               |  ✗   |    ✓     |   ✓   |
-| View Notifications             |  ✗   |    ✓     |   ✓   |
-| Pause/resume sources           |  ✗   |    ✗     |   ✓   |
-| Approve/reject proposals       |  ✗   |    ✗     |   ✓   |
-| Set feature flags              |  ✗   |    ✗     |   ✓   |
-| Engage/release kill switches   |  ✗   |    ✗     |   ✓   |
-| Ingest webhook notifications   |  ✗   |    ✗     |   ✓   |
+| Operation                    | user | operator | admin |
+| ---------------------------- | :--: | :------: | :---: |
+| View Ops Center              |  ✗   |    ✓     |   ✓   |
+| View Governance              |  ✗   |    ✓     |   ✓   |
+| View Audit Trail             |  ✗   |    ✓     |   ✓   |
+| View Notifications           |  ✗   |    ✓     |   ✓   |
+| Pause/resume sources         |  ✗   |    ✗     |   ✓   |
+| Approve/reject proposals     |  ✗   |    ✗     |   ✓   |
+| Set feature flags            |  ✗   |    ✗     |   ✓   |
+| Engage/release kill switches |  ✗   |    ✗     |   ✓   |
+| Ingest webhook notifications |  ✗   |    ✗     |   ✓   |
 
 ---
 

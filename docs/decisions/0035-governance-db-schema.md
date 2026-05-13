@@ -9,6 +9,7 @@
 ## Context
 
 Fase 8 introduced multiple operational subsystems, each needing persistent state:
+
 - Kill switches and feature flags (ADR-0032)
 - Source governance (pause/resume)
 - Prompt evolution proposals
@@ -25,14 +26,14 @@ The question is whether to use one database file or multiple.
 
 Tables and their owning managers:
 
-| Table              | Manager                  | Package             |
-|--------------------|--------------------------|---------------------|
-| `kill_switches`    | `SystemStateManager`     | `lex_agents_admin`  |
-| `feature_flags`    | `SystemStateManager`     | `lex_agents_admin`  |
-| `source_status`    | `GovernanceManager`      | `lex_agents_admin`  |
-| `proposals`        | `GovernanceManager`      | `lex_agents_admin`  |
-| `audit_trail`      | `AuditTrailManager`      | `lex_agents_audit`  |
-| `notifications`    | `NotificationManager`    | `lex_agents_audit`  |
+| Table           | Manager               | Package            |
+| --------------- | --------------------- | ------------------ |
+| `kill_switches` | `SystemStateManager`  | `lex_agents_admin` |
+| `feature_flags` | `SystemStateManager`  | `lex_agents_admin` |
+| `source_status` | `GovernanceManager`   | `lex_agents_admin` |
+| `proposals`     | `GovernanceManager`   | `lex_agents_admin` |
+| `audit_trail`   | `AuditTrailManager`   | `lex_agents_audit` |
+| `notifications` | `NotificationManager` | `lex_agents_audit` |
 
 All managers are initialized in `lifespan()` in `main.py` with
 `settings.governance_db_path` (default: `data/governance.db`).

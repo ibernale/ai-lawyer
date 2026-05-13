@@ -31,6 +31,7 @@ time-windowed views.
 `http://localhost:3001` → **lex-agents / Costs**
 
 Key panels:
+
 - **Daily cost (USD)** — bar chart of total daily spend
 - **7-day rolling average** — baseline for anomaly detection
 - **Cost by agent** — pie/bar of spend distribution across agents
@@ -65,9 +66,9 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 
 ## Alert thresholds
 
-| Alert           | Condition                              | Default threshold        |
-|-----------------|----------------------------------------|--------------------------|
-| `DailyCostSpike`| Daily cost > N × rolling 7d average   | N = 2 (configurable YAML)|
+| Alert            | Condition                           | Default threshold         |
+| ---------------- | ----------------------------------- | ------------------------- |
+| `DailyCostSpike` | Daily cost > N × rolling 7d average | N = 2 (configurable YAML) |
 
 To change the multiplier, edit `infra/grafana/provisioning/alerting/tier1.yaml`
 and restart Grafana.
@@ -79,6 +80,7 @@ and restart Grafana.
 Drift is defined as: `|local_cost - anthropic_invoice_cost| / anthropic_invoice_cost > 5%`.
 
 Possible causes:
+
 - Cached responses served without calling the API (cost = 0 locally, billed externally)
 - Token estimation differs from actual billing (Anthropic bills after processing)
 - Retries counted once locally but multiple times by Anthropic
@@ -104,6 +106,7 @@ When the `DailyCostSpike` alert fires:
    - Check if a new prompt version was deployed recently
 
 2. **Isolate the cause:**
+
    ```bash
    # Top 20 most expensive consultations in last 2h
    curl -s -H "Authorization: Bearer $TOKEN" \
@@ -111,6 +114,7 @@ When the `DailyCostSpike` alert fires:
    ```
 
 3. **If caused by a specific agent**, engage its kill switch:
+
    ```bash
    curl -s -X PUT -H "Authorization: Bearer $TOKEN" \
      -H "Content-Type: application/json" \
@@ -141,6 +145,7 @@ to pull official usage and billing data programmatically. See ADR-0029 for
 the FinOps tracking decision.
 
 This will enable:
+
 - Real-time billing reconciliation
 - Per-workspace spend tracking
 - Automated budget enforcement

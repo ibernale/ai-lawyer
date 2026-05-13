@@ -13,15 +13,18 @@ Investigation → Resolution → Post-mortem**.
 **Target resolution time:** < 30 min
 
 ### Detection
+
 - Grafana alert `ServiceDown` fires
 - `GET /health` returns non-200 or times out
 - In-app critical notification appears in admin bell
 
 ### Containment
+
 No kill switch needed — if the service is already down, users already get errors.
 Focus on recovery.
 
 ### Investigation
+
 ```bash
 # 1. Which container is unhealthy?
 docker compose ps
@@ -38,6 +41,7 @@ df -h
 ```
 
 ### Resolution
+
 ```bash
 # Restart unhealthy service
 docker compose restart api
@@ -49,6 +53,7 @@ docker compose up --build -d api
 ```
 
 ### Post-mortem triggers
+
 - If the outage exceeded 15 minutes, write a post-mortem note.
 - Check if the alert fired within 5 minutes of the issue starting.
 
@@ -61,11 +66,13 @@ docker compose up --build -d api
 **Target resolution time:** < 60 min (mostly external dependency)
 
 ### Detection
+
 - Grafana alert `AnthropicApiErrorRate` fires (> 5% error rate over 10 min)
 - Consultation responses return `500` or time out
 - Cost metric flatlines while request rate stays normal (cached responses not used)
 
 ### Containment
+
 ```bash
 # Engage global kill switch to give users a clear 503 instead of hanging requests
 curl -s -X PUT -H "Authorization: Bearer $TOKEN" \
@@ -75,6 +82,7 @@ curl -s -X PUT -H "Authorization: Bearer $TOKEN" \
 ```
 
 ### Investigation
+
 ```bash
 # Test Anthropic API directly (check their status page first)
 curl -s https://status.anthropic.com/api/v2/status.json | jq .status
@@ -89,6 +97,7 @@ docker compose logs api | grep "anthropic" | grep -iE "error|rate.limit|overload
 ```
 
 ### Resolution
+
 - If Anthropic incident: wait and release kill switch when resolved.
 - If rate limit: review MAX_TOKENS_PER_CONSULTATION and request volume.
 - If key revoked: rotate key (runbook §9.1).
@@ -102,10 +111,12 @@ docker compose logs api | grep "anthropic" | grep -iE "error|rate.limit|overload
 **Target resolution time:** < 30 min
 
 ### Detection
+
 - Grafana alert `DailyCostSpike` fires (daily cost > 2× 7-day average)
 - In-app critical notification created automatically
 
 ### Containment
+
 ```bash
 # Engage kill switch immediately if cost is still accelerating
 curl -s -X PUT -H "Authorization: Bearer $TOKEN" \
@@ -115,6 +126,7 @@ curl -s -X PUT -H "Authorization: Bearer $TOKEN" \
 ```
 
 ### Investigation
+
 ```bash
 # Identify top-cost consultations
 curl -s -H "Authorization: Bearer $TOKEN" \
@@ -129,6 +141,7 @@ docker compose logs api | grep "POST /api/v1/consult" | awk '{print $NF}' | sort
 ```
 
 ### Resolution
+
 - If caused by a prompt change: rollback (runbook §4.5) and release kill switch.
 - If caused by abuse: block the user (edit USER_CREDENTIALS), release kill switch.
 - If false positive: verify with Anthropic Console, release kill switch.
@@ -142,10 +155,12 @@ docker compose logs api | grep "POST /api/v1/consult" | awk '{print $NF}' | sort
 **Target resolution time:** < 2 hours
 
 ### Detection
+
 - Grafana alert `VerificationFailedRateHigh` fires (> 10% `status=red` over 1h)
 - Manual review of audit samples reveals incorrect citations
 
 ### Containment
+
 ```bash
 # Engage kill switch for affected agent (not global, other agents still work)
 curl -s -X PUT -H "Authorization: Bearer $TOKEN" \
@@ -155,6 +170,7 @@ curl -s -X PUT -H "Authorization: Bearer $TOKEN" \
 ```
 
 ### Investigation
+
 ```bash
 # Identify failing consultations
 curl -s -H "Authorization: Bearer $TOKEN" \
@@ -170,11 +186,13 @@ make eval-quick
 ```
 
 ### Resolution
+
 - If prompt regression: rollback (runbook §4.5).
 - If data quality issue (source returning bad content): pause source (runbook §3.2).
 - If systemic: engage global kill switch and escalate to legal team for review.
 
 ### Post-mortem triggers
+
 - All P2 hallucination incidents require a post-mortem note.
 - Review citation verification thresholds (ADR-0008).
 
@@ -187,6 +205,7 @@ make eval-quick
 **Target resolution time:** Containment < 15 min; AEPD notification < 72h
 
 ### Detection
+
 - Manual discovery or automated alert from log scanner
 - User report of seeing another user's data
 - Abnormal audit trail entry pattern
@@ -204,6 +223,7 @@ curl -s -X PUT -H "Authorization: Bearer $TOKEN" \
 ```
 
 ### Investigation
+
 ```bash
 # Export full audit trail for forensic analysis
 curl -s -H "Authorization: Bearer $TOKEN" \
@@ -218,12 +238,14 @@ docker compose logs api | grep "pii_redacted" | tail -20
 ```
 
 ### Escalation
+
 1. Notify DPO (Santander) immediately with preliminary findings.
 2. Preserve all logs and database snapshots.
 3. Do NOT release the kill switch until DPO clearance.
 4. If breach confirmed: AEPD notification within 72 hours of detection.
 
 ### Resolution
+
 - Only release kill switch after DPO confirms containment.
 - Patch the root cause before re-enabling.
 - Document full timeline in audit trail.
@@ -232,9 +254,9 @@ docker compose logs api | grep "pii_redacted" | tail -20
 
 ## Severity matrix
 
-| Severity | Examples                          | Engage kill switch? | Escalate DPO? | SLA      |
-|----------|-----------------------------------|---------------------|---------------|----------|
-| P1       | Service down, PII breach          | Yes (if service up) | If PII        | < 30 min |
-| P2       | Cost spike, hallucination surge   | Agent-level first   | No            | < 2h     |
-| P3       | Tier 2 alert, source error        | No                  | No            | < 24h    |
-| P4       | Audit samples high, PRs pending   | No                  | No            | Next day |
+| Severity | Examples                        | Engage kill switch? | Escalate DPO? | SLA      |
+| -------- | ------------------------------- | ------------------- | ------------- | -------- |
+| P1       | Service down, PII breach        | Yes (if service up) | If PII        | < 30 min |
+| P2       | Cost spike, hallucination surge | Agent-level first   | No            | < 2h     |
+| P3       | Tier 2 alert, source error      | No                  | No            | < 24h    |
+| P4       | Audit samples high, PRs pending | No                  | No            | Next day |

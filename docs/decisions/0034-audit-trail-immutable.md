@@ -14,6 +14,7 @@ Banking regulations require that administrative action logs cannot be retroactiv
 altered or deleted.
 
 We need an audit trail that is:
+
 1. Append-only (no UPDATE or DELETE on entries)
 2. Tamper-evident (any modification is detectable)
 3. Exportable for external audit review
@@ -26,6 +27,7 @@ We need an audit trail that is:
 **Implement an append-only audit trail in `governance.db` with a SHA-256 checksum chain.**
 
 Each audit entry contains:
+
 - `action_type`: namespaced string (`source.pause`, `kill_switch.engage`, etc.)
 - `actor` + `actor_role`: who performed the action and their role at the time
 - `target_type` + `target_id`: what was affected

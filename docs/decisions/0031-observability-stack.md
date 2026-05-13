@@ -9,6 +9,7 @@
 ## Context
 
 A multi-agent legal platform requires three observability pillars:
+
 - **Metrics** — quantitative health signals (latency, error rate, cost, throughput)
 - **Traces** — causal chains across agent steps for debugging
 - **Logs** — human-readable event audit with structured fields
@@ -23,11 +24,11 @@ in both environments without re-instrumentation.
 
 **Adopt the OpenTelemetry standard with the following implementations:**
 
-| Pillar   | Library                              | Storage/UI        |
-|----------|--------------------------------------|-------------------|
-| Metrics  | `prometheus_fastapi_instrumentator`  | Prometheus + Grafana |
-| Traces   | OTel Python SDK + OTLP exporter      | OTel Collector → Jaeger |
-| Logs     | structlog (JSON)                     | stdout → Docker logs / ELK (Fase 9) |
+| Pillar  | Library                             | Storage/UI                          |
+| ------- | ----------------------------------- | ----------------------------------- |
+| Metrics | `prometheus_fastapi_instrumentator` | Prometheus + Grafana                |
+| Traces  | OTel Python SDK + OTLP exporter     | OTel Collector → Jaeger             |
+| Logs    | structlog (JSON)                    | stdout → Docker logs / ELK (Fase 9) |
 
 OTel Collector acts as the telemetry hub: receives OTLP from the API, fans out
 to Prometheus (metrics) and Jaeger (traces). This allows swapping backends without

@@ -128,14 +128,14 @@ export default function AuditoriaPage() {
         </div>
       </div>
 
-      {loadError && (
-        <ErrorBanner message={loadError} onRetry={load} />
-      )}
+      {loadError && <ErrorBanner message={loadError} onRetry={load} />}
 
       {loading ? (
         <div className="flex items-center gap-3 py-6">
           <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <span className="text-sm text-muted-foreground">Cargando muestras…</span>
+          <span className="text-sm text-muted-foreground">
+            Cargando muestras…
+          </span>
         </div>
       ) : !loadError && samples.length === 0 ? (
         <p className="text-sm text-muted-foreground italic">
