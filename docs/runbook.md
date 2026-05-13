@@ -1,454 +1,782 @@
-# Runbook
+# Runbook — lex-agents v0.4.0
+
+Operational reference for the lex-agents platform. Covers every task an
+operator or admin performs from day-to-day operations to incident response.
+
+> **Auth note:** All `/api/v1/admin/*` endpoints require a bearer token.
+> Obtain one with `POST /auth/token` (credentials in `.env` or 1Password).
+> Operator role can read; admin role can mutate.
+
+---
 
 ## Table of contents
 
-1. [Service startup and shutdown](#service-startup-and-shutdown)
-2. [Branch protection (manual setup)](#branch-protection-manual-setup)
-3. [Ingestion procedures](#ingestion-procedures)
-4. [Qdrant operations](#qdrant-operations)
-5. [Common failures and remediation](#common-failures-and-remediation)
-6. [On-call escalation](#on-call-escalation)
+1. [Entorno local](#1-entorno-local)
+2. [Sistema — feature flags & kill switches](#2-sistema--feature-flags--kill-switches)
+3. [Fuentes de datos](#3-fuentes-de-datos)
+4. [Agentes y prompts](#4-agentes-y-prompts)
+5. [Auditoría](#5-auditoría)
+6. [Costes](#6-costes)
+7. [Observabilidad](#7-observabilidad)
+8. [Backup y restore](#8-backup-y-restore)
+9. [Rotación de credenciales](#9-rotación-de-credenciales)
+10. [Emergencias](#10-emergencias)
 
 ---
 
-## Service startup and shutdown
+## 1. Entorno local
+
+### 1.1 Levantar desde cero
 
 ```bash
-# Start all services in foreground (logs visible)
+# 1. Copiar variables de entorno
+cp .env.example .env
+# Rellenar: ANTHROPIC_API_KEY, INLABS_API_KEY, SECRET_KEY, ADMIN_PASSWORD
+
+# 2. Arrancar servicios
 make dev
+# Equivale a: docker compose up --build
 
-# Start all services in background
-make dev-detached
-
-# Stop all services
-make down
-
-# Tail logs
-make logs
-```
-
-Services started: `qdrant` (6333), `api` (8000), `web` (3000),
-`otel-collector` (4317/4318), `jaeger` (16686).
-
-### Startup health check
-
-```bash
-# API health
+# 3. Verificar salud
 curl http://localhost:8000/health
+# Esperado: {"status":"ok","version":"0.4.0"}
+```
 
-# Qdrant direct
-curl http://localhost:6333/readyz
+Servicios disponibles tras `make dev`:
 
-# Jaeger UI
-open http://localhost:16686
+| Servicio   | URL                         |
+| ---------- | --------------------------- |
+| API        | http://localhost:8000       |
+| Web admin  | http://localhost:3000/admin |
+| Qdrant UI  | http://localhost:6333       |
+| Jaeger UI  | http://localhost:16686      |
+| Grafana    | http://localhost:3001       |
+| Prometheus | http://localhost:9090       |
+
+### 1.2 Bootstrap primer admin
+
+```bash
+# Crear token admin (requiere .env con ADMIN_PASSWORD y SECRET_KEY)
+curl -s -X POST http://localhost:8000/auth/token \
+  -d "username=admin&password=${ADMIN_PASSWORD}" \
+  | jq -r .access_token
+```
+
+El token JWT incluye `role: admin`. Guardarlo para las operaciones siguientes.
+
+### 1.3 Añadir usuario
+
+```bash
+# Usuarios se gestionan via .env (USER_CREDENTIALS).
+# Formato: "user1:pass1:role1,user2:pass2:role2"
+# Roles válidos: admin, operator, user
+
+# Editar .env:
+USER_CREDENTIALS="admin:${ADMIN_PASS}:admin,op1:pass:operator,user1:pass:user"
+
+# Reiniciar la API para que tome los nuevos usuarios:
+docker compose restart api
+```
+
+### 1.4 Cambiar role de usuario
+
+```bash
+# Igual que 1.3: editar USER_CREDENTIALS en .env y reiniciar la API.
+# El token antiguo del usuario queda inválido hasta que vuelva a hacer login.
+```
+
+### 1.5 Detener servicios
+
+```bash
+make down          # detiene y elimina contenedores
+make down-volumes  # detiene + elimina volúmenes (destruye datos Qdrant)
 ```
 
 ---
 
-## Branch protection (manual setup)
+## 2. Sistema — feature flags & kill switches
 
-> **Action required:** Apply the following settings in GitHub after the
-> first push to `main`. This cannot be automated via config files.
+### 2.1 Leer estado del sistema
 
-### Steps
+```bash
+TOKEN="<bearer>"
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/admin/system/state | jq
+```
 
-1. Go to **github.com/ibernale/ai-lawyer → Settings → Branches**
-2. Click **Add branch protection rule**
-3. Branch name pattern: `main`
-4. Enable the following:
-   - ✅ **Require a pull request before merging**
-     - ✅ Require approvals: **1**
-     - ✅ Dismiss stale pull request approvals when new commits are pushed
-   - ✅ **Require status checks to pass before merging**
-     - ✅ Require branches to be up to date
-     - Add required status checks (after first CI run):
-       - `lint-py`
-       - `typecheck-py`
-       - `test-py`
-       - `lint-web`
-       - `typecheck-web`
-       - `test-web`
-       - `secrets-scan`
-   - ✅ **Do not allow bypassing the above settings**
-   - ✅ **Restrict who can push to matching branches** (optional: add team)
-   - ❌ Allow force pushes (leave unchecked)
-   - ❌ Allow deletions (leave unchecked)
-5. Click **Create**
+Respuesta incluye `feature_flags[]` y `kill_switches[]` con sus estados.
 
-See ADR `docs/decisions/0004-cicd-strategy.md` for rationale.
+### 2.2 Activar feature flag
+
+```bash
+curl -s -X PUT \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"enabled": true}' \
+  http://localhost:8000/api/v1/admin/system/flags/my.feature.flag
+# HTTP 204
+```
+
+### 2.3 Desactivar feature flag
+
+```bash
+curl -s -X PUT \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"enabled": false}' \
+  http://localhost:8000/api/v1/admin/system/flags/my.feature.flag
+```
+
+### 2.4 Engage global kill switch
+
+**Efecto:** todas las consultas devuelven HTTP 503 `SYSTEM_KILLED`.
+Requiere role `admin` y un motivo obligatorio.
+
+```bash
+curl -s -X PUT \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"engage": true, "reason": "Anomalía detectada: coste +500% en 10 min"}' \
+  http://localhost:8000/api/v1/admin/system/kill/global
+# HTTP 204
+```
+
+También accesible desde la UI: **Admin → botón rojo "Global Kill Switch"**.
+Se genera automáticamente una notificación crítica en el centro de notificaciones.
+
+### 2.5 Release global kill switch
+
+```bash
+curl -s -X PUT \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"engage": false, "reason": "Anomalía confirmada como falso positivo"}' \
+  http://localhost:8000/api/v1/admin/system/kill/global
+# HTTP 204
+```
+
+### 2.6 Engage kill switch de agente específico
+
+```bash
+# Targets disponibles: global | consult | rag | export
+curl -s -X PUT \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"engage": true, "reason": "Agente RAG devuelve resultados incorrectos"}' \
+  http://localhost:8000/api/v1/admin/system/kill/rag
+```
+
+### 2.7 Ver notificaciones del sistema
+
+```bash
+# Contar no leídas
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/admin/notifications/count
+
+# Listar todas (últimas 100)
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/admin/notifications | jq
+
+# Marcar una como leída
+curl -s -X PUT \
+  -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/admin/notifications/42/read
+
+# Marcar todas como leídas
+curl -s -X PUT \
+  -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/admin/notifications/read-all
+```
+
+### 2.8 Inyectar notificación desde webhook externo
+
+El endpoint `POST /api/v1/admin/notifications/ingest` recibe alertas de
+Grafana, Langfuse o cualquier sistema externo. Requiere role `admin`.
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": "grafana",
+    "category": "critical",
+    "title": "ServiceDown: API container unhealthy",
+    "body": "Container lex-agents-api has been unhealthy for 6 minutes",
+    "correlation_id": "grafana-alert-abc123"
+  }' \
+  http://localhost:8000/api/v1/admin/notifications/ingest
+```
 
 ---
 
-## Ingestion procedures
+## 3. Fuentes de datos
 
-### Fixture sample (offline, no network required)
+### 3.1 Ver estado de fuentes
 
 ```bash
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/admin/governance/sources | jq
+# Campos: source_id, status (active|paused|error), last_sync, doc_count
+```
+
+### 3.2 Pausar fuente
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"reason": "CENDOJ requiere mantenimiento programado"}' \
+  http://localhost:8000/api/v1/admin/governance/sources/cendoj/pause
+# HTTP 204 — queda registrado en audit trail
+```
+
+Fuentes disponibles: `boe`, `eurlex`, `cendoj`, `inlabs`.
+
+### 3.3 Reanudar fuente
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"reason": "Mantenimiento completado"}' \
+  http://localhost:8000/api/v1/admin/governance/sources/cendoj/resume
+```
+
+### 3.4 Forzar resync de un asset Dagster
+
+```bash
+# Acceder a Dagster UI (si está desplegado):
+open http://localhost:3002
+
+# O via Make:
 make ingest-sample
-# Ingests docs/sources/fixtures/*.xml into Qdrant
-# Required: Qdrant running (make dev-detached)
+
+# Verificar que el doc count ha cambiado:
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/admin/governance/sources | jq '.[] | {source_id, doc_count}'
 ```
 
-### Live BOE + EUR-Lex (requires network + ANTHROPIC_API_KEY)
+### 3.5 Levantar bloqueo CENDOJ quota
+
+Cuando el gauge `lex_cendoj_quota_blocked == 1`:
 
 ```bash
-make ingest-real
-# Calls live APIs; generates embeddings via BGE-M3; stores in Qdrant
-# Takes ~5–15 min depending on corpus size
+# 1. Verificar en Prometheus
+curl -s 'http://localhost:9090/api/v1/query?query=lex_cendoj_quota_blocked' | jq
+
+# 2. Si es cuota diaria, esperar reset a 00:00 UTC
+
+# 3. Si es un error permanente, revisar logs de la API:
+docker compose logs api | grep cendoj | tail -50
+
+# 4. Reset manual del estado de quota:
+curl -s -X POST \
+  -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/admin/ops/sources/cendoj/reset-quota
 ```
 
-### Verify ingestion
+### 3.6 Activar fuente comercial (cuando llegue licencia)
 
 ```bash
-curl http://localhost:6333/collections/lex_agents_v1/points/count
-# Returns: {"result":{"count":<N>},...}
+# 1. Añadir credencial en .env:
+ARANZADI_API_KEY="..."
+
+# 2. Activar flag:
+curl -s -X PUT \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"enabled": true}' \
+  http://localhost:8000/api/v1/admin/system/flags/source.aranzadi.enabled
+
+# 3. Reiniciar ingesta para que se registre la nueva fuente:
+make ingest-sample
 ```
 
 ---
 
-## Qdrant operations
+## 4. Agentes y prompts
+
+### 4.1 Ver estado de agentes
 
 ```bash
-# Open interactive Qdrant shell
-make qdrant-shell
-
-# Reset all vector data (DESTRUCTIVE — prompts for confirmation)
-make db-reset
-
-# Backup Qdrant snapshot
-docker compose -f infra/docker-compose.yml exec qdrant \
-  curl -X POST http://localhost:6333/collections/lex_agents_v1/snapshots
-
-# Restore from snapshot (replace <snapshot_name>)
-docker compose -f infra/docker-compose.yml exec qdrant \
-  curl -X PUT \
-    "http://localhost:6333/collections/lex_agents_v1/snapshots/recover" \
-    -H "Content-Type: application/json" \
-    -d '{"location":"file:///qdrant/snapshots/lex_agents_v1/<snapshot_name>"}'
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/admin/agents | jq
+# Campos: agent_id, kill_switch_engaged, active_prompt_version, last_used
 ```
 
----
-
-## Rotate API keys
-
-### Anthropic API key
-
-1. Generate a new key in the Anthropic console.
-2. Update `.env`: `ANTHROPIC_API_KEY=<new_key>`
-3. Restart the API container: `docker compose -f infra/docker-compose.yml restart api`
-4. Verify: `curl http://localhost:8000/health` → `anthropic_api: ok`
-
-### JWT secret
-
-1. Generate a strong secret: `python -c "import secrets; print(secrets.token_hex(32))"`
-2. Update `.env`: `JWT_SECRET=<new_secret>`
-3. All existing tokens are **immediately invalidated**; active sessions must re-authenticate.
-4. Restart the API container.
-
-### Internal auth users
-
-Edit `AUTH_USERS_JSON` in `.env` (JSON array of `{username, password_hash, role}`):
+### 4.2 Ver proposals de prompt evolution
 
 ```bash
-# Generate bcrypt hash for new user
-python -c "from passlib.hash import bcrypt; print(bcrypt.hash('your_password'))"
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/admin/governance/proposals | jq
+# Campos: proposal_id, agent_id, status (pending|approved|rejected), diff_preview
 ```
 
----
-
-## Common failures and remediation
-
-| Symptom                                          | Likely cause                                   | Remediation                                                                             |
-| ------------------------------------------------ | ---------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `api` exits on startup                           | `QDRANT_URL` not reachable                     | Ensure `qdrant` service is healthy first; check `QDRANT_URL` in `.env`                  |
-| `health` returns `anthropic_api: not_configured` | `ANTHROPIC_API_KEY` empty                      | Set key in `.env`                                                                       |
-| `otel-collector` crash-loops                     | Jaeger not ready                               | Jaeger starts slower; collector will retry — usually self-resolves in 30s               |
-| Docker build fails on `uv sync`                  | No internet or cache miss                      | Run `make build-images` with `--no-cache` or ensure network access                      |
-| `401 Unauthorized` on `/api/v1/*`                | Token expired or `auth_enabled=false` missing  | Re-authenticate via `POST /auth/token`; for dev set `AUTH_ENABLED=false` in `.env`      |
-| `429 Too Many Requests`                          | Rate limit exceeded (30 req/min on `/consult`) | Wait 60 s; adjust limit in `settings.py` if running load tests                          |
-| Qdrant returns empty results                     | Collection not indexed                         | Run `make ingest-sample` or `make ingest-real`                                          |
-| Export .docx fails with 404                      | Consultation not persisted yet                 | Background save is async; wait 1–2 s and retry                                          |
-| Grafana shows no data                            | Prometheus not scraping                        | Check `infra/prometheus.yml` target is `api:8000`; verify `make dev` started prometheus |
-
----
-
-## Observability
+### 4.3 Aprobar PR de prompt evolution
 
 ```bash
-# Grafana dashboard (rate, latency, errors)
-make grafana
-# → http://localhost:3001 (admin/admin)
-
-# Prometheus raw metrics
-curl http://localhost:9090/metrics
-
-# Jaeger distributed traces
-open http://localhost:16686
-
-# Structured logs (JSON)
-docker compose -f infra/docker-compose.yml logs api | jq .
+curl -s -X POST \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"decision": "approved", "comment": "Mejora validada en evals"}' \
+  http://localhost:8000/api/v1/admin/governance/proposals/42/decide
 ```
 
----
-
-## Fase 6 operations
-
-### Re-materializar un asset Dagster
+### 4.4 Rechazar PR de prompt evolution
 
 ```bash
-# Re-run a single Dagster asset (e.g., after source changes or failures)
-dagster asset materialize --select boe_raw
-
-# Or for a group
-dagster asset materialize --select boe_raw+ eur_lex_raw+
-
-# Via Dagster UI: http://localhost:3002 → Assets → select asset → Materialize
-# Monitor run in UI; GREEN = success, RED = inspect logs for root cause.
+curl -s -X POST \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"decision": "rejected", "comment": "Introduce alucinaciones en benchmark"}' \
+  http://localhost:8000/api/v1/admin/governance/proposals/42/decide
 ```
 
-**Common failure causes:**
-
-- Source HTTP 429 → check `RATE_LIMIT_DELAY` env var; increase if needed.
-- Qdrant connection refused → ensure `make dev` is running; check `docker compose ps`.
-- Checksum mismatch on canonical layer → re-run from raw: `dagster asset materialize --select boe_canonical`.
-
----
-
-### Revisar PR de prompt evolution
-
-Prompt evolution PRs are opened automatically by the reflection pipeline (ADR 0021).
-**They require human review before merge — CODEOWNERS prevents auto-merge.**
-
-Checklist:
-
-1. Read the PR body: verify the failing case and `diff_text` match.
-2. Check the regression simulation table: all 5 neighbor cases must pass (✅). If any fail (❌), close PR.
-3. Run locally:
-   ```bash
-   uv run python -m lex_agents_evals_advanced.reflection run --dry-run --specialist <branch_name>
-   ```
-4. Confirm the mandatory IA caveat and jurisdictional caveats are intact in the proposed prompt.
-5. Confirm the change does not expand specialist scope beyond ADRs 0010–0021.
-6. Assign to a qualified lawyer for content review.
-7. Merge only after all checklist items are confirmed.
-
----
-
-### Añadir patrón procedimental
+### 4.5 Rollback de versión de prompt
 
 ```bash
-# Open the seed SQL for editing
-make procedural-edit
-# → opens packages/memory/src/lex_agents_memory/data/seed.sql in $EDITOR
+# Ver historial de versiones de un agente:
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/admin/ops/agents/specialist_banking/prompts | jq
 
-# Add INSERT INTO procedural_patterns (pattern_id, jurisdiction, ...) VALUES (...)
-# See existing rows for format reference
-
-# Apply migration to development DB
-make procedural-apply
-
-# Validate
-uv run pytest packages/memory/tests/test_procedural.py -q
-
-# Open PR with @ibernale review required (CODEOWNERS enforces)
+# Forzar versión anterior:
+curl -s -X PUT \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"version": "v1.2.0", "reason": "Regresión detectada en v1.3.0"}' \
+  http://localhost:8000/api/v1/admin/ops/agents/specialist_banking/active-prompt
 ```
 
-**Invariant:** procedural patterns are read-only at runtime. No code path writes to `procedural.db`
-after seeding. If you need to modify a pattern, update `seed.sql` and reseed.
-
 ---
 
-### Abrir nueva fuente documental
+## 5. Auditoría
 
-Follow ADR 0018 (8-step checklist):
-
-1. **Identify source**: confirm URL stability, license, and update frequency.
-2. **Create scraper** in `packages/ingest/src/lex_agents_ingest/sources/<source>.py`.
-3. **Create raw Dagster asset** in `packages/pipeline/src/lex_agents_pipeline/assets/sources.py`.
-4. **Create canonical asset** with normalized `LegalDocument` schema.
-5. **Add tests** in `packages/ingest/tests/` with at least 3 fixture documents.
-6. **Manual GREEN gate**: run `dagster asset materialize --select <source>_canonical` and verify
-   ≥ 10 documents indexed in Qdrant with expected chunk count.
-7. **Add to CI** by including the asset in `.github/workflows/ingest.yml`.
-8. **Update `docs/sources/`** with source metadata (maintainer, license, update schedule).
-
-Never add a source that is not GREEN-gated — AMBER/RED sources degrade retrieval quality.
-
----
-
-## On-call escalation
-
-Internal Slack: `#lex-agents-oncall`. Escalate to:
-
-1. **API errors / 5xx surge** → check `/metrics` rate_5xx panel → check `make logs`
-2. **Anthropic API unavailable** → fallback: return cached consultation if trace_id known; otherwise 503
-3. **Qdrant data loss** → restore from snapshot (see above); re-index if no snapshot available
-4. **PII in logs** → verify `enable_pii_redaction=true` in prod (`ENV=prod` in `.env`); rotate affected logs
-
----
-
-## Fase 7.4 operations
-
-### Revisar audit_samples pendientes
-
-The daily audit sampling job runs at 23:00 and writes 5 records to `audit_samples` with
-status `pending`. Review them asynchronously:
-
-1. Log into the internal UI: `http://localhost:3000/auditoria` (requires JWT auth).
-2. Filter by **Status = pending** using the dropdown at the top of the list.
-3. Open each record by clicking its row.
-4. Review:
-   - The original query.
-   - The full response as delivered.
-   - The citations panel and verification status (GREEN/AMBER/RED).
-5. Enter a verdict from the dropdown: `correcto` / `dudoso` / `incorrecto`.
-6. Add free-text notes in the **Notas** field (required for `dudoso` and `incorrecto` verdicts).
-7. Click **Guardar**. The record status changes to `reviewed`.
-8. Repeat for all pending records.
-
-Records marked `dudoso` or `incorrecto` are automatically prioritized by the reflection pipeline
-before the next LeMAJ nightly run (see ADR 0028 M5).
-
----
-
-### Procesar feedback negativo hacia reflection
-
-User feedback events with verdict `dudoso` or `incorrecto` are stored in `feedback.db`. To trigger
-the reflection pipeline with feedback priority:
+### 5.1 Ver audit trail
 
 ```bash
-uv run python -m lex_agents_evals_advanced.reflection --feedback-priority
+# Últimas 50 entradas
+curl -s -H "Authorization: Bearer $TOKEN" \
+  'http://localhost:8000/api/v1/admin/audit-trail?limit=50' | jq
+
+# Filtrar por tipo de acción
+curl -s -H "Authorization: Bearer $TOKEN" \
+  'http://localhost:8000/api/v1/admin/audit-trail?action_type=kill_switch.engage' | jq
+
+# Filtrar por actor
+curl -s -H "Authorization: Bearer $TOKEN" \
+  'http://localhost:8000/api/v1/admin/audit-trail?actor=admin' | jq
 ```
 
-This invokes `FailureAnalyzer` with feedback signals as the primary input (before LeMAJ failures).
-Output is written to `evals/reports/reflection_<timestamp>.json`.
-
-Check the output:
+### 5.2 Revisar muestras de auditoría del día
 
 ```bash
-ls -lt evals/reports/ | head -5
-cat evals/reports/reflection_<timestamp>.json | jq '.cases_analyzed, .prompt_proposals'
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/audit | jq \
+  '.[] | select(.created_at | startswith("2026-05"))'
 ```
 
-If `prompt_proposals > 0`, the pipeline has opened or is preparing a PR for prompt evolution.
-**PRs require human review before merge** (CODEOWNERS + ADR 0021 — no auto-merge).
+### 5.3 Exportar audit trail para auditoría externa
+
+```bash
+# Exportar como JSON (últimos 30 días)
+curl -s -H "Authorization: Bearer $TOKEN" \
+  'http://localhost:8000/api/v1/admin/audit-trail/export?format=json&days=30' \
+  -o "audit_trail_$(date +%Y%m%d).json"
+
+# Exportar como CSV
+curl -s -H "Authorization: Bearer $TOKEN" \
+  'http://localhost:8000/api/v1/admin/audit-trail/export?format=csv&days=30' \
+  -o "audit_trail_$(date +%Y%m%d).csv"
+```
+
+### 5.4 Verificar integridad de cadena del audit trail
+
+Cada entrada tiene un campo `checksum` SHA-256 que encadena el hash de la
+entrada anterior. Verificar la cadena:
+
+```bash
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/admin/audit-trail/verify | jq
+# Esperado: {"valid": true, "entries_checked": 1543}
+# Si "valid": false → posible tampering. Escalar a seguridad inmediatamente.
+```
 
 ---
 
-### Levantar bloqueo CENDOJ
+## 6. Costes
 
-If CENDOJ retrieval falls back silently (check `cendoj_fallback=true` in response metadata or
-`cendoj_quota_remaining` approaching zero):
+### 6.1 Ver dashboard de coste
 
-1. **Check current quota and usage:**
+- **Grafana:** http://localhost:3001 → dashboard "lex-agents / Costs"
+- **Prometheus query:** `sum(lex_consultation_cost_usd_total)`
+- **Por consulta:** cada `ConsultResponse` incluye `cost_breakdown_by_agent`
 
-   ```bash
-   # Check env var setting
-   grep CENDOJ_DAILY_QUOTA .env
+```bash
+# Coste total acumulado
+curl -s 'http://localhost:9090/api/v1/query?query=sum(lex_consultation_cost_usd_total)' | jq
 
-   # Check remaining quota via Prometheus metric
-   curl -s http://localhost:9090/metrics | grep cendoj_quota_remaining
-   ```
+# Coste últimas 24h (tasa por hora)
+curl -s 'http://localhost:9090/api/v1/query?query=sum(increase(lex_consultation_cost_usd_total[24h]))' | jq
+```
 
-2. **Do NOT raise the quota without authorization.** The cap is a compliance control (ADR 0028 M6).
-   Raising `CENDOJ_DAILY_QUOTA` without written CGPJ authorization confirmation is not permitted.
+### 6.2 Reconciliar drift > 5%
 
-3. **Escalate to the legal team** via `#lex-agents-oncall`:
-   - Include the current `cendoj_quota_remaining` value.
-   - Include the date and estimated daily usage from Grafana (CENDOJ Requests panel).
-   - Request confirmation of CGPJ authorization status before any quota change.
+Drift = diferencia entre coste reportado por la plataforma vs factura Anthropic.
 
-4. **If authorization is confirmed in writing**, update `.env`:
+```bash
+# 1. Exportar coste acumulado local:
+curl -s 'http://localhost:9090/api/v1/query?query=sum(lex_consultation_cost_usd_total)' \
+  | jq '.data.result[0].value[1]'
 
-   ```bash
-   # Only after written legal team confirmation
-   CENDOJ_DAILY_QUOTA=<new_value>
-   ```
+# 2. Comparar con Anthropic Console (manual):
+#    https://console.anthropic.com/billing
 
-   Then restart the API container:
+# 3. Si drift > 5%, revisar trazas costosas:
+curl -s -H "Authorization: Bearer $TOKEN" \
+  'http://localhost:8000/api/v1/admin/ops/cost-breakdown?top=10' | jq
 
-   ```bash
-   docker compose -f infra/docker-compose.yml restart api
-   ```
+# 4. Buscar consultas con coste anómalo:
+curl -s -H "Authorization: Bearer $TOKEN" \
+  'http://localhost:8000/api/v1/admin/ops/cost-breakdown?threshold_usd=0.50' | jq
+```
 
-5. Verify the new quota is reflected:
+### 6.3 Investigar traza cara
 
-   ```bash
-   curl -s http://localhost:9090/metrics | grep cendoj_quota_remaining
-   ```
+```bash
+# Via API (metadata en consulta):
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/consult/<consultation_id> \
+  | jq '.cost_breakdown_by_agent'
 
----
-
-### Activar DB comercial cuando llegue licencia
-
-When a commercial legal database license (Aranzadi, La Ley, or Tirant lo Blanch) is acquired,
-follow this checklist in order:
-
-- [ ] **(a) Configure env var** — add the API key or connection string to `.env`:
-
-  ```bash
-  # Example for Aranzadi
-  ARANZADI_API_KEY=<key>
-  ARANZADI_BASE_URL=<url>
-  ```
-
-- [ ] **(b) Create Dagster source asset** — in
-      `packages/pipeline/src/lex_agents_pipeline/assets/sources.py`, add a new asset following the
-      pattern of the existing `boe_raw` and `eur_lex_raw` assets. Adapter stubs are already prepared
-      in `packages/pipeline/src/lex_agents_pipeline/adapters/`.
-
-- [ ] **(c) Run ingest sample** — ingest a small fixture corpus first:
-
-  ```bash
-  dagster asset materialize --select <source>_raw <source>_canonical
-  # Verify: curl http://localhost:6333/collections/lex_agents_v1/points/count
-  ```
-
-- [ ] **(d) Validate GREEN gate** — confirm at least 10 documents indexed with expected chunk count
-      and no verification failures. Do not proceed to production indexing until GREEN gate passes.
-
-- [ ] **(e) Update `docs/sources/`** — add a source metadata file with: maintainer, license type,
-      update frequency, and coverage scope.
-
-- [ ] **(f) Update `docs/limitations.md`** — move the source from "Fuentes en desarrollo" to the
-      appropriate section (or remove the limitation note if now fully covered).
-
-Open a PR with the changes. CODEOWNERS requires review before merge.
+# Via logs (correlation ID del header X-Correlation-ID de la respuesta):
+docker compose logs api | grep "consultation_id=<id>" | grep cost
+```
 
 ---
 
-### Añadir nueva rama jurídica
+## 7. Observabilidad
 
-Adding a new legal specialist branch requires 8 steps. Follow in order:
+### 7.1 Acceder a Grafana
 
-1. **Create the specialist agent** in
-   `packages/agents/src/lex_agents_agents/specialists/<branch_name>.py`.
-   Follow the pattern of `regulatorio_bancario.py` — implement `run(query, context)` returning
-   `AgentResponse`. Use the `base_agent.py` types.
+```
+URL: http://localhost:3001
+User: admin / Password: ${GRAFANA_PASSWORD} (en .env)
+```
 
-2. **Add to branch classifier** — in `packages/agents/src/lex_agents_agents/router.py`, add
-   the new branch name to the `RoutingDecision` enum and update the router prompt to recognize
-   the new branch. Bump the prompt version in the YAML frontmatter.
+Dashboards disponibles:
 
-3. **Add prompt in `docs/prompts/`** — create
-   `docs/prompts/especialistas/<branch_name>/v1.md` with YAML frontmatter (model, temperature,
-   version) and the full specialist prompt body. Follow the 6-section format used by
-   `regulatorio_bancario_ue_es/v1.md`.
+- **lex-agents / Overview** — latencia p50/p95, tasa error, consultas/min
+- **lex-agents / Costs** — coste diario, tendencia 7d, breakdown por agente
+- **lex-agents / Sources** — estado fuentes, errores ingesta, quota CENDOJ
+- **lex-agents / Audit** — actividad audit trail, kill switch events
 
-4. **Add eval cases** — add at least 5 golden cases to `evals/golden_dataset/` covering the
-   new branch. Include at least 1 shallow, 2 standard, and 1 deep case.
+### 7.2 Acceder a Jaeger (trazas distribuidas)
 
-5. **Wire to planner** — in
-   `packages/agents/src/lex_agents_agents/planner.py`, add the new branch to the planner's
-   available branches list and update the planner prompt to include the branch description.
+```
+URL: http://localhost:16686
+Service: lex-agents-api
+```
 
-6. **Update router_v1 enum** — in `apps/api/routers/consult.py`, add the new branch name to
-   the `BranchEnum` (or equivalent) used for request validation and response typing.
+Para buscar una traza por correlation ID:
 
-7. **Update `docs/`** — update `docs/architecture.md` (component map + Mermaid graph),
-   `docs/limitations.md` (Ramas jurídicas activas section), and `docs/runbook.md` if new
-   operational procedures are needed for the branch.
+```bash
+# El correlation ID aparece en el header X-Correlation-ID de la respuesta
+# Buscar en Jaeger: Service=lex-agents-api, Tags: correlation_id=<value>
+```
 
-8. **Open PR** — include: specialist implementation, prompt file, eval cases, router update,
-   planner update, and doc updates. CODEOWNERS requires review before merge. Do not merge
-   until LeMAJ passes with the new eval cases included.
+### 7.3 Acceder a Prometheus
+
+```
+URL: http://localhost:9090
+```
+
+Métricas de negocio clave:
+
+| Métrica                             | Descripción                           |
+| ----------------------------------- | ------------------------------------- |
+| `lex_consultation_cost_usd_total`   | Coste acumulado USD                   |
+| `lex_consultation_duration_seconds` | Latencia p50/p95 por agente           |
+| `lex_verification_status_total`     | Verificaciones por status (green/red) |
+| `lex_cendoj_quota_blocked`          | 1 si CENDOJ quota bloqueada           |
+| `lex_audit_samples_pending`         | Muestras pendientes de revisión       |
+
+### 7.4 Interpretar alertas Tier 1 (críticas)
+
+| Alerta                  | Trigger                             | Acción                               |
+| ----------------------- | ----------------------------------- | ------------------------------------ |
+| `ServiceDown`           | Contenedor unhealthy > 5 min        | Ver §10.1, reiniciar contenedor      |
+| `AnthropicApiErrorRate` | Error rate API > 5% en 10 min       | Ver §10.2, comprobar cuota/incidente |
+| `QdrantUnavailable`     | Qdrant no responde > 2 min          | `docker compose restart qdrant`      |
+| `DailyCostSpike`        | Coste diario > 2× media 7d          | Ver §10.3, engage kill switch        |
+| `CendojQuotaBlocked`    | Gauge `lex_cendoj_quota_blocked==1` | Ver §3.5                             |
+
+### 7.5 Interpretar alertas Tier 2 (warning)
+
+| Alerta                       | Trigger                      | Acción                                   |
+| ---------------------------- | ---------------------------- | ---------------------------------------- |
+| `LlmP95LatencyHigh`          | p95 latencia > umbral 10 min | Revisar prompts largos, tokens input     |
+| `VerificationFailedRateHigh` | Status=red > 10% en 1h       | Ver §10.4 (alucinaciones)                |
+| `AuditSamplesPendingHigh`    | `audit_samples_pending > 30` | Revisar muestras en `/admin/audit-trail` |
+| `PromptEvolutionPRsPending`  | Proposals pendientes > 5     | Revisar en `/admin/governance`           |
+
+### 7.6 Reiniciar servicios de observabilidad
+
+```bash
+# OTel Collector
+docker compose restart otel-collector
+
+# Prometheus (datos en volumen prometheus_data — no se pierden)
+docker compose restart prometheus
+
+# Grafana (dashboards provisionados via YAML — no se pierden)
+docker compose restart grafana
+
+# Jaeger (datos en memoria — se pierden al reiniciar)
+docker compose restart jaeger
+```
+
+---
+
+## 8. Backup y restore
+
+### 8.1 Backup SQLite databases
+
+```bash
+#!/bin/bash
+BACKUP_DIR="backups/$(date +%Y%m%d_%H%M%S)"
+mkdir -p "$BACKUP_DIR"
+
+# SQLite WAL mode permite lectura concurrente; no es necesario detener la API
+sqlite3 data/consultations.db ".backup $BACKUP_DIR/consultations.db"
+sqlite3 data/governance.db    ".backup $BACKUP_DIR/governance.db"
+
+echo "Backup completo en $BACKUP_DIR"
+ls -lh "$BACKUP_DIR"
+```
+
+### 8.2 Restore SQLite databases
+
+```bash
+# Detener la API antes de restaurar
+docker compose stop api
+
+# Restaurar
+cp backups/20260513_120000/consultations.db data/consultations.db
+cp backups/20260513_120000/governance.db    data/governance.db
+
+# Verificar integridad
+sqlite3 data/consultations.db "PRAGMA integrity_check;"
+sqlite3 data/governance.db    "PRAGMA integrity_check;"
+
+# Reiniciar
+docker compose start api
+```
+
+### 8.3 Backup Qdrant
+
+```bash
+# Crear snapshot via API Qdrant
+curl -s -X POST http://localhost:6333/snapshots | jq
+
+# Listar snapshots disponibles
+curl -s http://localhost:6333/snapshots | jq
+
+# Copiar snapshot fuera del contenedor
+SNAPSHOT=$(curl -s http://localhost:6333/snapshots | jq -r '.result[-1].name')
+docker compose cp qdrant:/qdrant/snapshots/$SNAPSHOT "backups/$SNAPSHOT"
+```
+
+### 8.4 Restore Qdrant
+
+```bash
+# 1. Detener Qdrant
+docker compose stop qdrant
+
+# 2. Copiar snapshot al contenedor
+docker compose cp "backups/$SNAPSHOT" qdrant:/qdrant/snapshots/$SNAPSHOT
+
+# 3. Arrancar Qdrant con flag de restore
+docker compose run --rm qdrant ./qdrant --snapshot /qdrant/snapshots/$SNAPSHOT
+
+# 4. Verificar colecciones
+curl -s http://localhost:6333/collections | jq
+```
+
+---
+
+## 9. Rotación de credenciales
+
+### 9.1 Rotar API key de Anthropic
+
+```bash
+# 1. Crear nueva key en https://console.anthropic.com/settings/keys
+# 2. Actualizar .env: ANTHROPIC_API_KEY=sk-ant-new-key
+# 3. Reiniciar API:
+docker compose restart api
+# 4. Verificar que consultas funcionan:
+curl -s -H "Authorization: Bearer $TOKEN" \
+  -X POST http://localhost:8000/api/v1/consult \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Capital Tier 1 CRR", "jurisdiction": "ES"}' | jq .status
+# 5. Revocar key antigua en Anthropic Console
+```
+
+### 9.2 Rotar API key INLABS
+
+```bash
+# 1. Renovar en https://inlabs.boe.es (acceso corporativo)
+# 2. Actualizar .env: INLABS_API_KEY=nueva_key
+# 3. docker compose restart api
+# 4. Verificar ingesta: make ingest-sample
+```
+
+### 9.3 Rotar SECRET_KEY (JWT)
+
+```bash
+# AVISO: invalida todos los tokens activos — hacer en ventana de mantenimiento.
+
+# 1. Generar nueva clave:
+python -c "import secrets; print(secrets.token_hex(32))"
+
+# 2. Actualizar .env: SECRET_KEY=nueva_clave
+# 3. docker compose restart api
+# 4. Todos los usuarios deberán re-autenticarse.
+```
+
+### 9.4 Rotar password de admin
+
+```bash
+# Editar USER_CREDENTIALS en .env con nueva contraseña:
+# Formato: "admin:nueva_pass:admin,..."
+docker compose restart api
+```
+
+---
+
+## 10. Emergencias
+
+### 10.1 Sistema responde lento: diagnóstico
+
+```bash
+# 1. Verificar latencia p95 actual:
+curl -s 'http://localhost:9090/api/v1/query?query=histogram_quantile(0.95,rate(http_request_duration_seconds_bucket[5m]))' | jq
+
+# 2. Verificar recursos del contenedor API:
+docker stats lex-agents-api --no-stream
+
+# 3. Revisar logs por errores:
+docker compose logs api --tail=100 | grep -E "ERROR|CRITICAL|timeout"
+
+# 4. Si Qdrant es el cuello de botella:
+docker stats lex-agents-qdrant --no-stream
+
+# 5. Si el problema persiste y afecta a usuarios, engage kill switch (§2.4)
+```
+
+### 10.2 Coste se dispara: detectar consulta culpable
+
+```bash
+# 1. Alerta DailyCostSpike activa — ir a Grafana dashboard "Costs"
+
+# 2. Identificar consultas costosas en las últimas 2h:
+curl -s -H "Authorization: Bearer $TOKEN" \
+  'http://localhost:8000/api/v1/admin/ops/cost-breakdown?top=20&window_minutes=120' | jq
+
+# 3. Si hay un patrón (mismo usuario, mismo agente):
+#    a. Engage kill switch del agente específico (§2.6)
+#    b. Revisar si es un bucle de prompts o abuso
+
+# 4. Si es coste legítimo pero alto, revisar límite de tokens en .env:
+#    MAX_TOKENS_PER_CONSULTATION
+```
+
+### 10.3 Qdrant fuera de servicio: recuperación
+
+```bash
+# 1. Verificar estado:
+curl -s http://localhost:6333/readyz
+
+# 2. Intentar reinicio graceful:
+docker compose restart qdrant
+
+# 3. Si el volumen está corrupto, restaurar desde backup (§8.4)
+
+# 4. Mientras Qdrant está caído, engage kill switch para dar error claro a usuarios.
+
+# 5. Verificar colecciones tras restaurar:
+curl -s http://localhost:6333/collections | jq
+make ingest-sample  # re-ingestar si las colecciones están vacías
+```
+
+### 10.4 Alucinaciones aumentan: workflow de mitigación
+
+Indicador: alerta `VerificationFailedRateHigh` o tasa `verification_status=red > 10%`.
+
+```bash
+# 1. Cuantificar:
+curl -s 'http://localhost:9090/api/v1/query?query=sum(rate(lex_verification_status_total{status="red"}[1h]))/sum(rate(lex_verification_status_total[1h]))' | jq
+
+# 2. Identificar qué agente falla más:
+curl -s -H "Authorization: Bearer $TOKEN" \
+  'http://localhost:8000/api/v1/audit?verification_status=red&limit=50' | jq \
+  '.[] | {agent_id, consultation_id}'
+
+# 3. Revisar si hay un prompt evolution reciente:
+curl -s -H "Authorization: Bearer $TOKEN" \
+  'http://localhost:8000/api/v1/admin/governance/proposals?status=approved&limit=5' | jq
+
+# 4. Si el problema coincide con un prompt reciente, hacer rollback (§4.5)
+
+# 5. Mientras tanto, engage kill switch del agente afectado (§2.6)
+
+# 6. Ejecutar evals para confirmar regresión:
+make eval-quick
+```
+
+### 10.5 Fuente devuelve errores masivos
+
+```bash
+# 1. Identificar fuente problemática:
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/admin/governance/sources | jq '.[] | select(.status=="error")'
+
+# 2. Ver últimos errores:
+docker compose logs api | grep "source_id=boe" | grep ERROR | tail -20
+
+# 3. Pausar la fuente para evitar reintentos (§3.2)
+
+# 4. Verificar que consultas siguen funcionando con otras fuentes:
+curl -s -H "Authorization: Bearer $TOKEN" \
+  -X POST http://localhost:8000/api/v1/consult \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Capital Tier 1 CRR", "jurisdiction": "ES"}' | jq .verification_status
+
+# 5. Cuando la fuente externa se recupere, reanudar (§3.3)
+```
+
+### 10.6 Datos personales potencialmente filtrados: contención
+
+```bash
+# 1. Engage kill switch global INMEDIATAMENTE:
+curl -s -X PUT \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"engage": true, "reason": "INCIDENTE SEGURIDAD: posible filtración PII — contención"}' \
+  http://localhost:8000/api/v1/admin/system/kill/global
+
+# 2. Identificar la consulta problemática via audit trail:
+curl -s -H "Authorization: Bearer $TOKEN" \
+  'http://localhost:8000/api/v1/admin/audit-trail?limit=100' | jq \
+  '.[] | select(.action_type == "consult.response")'
+
+# 3. Exportar audit trail completo para análisis forense (§5.3)
+
+# 4. Verificar que los logs no contienen PII (redactor activo en prod):
+docker compose logs api | grep -iE "nif|dni|nombre|email" | wc -l
+# Debería ser 0 en prod (enable_pii_redaction=True)
+
+# 5. Escalar a DPO (Santander) y al equipo de seguridad.
+#    RGPD Art. 33 — notificación a AEPD en 72h si hay brecha confirmada.
+
+# 6. Una vez contenido, release kill switch y documentar en audit trail.
+```

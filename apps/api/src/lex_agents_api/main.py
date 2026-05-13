@@ -35,6 +35,7 @@ from lex_agents_api.routers import health as health_router
 from lex_agents_api.routers import rag as rag_router
 from lex_agents_api.routers.audit_trail import router as audit_trail_router
 from lex_agents_api.routers.governance import router as governance_router
+from lex_agents_api.routers.notifications import router as notifications_router
 from lex_agents_api.routers.ops import router as ops_router
 from lex_agents_api.routers.system import router as system_router
 from lex_agents_api.settings import get_settings
@@ -117,6 +118,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.warning("lex_agents_audit_audit_trail_not_available")
 
     # Kill switches & feature flags (ADR-0032)
+    ssm = None
     try:
         from lex_agents_admin.state import SystemStateManager, set_system_state_manager
         ssm = SystemStateManager(settings.governance_db_path)
@@ -124,6 +126,50 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         set_system_state_manager(ssm)
     except ImportError:
         logger.warning("lex_agents_admin_state_not_available")
+
+    # In-app notifications (ADR-0035)
+    try:
+        from lex_agents_audit.notifications import NotificationManager, set_notification_manager
+        notif_mgr = NotificationManager(settings.governance_db_path)
+        await notif_mgr.init()
+        set_notification_manager(notif_mgr)
+        # Wire kill-switch events → notifications
+        if ssm is not None:
+            def _on_ssm_event(event: str, payload: object) -> None:
+                import asyncio
+
+                from lex_agents_audit.notifications import get_notification_manager
+                nm = get_notification_manager()
+                if nm is None:
+                    return
+                p = payload if isinstance(payload, dict) else {}
+                if event == "kill_switch.engage":
+                    coro = nm.create(
+                        "system", "critical",
+                        f"Kill switch engaged: {p.get('target', '?')}",
+                        f"Engaged by {p.get('actor', '?')} — {p.get('reason', '')}",
+                        payload=p,
+                    )
+                elif event == "kill_switch.release":
+                    coro = nm.create(
+                        "system", "info",
+                        f"Kill switch released: {p.get('target', '?')}",
+                        f"Released by {p.get('actor', '?')}",
+                        payload=p,
+                    )
+                else:
+                    return
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        _task = asyncio.ensure_future(coro)  # noqa: RUF006
+                    else:
+                        loop.run_until_complete(coro)
+                except Exception as exc:
+                    logger.warning("notification_create_failed", error=str(exc))
+            ssm.subscribe(_on_ssm_event)
+    except ImportError:
+        logger.warning("lex_agents_audit_notifications_not_available")
 
     yield
 
@@ -182,6 +228,7 @@ def create_app() -> FastAPI:
     app.include_router(audit_trail_router)     # /api/v1/admin/audit-trail/*
     app.include_router(system_router)          # /api/v1/admin/system/*
     app.include_router(ops_router)             # /api/v1/admin/agents, /rag, /memory, /sources
+    app.include_router(notifications_router)   # /api/v1/admin/notifications/*
 
     # Prometheus metrics — /metrics (no auth, internal scrape only)
     Instrumentator(

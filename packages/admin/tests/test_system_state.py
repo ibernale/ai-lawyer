@@ -74,6 +74,14 @@ class TestKillSwitch:
         with pytest.raises(ValueError, match="reason"):
             await mgr.engage_kill_switch("global", actor="a", reason="")
 
+    async def test_release_reason_required(self, mgr: SystemStateManager) -> None:
+        with pytest.raises(ValueError, match="reason"):
+            await mgr.release_kill_switch("global", actor="a", reason="   ")
+
+    async def test_release_unknown_target_raises(self, mgr: SystemStateManager) -> None:
+        with pytest.raises(ValueError, match="unknown kill switch target"):
+            await mgr.release_kill_switch("typo.golbal", actor="a", reason="r")
+
     async def test_get_kill_reason(self, mgr: SystemStateManager) -> None:
         await mgr.engage_kill_switch("global", actor="a", reason="maintenance window")
         reason = await mgr.get_kill_reason("global")

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { ResponseView } from "@/components/ResponseView";
+import { ErrorBanner } from "@/components/ui/error-banner";
 import { consultQuery, getConsultation } from "@/lib/api";
 import type { ConsultResponse } from "@/lib/api";
 
@@ -52,11 +54,8 @@ const DEPTH_OPTIONS: {
   },
 ];
 
-export default function ConsultaPage({
-  searchParams,
-}: {
-  searchParams: Record<string, string | undefined>;
-}) {
+function ConsultaInner() {
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [outputType, setOutputType] = useState("dictamen");
   const [depth, setDepth] = useState<"shallow" | "standard" | "deep">(
@@ -70,7 +69,7 @@ export default function ConsultaPage({
   const [error, setError] = useState<string | null>(null);
 
   // Load from trace ID if provided via ?trace=...
-  const traceId = searchParams["trace"];
+  const traceId = searchParams.get("trace") ?? undefined;
   const [loaded, setLoaded] = useState(false);
 
   if (traceId && !loaded && !response) {
@@ -258,11 +257,7 @@ export default function ConsultaPage({
           </div>
         </form>
 
-        {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            {error}
-          </div>
-        )}
+        {error && <ErrorBanner message={error} />}
 
         {response && (
           <ResponseView
@@ -274,5 +269,13 @@ export default function ConsultaPage({
 
       <LegalDisclaimer />
     </div>
+  );
+}
+
+export default function ConsultaPage() {
+  return (
+    <Suspense>
+      <ConsultaInner />
+    </Suspense>
   );
 }

@@ -30,11 +30,11 @@ def role_gte(user_role: str, required_role: Role) -> bool:
 
 
 def requires_role(*roles: Role) -> Any:
-    """FastAPI dependency factory. Accepts any of the given roles (OR logic, no hierarchy)."""
+    """FastAPI dependency factory. Accepts roles >= any of the given roles in the hierarchy."""
     from lex_agents_api.auth import CurrentUser, require_auth  # late import to avoid circular
 
     async def _check(user: CurrentUser = Depends(require_auth)) -> CurrentUser:
-        if user.role not in {r.value for r in roles}:
+        if not any(role_gte(user.role, r) for r in roles):
             raise HTTPException(
                 status_code=403,
                 detail=f"Role '{user.role}' is not authorised. Required: {[r.value for r in roles]}",

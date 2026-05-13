@@ -1,0 +1,150 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: lex-agents-tier1
+    folder: Lex-Agents Alerts
+    interval: 1m
+    rules:
+      # -----------------------------------------------------------------------
+      # ServiceDown
+      # Fires when any core service (qdrant, api, dagster) stops reporting.
+      # -----------------------------------------------------------------------
+      - uid: service-down
+        title: ServiceDown
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: 'up{job=~"qdrant|api|dagster"} == 0'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: >
+            The service '{{ $labels.job }}' on instance '{{ $labels.instance }}'
+            has been unreachable for more than 5 minutes.
+
+      # -----------------------------------------------------------------------
+      # QdrantUnavailable
+      # Fires specifically when the Qdrant vector store is unreachable.
+      # -----------------------------------------------------------------------
+      - uid: qdrant-unavailable
+        title: QdrantUnavailable
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: 'up{job="qdrant"} == 0'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+        noDataState: NoData
+        execErrState: Error
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Qdrant vector store is unavailable"
+          description: >
+            Qdrant has been unreachable for more than 2 minutes.
+            All legal query routing and similarity search will fail.
+
+      # -----------------------------------------------------------------------
+      # DailyCostSpike
+      # Fires when today's LLM cost is more than 2x the 7-day daily average.
+      # -----------------------------------------------------------------------
+      - uid: daily-cost-spike
+        title: DailyCostSpike
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: >
+                increase(legal_query_cost_usd_sum[24h])
+                > 2 * (increase(legal_query_cost_usd_sum[7d]) / 7)
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+        noDataState: NoData
+        execErrState: Error
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Daily LLM cost spike detected"
+          description: >
+            Daily LLM cost spike detected — check /admin/ops.
+            Today's cost exceeds 2× the 7-day daily average.
+
+      # -----------------------------------------------------------------------
+      # CendojQuotaBlocked
+      # Fires when the CENDOJ source is quota-blocked.
+      # metric added in Fase 9
+      # -----------------------------------------------------------------------
+      - uid: cendoj-quota-blocked
+        title: CendojQuotaBlocked
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: "lex_cendoj_quota_blocked == 1"
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+        noDataState: NoData
+        execErrState: Error
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CENDOJ quota blocked"
+          description: >
+            The CENDOJ source is currently quota-blocked.
+            Jurisprudence queries will fall back to cached results only.
+
+      # -----------------------------------------------------------------------
+      # AnthropicErrorRate
+      # Fires when > 5% of /consult* requests return 5xx over a 10-minute window.
+      # -----------------------------------------------------------------------
+      - uid: anthropic-error-rate
+        title: AnthropicErrorRate
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: >
+                increase(http_requests_total{status=~"5..",path=~".*consult.*"}[10m])
+                /
+                increase(http_requests_total{path=~".*consult.*"}[10m])
+                > 0.05
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+        noDataState: NoData
+        execErrState: Error
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High Anthropic API error rate on /consult endpoints"
+          description: >
+            More than 5% of requests to /consult* endpoints have returned 5xx
+            errors over the last 10 minutes. Check Anthropic API status and
+            API error logs.

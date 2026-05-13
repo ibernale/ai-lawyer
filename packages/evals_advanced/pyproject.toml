@@ -4,11 +4,11 @@ version = "0.1.0"
 description = "LeMAJ multi-judge evaluation + reflection-driven prompt evolution for lex-agents"
 requires-python = ">=3.12"
 dependencies = [
-    "anthropic>=0.34.0",
-    "pydantic>=2.8.0",
-    "structlog>=24.4.0",
-    "numpy>=1.26.0",
-    "scikit-learn>=1.4.0",
+    "anthropic>=0.100.0",
+    "pydantic>=2.13.0",
+    "structlog>=25.5.0",
+    "numpy>=2.4.0",
+    "scikit-learn>=1.8.0",
     "pyyaml>=6.0",
     "lex-agents-shared",
     "lex-agents-agents",
@@ -17,8 +17,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.3.0",
-    "pytest-asyncio>=0.23.0",
+    "pytest>=9.0.0",
+    "pytest-asyncio>=1.3.0",
 ]
 
 [build-system]

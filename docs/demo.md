@@ -1,6 +1,6 @@
-# Demo script — Fase 7.4
+# Demo script — Fase 8.5 (v0.4.0)
 
-> Duration: 30 minutes. Internal audience: compliance team, engineering leads, product stakeholders.
+> Duration: 40 minutes. Internal audience: compliance team, engineering leads, product stakeholders.
 > Prerequisites: `make dev` running, sample corpus ingested (`make ingest-sample`), browser open
 > at `http://localhost:3000`, Grafana at `http://localhost:3001`.
 
@@ -316,3 +316,68 @@ regulatory authorizations — both actively in progress."
   prevent false expectations from the audience.
 - CENDOJ alert in the banner only appears when CENDOJ chunks are present in the response. For
   the shallow demo query (segment 3–7 min) it should not appear.
+
+---
+
+## 30–40 min: Admin & Governance (Fase 8)
+
+> Navigate to `http://localhost:3000/admin` — login with operator or admin credentials.
+
+**What to say:** "In Fase 8 we built the operational control plane. Let me show you what an
+operator or admin can do without touching the codebase."
+
+### 30–32 min: Ops Center overview
+
+1. Open `/admin/ops`
+2. Show agent list with kill switch state, prompt versions
+3. Show RAG status (Qdrant collections, doc counts per source)
+4. Show cost breakdown by agent
+
+**Key message:** "Everything an operator needs to understand system health in one place."
+
+### 32–34 min: Governance — source management
+
+1. Open `/admin/governance`
+2. Show source list (BOE, EUR-Lex, CENDOJ, INLABS) with statuses
+3. Pause BOE — enter reason "Demo: maintenance window" — confirm
+4. Show audit trail entry appears immediately at `/admin/audit-trail`
+5. Resume BOE
+6. Show proposal list (prompt evolution PRs pending review)
+
+**Key message:** "Every governance action is reversible and auditable. The audit trail is tamper-evident."
+
+### 34–37 min: Kill switch demo
+
+1. Click **"Global Kill Switch"** button (top right, red)
+2. Enter reason: "Demo — simulating incident containment"
+3. Confirm → sidebar badge changes to `KILL ACTIVE`
+4. Open a new tab, try a consultation — observe 503 response
+5. Click **"Release Kill Switch"** → badge returns to `OK`
+6. Retry consultation — normal response
+
+**Key message:** "In a real incident, one click stops all AI output platform-wide, with a
+mandatory reason and full audit trail. Recovery is equally fast."
+
+### 37–39 min: Notification center
+
+1. Bell icon should show a badge (kill switch engage created a critical notification)
+2. Click bell → drawer slides in
+3. Show: category badge (critical / warning / info), source, relative timestamp
+4. Click "Mark all read" → badge disappears
+5. Explain: Grafana and Dagster alerts also arrive here via webhook
+
+**Key message:** "Operators don't need to switch to Grafana for awareness. Alerts come to them."
+
+### 39–40 min: Audit trail verification
+
+1. Open `/admin/audit-trail`
+2. Show kill_switch.engage + kill_switch.release entries from the demo
+3. Explain checksum chain: each entry hashes the previous — tamper-evident immutable log
+
+**What to say:** "This is the paper trail that compliance and legal teams need. Exportable
+as JSON or CSV for external audit."
+
+---
+
+> **Post-demo:** Show `docs/incident-response.md` as the structured playbook for the 5
+> most likely incidents. Mention RGPD Art. 33 (72h notification) is covered in IR-005.
