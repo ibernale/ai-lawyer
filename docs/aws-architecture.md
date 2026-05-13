@@ -277,15 +277,15 @@ graph TD
 
 ## Referencias
 
-| Componente | ADR |
-|---|---|
-| Regiones y residencia de datos | [ADR 0036](decisions/0036-aws-regions-data-residency.md) |
-| Estructura multi-account | [ADR 0037](decisions/0037-aws-multi-account.md) |
-| AgentCore Runtime | [ADR 0038](decisions/0038-agentcore-runtime.md) |
-| Bedrock como provider LLM | [ADR 0039](decisions/0039-bedrock-llm-provider.md) |
-| RAG en AWS (Bedrock KB + Aurora pgvector) | [ADR 0040](decisions/0040-rag-aws-bedrock-kb.md) |
-| Networking y seguridad | [ADR 0041](decisions/0041-aws-networking-security.md) |
-| Persistencia y estado | [ADR 0042](decisions/0042-aws-persistence.md) |
-| CDK deployment strategy | [ADR 0043](decisions/0043-cdk-deployment-strategy.md) |
-| DORA controls mapping | [ADR 0044](decisions/0044-dora-controls-mapping.md) |
-| Cost model fase inicial | [ADR 0045](decisions/0045-cost-model-fase-inicial.md) |
+| Componente                                | ADR                                                      |
+| ----------------------------------------- | -------------------------------------------------------- |
+| Regiones y residencia de datos            | [ADR 0036](decisions/0036-aws-regions-data-residency.md) |
+| Estructura multi-account                  | [ADR 0037](decisions/0037-aws-multi-account.md)          |
+| AgentCore Runtime                         | [ADR 0038](decisions/0038-agentcore-runtime.md)          |
+| Bedrock como provider LLM                 | [ADR 0039](decisions/0039-bedrock-llm-provider.md)       |
+| RAG en AWS (Bedrock KB + Aurora pgvector) | [ADR 0040](decisions/0040-rag-aws-bedrock-kb.md)         |
+| Networking y seguridad                    | [ADR 0041](decisions/0041-aws-networking-security.md)    |
+| Persistencia y estado                     | [ADR 0042](decisions/0042-aws-persistence.md)            |
+| CDK deployment strategy                   | [ADR 0043](decisions/0043-cdk-deployment-strategy.md)    |
+| DORA controls mapping                     | [ADR 0044](decisions/0044-dora-controls-mapping.md)      |
+| Cost model fase inicial                   | [ADR 0045](decisions/0045-cost-model-fase-inicial.md)    |

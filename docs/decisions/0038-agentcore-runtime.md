@@ -41,6 +41,7 @@ se adapta con cambios superficiales en el wrapper de entrada.
 ### Componentes adoptados en Fase 9
 
 #### AgentCore Runtime
+
 - **Qué hace:** hospeda el código de agente en microVMs aisladas por sesión. Cada
   invocación obtiene un entorno limpio. Soporta sesiones long-running (streaming).
 - **Adopción:** `OrchestratorV2` y los especialistas se exponen via `@app.entrypoint`.
@@ -52,6 +53,7 @@ se adapta con cambios superficiales en el wrapper de entrada.
   de prompts de especialistas (complementa ADR 0021).
 
 #### AgentCore Memory
+
 - **Qué hace:** almacenamiento persistente de memoria procedural y semántica, gestionado
   por AWS. Reemplaza el SQLite local de `packages/memory/` (ADR 0022).
 - **Memoria procedural:** plantillas de análisis, atajos de routing, formatos de citación.
@@ -62,6 +64,7 @@ se adapta con cambios superficiales en el wrapper de entrada.
 - **Memoria episódica:** continúa **DESACTIVADA** per ADR 0013 (riesgo RGPD no resuelto).
 
 #### AgentCore Gateway (MCP)
+
 - **Qué hace:** expone las herramientas internas como MCP tools con auth por llamada
   y audit automático. Los agentes llaman a las tools via Gateway en lugar de invocaciones
   directas en proceso.
@@ -78,6 +81,7 @@ se adapta con cambios superficiales en el wrapper de entrada.
 - **Audit:** cada llamada a tool queda registrada en CloudTrail via Gateway.
 
 #### AgentCore Observability
+
 - **Qué hace:** captura traces AWS-nativas del Runtime → CloudWatch Logs Insights.
 - **Integración con stack existente:** los traces AgentCore se agregan en CloudWatch;
   Langfuse sigue siendo el hub para prompt management, replay y evaluaciones (ADR 0030).
@@ -87,32 +91,35 @@ se adapta con cambios superficiales en el wrapper de entrada.
 
 ### Componentes AgentCore NO adoptados en Fase 9
 
-| Componente | Decisión | Razón |
-|---|---|---|
-| **AgentCore Identity** | Placeholder Fase 10 | Requiere SSO Santander (Azure AD). No disponible en Fase 9. |
-| **AgentCore Evaluations** | No adoptado | Mantenemos nuestro eval framework (ADR 0009/0014/0020). LeMAJ y adversarial evals son específicos de dominio jurídico; AgentCore Evaluations es genérico. |
+| Componente                | Decisión            | Razón                                                                                                                                                     |
+| ------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **AgentCore Identity**    | Placeholder Fase 10 | Requiere SSO Santander (Azure AD). No disponible en Fase 9.                                                                                               |
+| **AgentCore Evaluations** | No adoptado         | Mantenemos nuestro eval framework (ADR 0009/0014/0020). LeMAJ y adversarial evals son específicos de dominio jurídico; AgentCore Evaluations es genérico. |
 
 ---
 
 ## Justificación frente a alternativas
 
 ### ECS Fargate puro
+
 Actualmente el API y la web corren en ECS Fargate. ¿Por qué no los agentes también?
 
-| Criterio | ECS Fargate puro | AgentCore Runtime |
-|---|---|---|
-| Session isolation | Manual (código de app) | Nativa (microVM por sesión) |
-| Memory persistente | Self-managed (SQLite → Aurora) | Gestionada por AWS |
-| MCP Gateway con audit | Self-managed | Built-in |
-| A/B testing de prompts | CI/CD manual | Canary nativo |
-| Overhead operacional | Alto (ECS task definitions, scaling policies, healthchecks) | Bajo (CDK construct) |
-| DORA infra gestionada | Parcialmente (ECS gestionado, pero lógica de agente expuesta) | AWS gestiona la capa de runtime |
+| Criterio               | ECS Fargate puro                                              | AgentCore Runtime               |
+| ---------------------- | ------------------------------------------------------------- | ------------------------------- |
+| Session isolation      | Manual (código de app)                                        | Nativa (microVM por sesión)     |
+| Memory persistente     | Self-managed (SQLite → Aurora)                                | Gestionada por AWS              |
+| MCP Gateway con audit  | Self-managed                                                  | Built-in                        |
+| A/B testing de prompts | CI/CD manual                                                  | Canary nativo                   |
+| Overhead operacional   | Alto (ECS task definitions, scaling policies, healthchecks)   | Bajo (CDK construct)            |
+| DORA infra gestionada  | Parcialmente (ECS gestionado, pero lógica de agente expuesta) | AWS gestiona la capa de runtime |
 
 **ECS Fargate seguimos usándolo** para la API FastAPI y la web Next.js, que son servicios
 web estándar sin requisitos de session isolation de agente.
 
 ### Bedrock Agents (legacy / "classic")
+
 Bedrock Agents exige Lambda + Knowledge Bases hardcodeadas. Nuestra arquitectura tiene:
+
 - LegalChunker personalizado (incompatible con KB chunking estándar sin Custom Chunking).
 - PMJ pattern en Python puro (no encaja en el modelo de Action Groups de Bedrock Agents).
 - Necesidad de múltiples especialistas en paralelo (el modelo Bedrock Agents es secuencial).
@@ -121,8 +128,10 @@ AgentCore es el sucesor de Bedrock Agents, framework-agnostic. La migración fut
 AgentCore es más limpia que desde Bedrock Agents.
 
 ### Self-managed Strands / LangGraph en ECS
+
 Strands (AWS) y LangGraph (LangChain) son frameworks de orquestación de agentes que se
 desplegarían en ECS. El código sería similar al actual pero:
+
 - Requireen gestionar la infra subyacente (ECS tasks, scaling, isolation).
 - No proporcionan Memory gestionada ni Gateway MCP con audit.
 - Para banca con DORA, preferimos que AWS opere la capa de runtime y nosotros validemos
@@ -153,15 +162,16 @@ AgentCore Runtime (eu-central-1)
 
 ## Trade-offs y consecuencias
 
-| Trade-off | Impacto |
-|---|---|
-| Vendor lock-in en AgentCore | Exit strategy: `@app.entrypoint` es un wrapper delgado; el código del agente vuelve a ECS Fargate en <1 sprint. Ver ADR 0044. |
-| Cold start AgentCore (~500 ms) | Aceptable; consultas jurídicas tardan segundos. Mitigable con provisioned concurrency en Fase 10 si SLA lo exige. |
-| Coste AgentCore por invocación | $50–200/mes en dev. Escalar se paga por uso, no por instancia 24/7. Favorable frente a ECS task always-on. |
-| Código Python actual sin cambios | Solo el entrypoint wrapper cambia. Tests existentes de packages/agents/ siguen válidos. |
-| Memoria episódica sigue DISABLED | ADR 0013 vigente. AgentCore Memory no cambia la política; cambia la implementación del almacenamiento. |
+| Trade-off                        | Impacto                                                                                                                       |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Vendor lock-in en AgentCore      | Exit strategy: `@app.entrypoint` es un wrapper delgado; el código del agente vuelve a ECS Fargate en <1 sprint. Ver ADR 0044. |
+| Cold start AgentCore (~500 ms)   | Aceptable; consultas jurídicas tardan segundos. Mitigable con provisioned concurrency en Fase 10 si SLA lo exige.             |
+| Coste AgentCore por invocación   | $50–200/mes en dev. Escalar se paga por uso, no por instancia 24/7. Favorable frente a ECS task always-on.                    |
+| Código Python actual sin cambios | Solo el entrypoint wrapper cambia. Tests existentes de packages/agents/ siguen válidos.                                       |
+| Memoria episódica sigue DISABLED | ADR 0013 vigente. AgentCore Memory no cambia la política; cambia la implementación del almacenamiento.                        |
 
 ### Sub-fases afectadas
+
 - **9.2:** escribir `AgentsStack` CDK + wrapper `@app.entrypoint` para OrchestratorV2.
 - **9.3:** adaptar `BedrockAnthropicClient` para llamadas dentro de AgentCore Runtime.
   Migrar `packages/memory/` → AgentCore Memory.

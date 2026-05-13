@@ -12,6 +12,7 @@
 ## Contexto
 
 El despliegue actual usa `docker-compose` en local. Para AWS necesitamos IaC que:
+
 1. Sea reproducible y versionada en Git.
 2. Soporte múltiples entornos (dev, pre, pro) desde la misma base de código.
 3. Sea mantenible por un equipo Python sin expertise en HCL/Terraform.
@@ -24,16 +25,16 @@ El despliegue actual usa `docker-compose` en local. Para AWS necesitamos IaC que
 
 ### IaC: AWS CDK v2 Python (no Terraform)
 
-| Criterio | CDK v2 Python | Terraform (HCL) |
-|---|---|---|
-| Lenguaje | Python — mismo que la app | HCL — lenguaje adicional |
-| CDK Constructs nativos | ✅ AgentCore, KB, SageMaker serverless | ⚠️ Via terraform-aws-provider; lag en nuevos servicios |
-| AgentCore CLI | ✅ CDK como resource manager nativo | ❌ No integrado |
-| Type safety | ✅ mypy-compatible | ❌ Sin tipos |
-| Testing IaC | ✅ `aws_cdk.assertions` + pytest | ⚠️ `terraform test` (menos maduro) |
-| Estado remoto | CDK → CloudFormation (gestionado por AWS) | S3 + DynamoDB lock (self-managed) |
-| Portabilidad multi-cloud | ❌ AWS only | ✅ Multi-cloud |
-| Curva de aprendizaje equipo | Baja (Python conocido) | Media (HCL nuevo) |
+| Criterio                    | CDK v2 Python                             | Terraform (HCL)                                        |
+| --------------------------- | ----------------------------------------- | ------------------------------------------------------ |
+| Lenguaje                    | Python — mismo que la app                 | HCL — lenguaje adicional                               |
+| CDK Constructs nativos      | ✅ AgentCore, KB, SageMaker serverless    | ⚠️ Via terraform-aws-provider; lag en nuevos servicios |
+| AgentCore CLI               | ✅ CDK como resource manager nativo       | ❌ No integrado                                        |
+| Type safety                 | ✅ mypy-compatible                        | ❌ Sin tipos                                           |
+| Testing IaC                 | ✅ `aws_cdk.assertions` + pytest          | ⚠️ `terraform test` (menos maduro)                     |
+| Estado remoto               | CDK → CloudFormation (gestionado por AWS) | S3 + DynamoDB lock (self-managed)                      |
+| Portabilidad multi-cloud    | ❌ AWS only                               | ✅ Multi-cloud                                         |
+| Curva de aprendizaje equipo | Baja (Python conocido)                    | Media (HCL nuevo)                                      |
 
 **Trade-off de portabilidad:** el proyecto es AWS-first por decisión de arquitectura (ADR 0036).
 La portabilidad multi-cloud no es un objetivo en Fase 9 ni en Fase 10. El coste de portabilidad
@@ -43,6 +44,7 @@ los CDK Constructs nativos hoy.
 ### Ubicación: `infra/cdk/` en el repo existente
 
 No se crea un repo separado `lex-agents-infra` en Fase 9. Justificación:
+
 - El equipo es pequeño; la colocación del código IaC con el código de aplicación evita drift.
 - Los cambios de aplicación y de infraestructura suelen ir juntos (e.g., nueva variable de
   entorno en el código + nuevo secret en Secrets Manager).
@@ -95,6 +97,7 @@ class EnvironmentConfig:
 ```
 
 `app.py` instancia los stacks para cada entorno:
+
 ```python
 dev_config = EnvironmentConfig(env="dev", account=DEV_ACCOUNT_ID)
 NetworkStack(app, "LexAgents-Dev-Network", config=dev_config, ...)
@@ -129,6 +132,7 @@ de outputs entre stacks.
 Sin long-lived AWS credentials en CI/CD.
 
 **Configuración OIDC:**
+
 ```yaml
 # .github/workflows/deploy-dev.yml
 permissions:
@@ -147,12 +151,14 @@ jobs:
 ```
 
 **Rol `GitHubActionsDeployRole`** en cada cuenta workloads:
+
 - Trust policy: `token.actions.githubusercontent.com` con condition `repo:ibernale/ai-lawyer:*`.
 - Permissions: `AdministratorAccess` en dev (flexibilidad para iteración); scope reducido
   en pre/pro (solo stacks específicos).
 - Se crea bootstrappeando CDK en cada cuenta: `cdk bootstrap --trust <management-account-id>`.
 
 **Aprobación manual en pre/pro:**
+
 - Workflow `deploy-pre.yml` tiene `environment: pre` con protection rule que requiere
   aprobación de un revisor antes de continuar.
 
@@ -176,10 +182,10 @@ Tests ejecutados en CI con `uv run pytest infra/cdk/tests/ -v`.
 
 ## Trade-offs y consecuencias
 
-| Trade-off | Impacto |
-|---|---|
-| CDK → CloudFormation state | El estado vive en CloudFormation (gestionado por AWS). No hay S3 backend que mantener. Downside: no hay `terraform state mv` para renombrar recursos sin destroy. |
-| `infra/cdk/` en mismo repo | PRs que tocan tanto app como infra son visibles. Puede crecer el repo; mitigado con `.gitignore` para `cdk.out/` y `node_modules`. |
-| CDK requiere Node.js para el CLI | `npm install -g aws-cdk` en CI. Alternativa: `pip install aws-cdk-cli` (Python wrapper). El código de los stacks es Python puro. |
-| Testing de IaC con `cdk.assertions` | Solo verifica el template generado, no el comportamiento real en AWS. Complementar con smoke tests post-deploy. |
-| Un stack por concern | 7 stacks con dependencias. Más despliegues en CI, pero fallos aislados. Orden de despliegue documentado arriba. |
+| Trade-off                           | Impacto                                                                                                                                                           |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CDK → CloudFormation state          | El estado vive en CloudFormation (gestionado por AWS). No hay S3 backend que mantener. Downside: no hay `terraform state mv` para renombrar recursos sin destroy. |
+| `infra/cdk/` en mismo repo          | PRs que tocan tanto app como infra son visibles. Puede crecer el repo; mitigado con `.gitignore` para `cdk.out/` y `node_modules`.                                |
+| CDK requiere Node.js para el CLI    | `npm install -g aws-cdk` en CI. Alternativa: `pip install aws-cdk-cli` (Python wrapper). El código de los stacks es Python puro.                                  |
+| Testing de IaC con `cdk.assertions` | Solo verifica el template generado, no el comportamiento real en AWS. Complementar con smoke tests post-deploy.                                                   |
+| Un stack por concern                | 7 stacks con dependencias. Más despliegues en CI, pero fallos aislados. Orden de despliegue documentado arriba.                                                   |

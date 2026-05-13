@@ -33,6 +33,7 @@ En producción AWS necesitamos:
 Aurora Serverless v2 con la extensión `pgvector` y HNSW indexing como backend de vectores.
 
 **Justificación específica:**
+
 - **Escala casi a cero:** Aurora Serverless v2 puede pausarse automáticamente cuando no
   hay carga. En dev fuera de horario, el coste baja a ~$0 (solo almacenamiento).
   En prod, el ACU mínimo es 0.5 ACU (~$60/mes) sin instancia idle.
@@ -47,6 +48,7 @@ Aurora Serverless v2 con la extensión `pgvector` y HNSW indexing como backend d
   configuración adicional.
 
 **Índice pgvector:**
+
 ```sql
 -- Colección principal
 CREATE TABLE legal_chunks (
@@ -81,6 +83,7 @@ retrieval, re-ranking opcional). Adoptamos KB pero con **Custom Chunking** para 
 el `LegalChunker`.
 
 **Cómo funciona el Custom Chunking en KB:**
+
 1. Bedrock KB detecta un nuevo documento en S3.
 2. En lugar de aplicar chunking estándar, invoca un **Lambda Custom Chunking Hook**.
 3. La Lambda ejecuta `LegalChunker` (de `packages/ingest/`) sobre el documento.
@@ -153,12 +156,12 @@ Proceso de migración para sub-fase 9.3:
 
 ### OpenSearch Serverless
 
-| Criterio | OpenSearch Serverless | Aurora + pgvector |
-|---|---|---|
-| Coste mínimo | ~$700/mes (2 OCUs mínimo) | ~$60/mes (0.5 ACU) |
-| Performance a escala | Superior (>1M chunks) | Suficiente (<100K chunks MVP) |
-| Ops | Menos (managed) | Menos (shared cluster ya existente) |
-| Bedrock KB integración | ✅ Soportado | ✅ Soportado |
+| Criterio               | OpenSearch Serverless     | Aurora + pgvector                   |
+| ---------------------- | ------------------------- | ----------------------------------- |
+| Coste mínimo           | ~$700/mes (2 OCUs mínimo) | ~$60/mes (0.5 ACU)                  |
+| Performance a escala   | Superior (>1M chunks)     | Suficiente (<100K chunks MVP)       |
+| Ops                    | Menos (managed)           | Menos (shared cluster ya existente) |
+| Bedrock KB integración | ✅ Soportado              | ✅ Soportado                        |
 
 **Decisión:** Aurora en Fase 9; OpenSearch Serverless documentado como upgrade path cuando
 el corpus crezca a >500K chunks o cuando la latencia de retrieval sea inaceptable.
@@ -167,6 +170,7 @@ el corpus crezca a >500K chunks o cuando la latencia de retrieval sea inaceptabl
 
 S3 Vectors es una capa de almacenamiento vectorial sobre S3, con pricing muy bajo.
 Limitaciones para nuestro caso:
+
 - Sin filtering avanzado por metadata (jurisdiction, in_force_at_indexing, etc.).
 - Sin re-ranking integrado.
 - Latencia de retrieval mayor que HNSW en-memoria.
@@ -184,10 +188,10 @@ donde el filtering avanzado no es crítico y el precio por vector domina.
 
 ## Trade-offs y consecuencias
 
-| Trade-off | Impacto |
-|---|---|
-| `HybridRetriever` requiere adaptación | Cambio de Qdrant API a Bedrock KB API. Interfaz `SearchFilters` se mantiene. Estimación: 1 semana dev en 9.3. |
-| Embeddings: decisión en 9.3 | Bloquea el cutover hasta benchmark. Mitigado: el índice Qdrant local sirve como fallback durante evaluación. |
-| Custom Chunking Lambda | Nueva Lambda que empaqueta `packages/ingest/`. Añade latencia a ingesta (aceptable; ingesta es batch). |
-| Aurora shared cluster | Contención posible si queries vectoriales pesadas coinciden con escrituras governance. Mitigado: ACU escala automáticamente; separar schemas. |
-| SageMaker cold start | 3-5s primer request tras inactividad. Warm-up via EventBridge si el SLA de retrieval lo requiere. |
+| Trade-off                             | Impacto                                                                                                                                       |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `HybridRetriever` requiere adaptación | Cambio de Qdrant API a Bedrock KB API. Interfaz `SearchFilters` se mantiene. Estimación: 1 semana dev en 9.3.                                 |
+| Embeddings: decisión en 9.3           | Bloquea el cutover hasta benchmark. Mitigado: el índice Qdrant local sirve como fallback durante evaluación.                                  |
+| Custom Chunking Lambda                | Nueva Lambda que empaqueta `packages/ingest/`. Añade latencia a ingesta (aceptable; ingesta es batch).                                        |
+| Aurora shared cluster                 | Contención posible si queries vectoriales pesadas coinciden con escrituras governance. Mitigado: ACU escala automáticamente; separar schemas. |
+| SageMaker cold start                  | 3-5s primer request tras inactividad. Warm-up via EventBridge si el SLA de retrieval lo requiere.                                             |

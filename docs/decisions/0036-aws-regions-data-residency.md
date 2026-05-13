@@ -56,13 +56,13 @@ Frankfurt + Irlanda es la combinación estándar para DR en banca europea:
 
 ### Alternativa evaluada: Frankfurt + Madrid (`eu-south-2`)
 
-| Criterio | Frankfurt + Irlanda | Frankfurt + Madrid |
-|---|---|---|
-| AgentCore GA | ✅ Ambas | ⚠️ Madrid: verificar en Fase 10 |
-| Latencia desde sede Santander | Irlanda ~30 ms | Madrid ~5 ms |
-| Coste DR | Similar | Similar |
-| Riesgo disponibilidad | Bajo | Medio (región más nueva) |
-| Data residency España | EEA | EEA + ES |
+| Criterio                      | Frankfurt + Irlanda | Frankfurt + Madrid              |
+| ----------------------------- | ------------------- | ------------------------------- |
+| AgentCore GA                  | ✅ Ambas            | ⚠️ Madrid: verificar en Fase 10 |
+| Latencia desde sede Santander | Irlanda ~30 ms      | Madrid ~5 ms                    |
+| Coste DR                      | Similar             | Similar                         |
+| Riesgo disponibilidad         | Bajo                | Medio (región más nueva)        |
+| Data residency España         | EEA                 | EEA + ES                        |
 
 **Decisión:** Frankfurt + Irlanda en Fase 9.
 Madrid (`eu-south-2`) se evalúa en Fase 10 una vez confirmado AgentCore GA en eu-south-2.
@@ -91,15 +91,15 @@ operación por personal europeo. Se descarta para Fase 9 por:
 
 Todos los siguientes artefactos permanecen dentro de eu-central-1 o eu-west-1 en todo momento:
 
-| Artefacto | Servicio | Región |
-|---|---|---|
-| Prompts y respuestas jurídicas | Bedrock (in-region) | eu-central-1 |
-| Audit trail | Aurora (primary) + S3 Object Lock (replica) | eu-central-1 + eu-west-1 |
-| Vectores de documentos legales | Aurora pgvector via Bedrock KB | eu-central-1 |
-| Documentos BOE/EUR-Lex crudos | S3 con versioning | eu-central-1 |
-| Logs de sistema | CloudWatch + log-archive S3 | eu-central-1 + eu-west-1 |
-| Trazas de agentes | CloudWatch + Langfuse ECS | eu-central-1 |
-| Backups Aurora | S3 cross-region replication | eu-central-1 → eu-west-1 |
+| Artefacto                      | Servicio                                    | Región                   |
+| ------------------------------ | ------------------------------------------- | ------------------------ |
+| Prompts y respuestas jurídicas | Bedrock (in-region)                         | eu-central-1             |
+| Audit trail                    | Aurora (primary) + S3 Object Lock (replica) | eu-central-1 + eu-west-1 |
+| Vectores de documentos legales | Aurora pgvector via Bedrock KB              | eu-central-1             |
+| Documentos BOE/EUR-Lex crudos  | S3 con versioning                           | eu-central-1             |
+| Logs de sistema                | CloudWatch + log-archive S3                 | eu-central-1 + eu-west-1 |
+| Trazas de agentes              | CloudWatch + Langfuse ECS                   | eu-central-1             |
+| Backups Aurora                 | S3 cross-region replication                 | eu-central-1 → eu-west-1 |
 
 **Cross-region inference para Bedrock:** si eu-central-1 está congestionado para Claude
 Opus (latencia alta), se puede activar cross-region inference que puede enrutar a

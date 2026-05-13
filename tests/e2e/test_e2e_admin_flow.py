@@ -29,6 +29,13 @@ os.environ.setdefault("AUTH_USERS_JSON", "[]")
 os.environ["AUTH_ENABLED"] = "false"
 os.environ["NOTIFICATION_WEBHOOK_SECRET"] = "test-webhook-secret-e2e"
 
+# Invalidate the settings singleton so it re-reads the env vars we just set.
+# Without this, a cached Settings() from a previous import (e.g. in CI where
+# no .env file exists) would have notification_webhook_secret="" and the
+# /ingest webhook endpoint would return 503 instead of 204.
+import lex_agents_api.settings as _settings_mod  # noqa: E402
+_settings_mod._settings = None
+
 
 # ---------------------------------------------------------------------------
 # Fixtures

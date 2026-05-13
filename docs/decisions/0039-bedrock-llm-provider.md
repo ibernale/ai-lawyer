@@ -37,6 +37,7 @@ Todas las llamadas LLM en el entorno AWS (`workloads-dev`, `workloads-pre`, `wor
 van a Amazon Bedrock por defecto.
 
 Anthropic API directa (`api.anthropic.com`) queda como:
+
 - **Provider en dev local** (docker-compose, desarrolladores desde su máquina).
 - **Fallback de emergencia** en AWS si Bedrock tiene incidencia.
 - Configurable via variable de entorno `LLM_PROVIDER=bedrock|anthropic`.
@@ -59,6 +60,7 @@ class BedrockAnthropicClient:
 ```
 
 **Implementación técnica:**
+
 - Usa `boto3` + `bedrock-runtime` Converse API (no el cliente legacy `invoke_model`).
 - La Converse API es la API unificada de Bedrock que acepta el mismo formato de mensajes
   que la Anthropic Messages API. La adaptación de `kwargs` es mínima.
@@ -68,6 +70,7 @@ class BedrockAnthropicClient:
   `Contextualizer`, `CitationVerifierLLM`, `QueryRewriter`) llaman a la misma interfaz sin cambios.
 
 **Selección dinámica de cliente** en `packages/shared/src/lex_agents_shared/client_factory.py`:
+
 ```python
 def get_llm_client(settings: Settings) -> AnthropicClientWrapper | BedrockAnthropicClient:
     if settings.llm_provider == "bedrock":
@@ -79,14 +82,15 @@ def get_llm_client(settings: Settings) -> AnthropicClientWrapper | BedrockAnthro
 
 Los mismos modelos usados en local, con sus IDs de Bedrock:
 
-| Uso | Modelo local | ID Bedrock | Notas |
-|---|---|---|---|
-| Planner, Judge, razonamiento jurídico | `claude-opus-4-7` | `anthropic.claude-opus-4-7-v1:0` | |
-| Makers especialistas | `claude-sonnet-4-6` | `anthropic.claude-sonnet-4-6-v1:0` | |
-| Contextualizer, Verifier LLM, Query Rewriter, Reranker fallback | `claude-haiku-4-5` | `anthropic.claude-haiku-4-5-20251001-v1:0` | |
+| Uso                                                             | Modelo local        | ID Bedrock                                 | Notas |
+| --------------------------------------------------------------- | ------------------- | ------------------------------------------ | ----- |
+| Planner, Judge, razonamiento jurídico                           | `claude-opus-4-7`   | `anthropic.claude-opus-4-7-v1:0`           |       |
+| Makers especialistas                                            | `claude-sonnet-4-6` | `anthropic.claude-sonnet-4-6-v1:0`         |       |
+| Contextualizer, Verifier LLM, Query Rewriter, Reranker fallback | `claude-haiku-4-5`  | `anthropic.claude-haiku-4-5-20251001-v1:0` |       |
 
 Los model IDs se centralizan en `packages/shared/src/lex_agents_shared/models.py` con
 constantes por provider:
+
 ```python
 BEDROCK_OPUS    = "anthropic.claude-opus-4-7-v1:0"
 BEDROCK_SONNET  = "anthropic.claude-sonnet-4-6-v1:0"
@@ -100,6 +104,7 @@ ANTHROPIC_HAIKU  = "claude-haiku-4-5-20251001"
 
 Bedrock soporta prompt caching con descuento del ~90% en tokens cacheados. Se aplica al
 mismo patrón que en local (ADR 0003):
+
 - El contexto RAG se marca como cacheable cuando supera 1024 tokens.
 - El system prompt de cada especialista se cachea entre invocaciones del mismo agente
   dentro de una sesión AgentCore.
@@ -108,6 +113,7 @@ mismo patrón que en local (ADR 0003):
 ### Cross-region inference
 
 Si eu-central-1 está congestionado para Claude Opus (latencia p99 > 10s):
+
 - Activar **Bedrock cross-region inference** que puede enrutar a eu-west-1 o, en último
   caso, us-east-1.
 - **Restricción de data residency:** el cross-region a US solo se activa para llamadas
@@ -120,6 +126,7 @@ Si eu-central-1 está congestionado para Claude Opus (latencia p99 > 10s):
 ### Cost tracking
 
 `packages/finops/` (ADR 0029) integra con **Bedrock Usage & Cost API** en AWS:
+
 - Métricas: `InputTokens`, `OutputTokens`, `CacheReadTokens`, `CacheWriteTokens` por modelo.
 - Reemplaza la estimación manual de tokens del `AnthropicClientWrapper.messages_create()`.
 - La tabla `anthropic_usage_hourly` en Aurora (ADR 0042) pasa a llamarse
@@ -130,16 +137,16 @@ Si eu-central-1 está congestionado para Claude Opus (latencia p99 > 10s):
 
 ## Justificación
 
-| Criterio | Bedrock | Anthropic API directa |
-|---|---|---|
-| Data residency EEA | ✅ Datos en eu-central-1 | ⚠️ Requiere verificación contractual |
-| Auth | ✅ IAM roles (sin keys largas) | ⚠️ API key larga duración |
-| CloudTrail audit | ✅ Nativo en cada llamada | ❌ No disponible |
-| AgentCore integración | ✅ Nativa | ❌ Llamada externa |
-| Prompt caching | ✅ Mismo comportamiento | ✅ Mismo comportamiento |
-| Modelos disponibles | ✅ Opus/Sonnet/Haiku | ✅ Opus/Sonnet/Haiku |
-| Pricing | = mismo que Anthropic | = mismo que Bedrock |
-| Disponibilidad dev local | ❌ Requiere AWS creds | ✅ Solo API key |
+| Criterio                 | Bedrock                        | Anthropic API directa                |
+| ------------------------ | ------------------------------ | ------------------------------------ |
+| Data residency EEA       | ✅ Datos en eu-central-1       | ⚠️ Requiere verificación contractual |
+| Auth                     | ✅ IAM roles (sin keys largas) | ⚠️ API key larga duración            |
+| CloudTrail audit         | ✅ Nativo en cada llamada      | ❌ No disponible                     |
+| AgentCore integración    | ✅ Nativa                      | ❌ Llamada externa                   |
+| Prompt caching           | ✅ Mismo comportamiento        | ✅ Mismo comportamiento              |
+| Modelos disponibles      | ✅ Opus/Sonnet/Haiku           | ✅ Opus/Sonnet/Haiku                 |
+| Pricing                  | = mismo que Anthropic          | = mismo que Bedrock                  |
+| Disponibilidad dev local | ❌ Requiere AWS creds          | ✅ Solo API key                      |
 
 La combinación Bedrock (producción) + Anthropic API (local) optimiza en ambos entornos.
 
@@ -148,11 +155,13 @@ La combinación Bedrock (producción) + Anthropic API (local) optimiza en ambos 
 ## Alternativas consideradas
 
 ### Bedrock solo (sin fallback Anthropic API)
+
 Rechazada para Fase 9. Los desarrolladores en local necesitan iterar rápido sin configurar
 credenciales AWS. El fallback `LLM_PROVIDER=anthropic` en local mantiene la experiencia
 de desarrollo sin cambios.
 
 ### Azure OpenAI / GPT-4
+
 Rechazada. Los agentes están calibrados para Claude (razonamiento jurídico, prompt caching,
 estilos de output). Cambiar de modelo base requeriría re-evaluar todo el golden dataset.
 Fuera del scope de Fase 9.
@@ -161,9 +170,9 @@ Fuera del scope de Fase 9.
 
 ## Trade-offs y consecuencias
 
-| Trade-off | Impacto |
-|---|---|
-| `BedrockAnthropicClient` nuevo código | ~200 líneas en packages/shared. Tests de equivalencia contra Anthropic API en CI. |
-| Bedrock Converse API vs Messages API | Conversión de `system` prompt y `messages` es directa; `tool_use` tiene formato ligeramente distinto — wrapper lo abstrae. |
-| IAM roles en ECS/AgentCore | Simplifica seguridad (sin Secrets Manager para LLM key) pero requiere configurar task roles CDK. |
-| Cross-region inference data residency | Restricción operacional: solo para llamadas sin datos de cliente. Política documentada y auditable via CloudTrail. |
+| Trade-off                             | Impacto                                                                                                                    |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `BedrockAnthropicClient` nuevo código | ~200 líneas en packages/shared. Tests de equivalencia contra Anthropic API en CI.                                          |
+| Bedrock Converse API vs Messages API  | Conversión de `system` prompt y `messages` es directa; `tool_use` tiene formato ligeramente distinto — wrapper lo abstrae. |
+| IAM roles en ECS/AgentCore            | Simplifica seguridad (sin Secrets Manager para LLM key) pero requiere configurar task roles CDK.                           |
+| Cross-region inference data residency | Restricción operacional: solo para llamadas sin datos de cliente. Política documentada y auditable via CloudTrail.         |
