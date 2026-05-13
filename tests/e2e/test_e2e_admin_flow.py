@@ -33,7 +33,8 @@ os.environ["NOTIFICATION_WEBHOOK_SECRET"] = "test-webhook-secret-e2e"
 # Without this, a cached Settings() from a previous import (e.g. in CI where
 # no .env file exists) would have notification_webhook_secret="" and the
 # /ingest webhook endpoint would return 503 instead of 204.
-import lex_agents_api.settings as _settings_mod  # noqa: E402
+import lex_agents_api.settings as _settings_mod  # noqa: E402, I001
+
 _settings_mod._settings = None
 
 
