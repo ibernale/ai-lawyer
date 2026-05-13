@@ -268,16 +268,16 @@ function PromptEvolutionTab() {
 
 // ─── Tab 2: Audit Samples ─────────────────────────────────────────────────────
 
+function isUrgent(s: AuditSample): boolean {
+  if (s.status === "reviewed") return false;
+  const days = (Date.now() - new Date(s.sampled_at).getTime()) / 86400000;
+  return days > 7;
+}
+
 function AuditSamplesTab() {
   const [samples, setSamples] = useState<AuditSample[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("pending");
   const [loading, setLoading] = useState(false);
-
-  const isUrgent = (s: AuditSample) => {
-    if (s.status === "reviewed") return false;
-    const days = (Date.now() - new Date(s.sampled_at).getTime()) / 86400000;
-    return days > 7;
-  };
 
   useEffect(() => {
     setLoading(true);
