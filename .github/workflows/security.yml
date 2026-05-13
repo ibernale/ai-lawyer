@@ -49,9 +49,9 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
-      - uses: astral-sh/setup-uv@v8
+      - uses: astral-sh/setup-uv@v7
         with:
-          version: "0.4.x"
+          version: "latest"
       - run: uv tool run pip-audit --requirement <(uv export --all-packages --no-hashes)
 
   npm-audit:

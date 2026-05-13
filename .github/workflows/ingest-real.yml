@@ -35,7 +35,7 @@ jobs:
           curl -sf http://localhost:6333/readyz || (echo "Qdrant failed to start" && exit 1)
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v8
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: "**/pyproject.toml"

@@ -42,7 +42,7 @@ jobs:
           done
           curl -sf http://localhost:6333/readyz || (echo "Qdrant failed to start" && exit 1)
 
-      - uses: astral-sh/setup-uv@v8
+      - uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.12"
 
