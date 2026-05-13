@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     # Governance & audit trail (ADR 0035)
     governance_db_path: str = "data/governance.db"
 
+    # Notifications webhook secret (used by Grafana/Langfuse/Dagster to POST /ingest)
+    # Must be a long random string; leave empty to disable the ingest endpoint.
+    notification_webhook_secret: str = ""
+
     # Build metadata (injected by Dockerfile ARG → ENV)
     commit_sha: str = "unknown"
     build_time: str = "unknown"

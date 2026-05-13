@@ -304,10 +304,16 @@ class OrchestratorV2:
     ) -> tuple[Any, Any]:
         with tracer.start_as_current_span("orchestrator_v2.rag"):
             rewritten = self._deps.query_rewriter.rewrite(req.query)
-            filters = SearchFilters(
-                jurisdiction=req.jurisdiction_hint or (jurisdictions[0] if jurisdictions else None),
-                status="vigente",
+            # Only apply jurisdiction filter when a single jurisdiction is
+            # explicitly requested; for multi-jurisdiction branches (e.g.
+            # regulatorio_bancario_ue_es) retrieve across all jurisdictions so
+            # both EU and ES chunks are candidates.  The `status` field is not
+            # present on ChunkMetadata — in-force filtering relies on
+            # `in_force_at_indexing` (handled at re-rank level).
+            single_jurisdiction = req.jurisdiction_hint or (
+                jurisdictions[0] if len(jurisdictions) == 1 else None
             )
+            filters = SearchFilters(jurisdiction=single_jurisdiction)
             chunks = self._deps.retriever.search(rewritten.expanded_query, filters)
             reranked = self._deps.reranker.rerank(
                 rewritten.expanded_query, chunks, top_k=self._deps.rag_top_k

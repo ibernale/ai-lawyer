@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Ingest sample documents using local fixture files (no network required).
+"""Ingest sample documents from data/raw/ into Qdrant (no network required).
+
+Reads raw XML files already present in data/raw/boe/ and data/raw/eurlex/,
+parses them, chunks, contextualises (if ANTHROPIC_API_KEY is set), embeds,
+and indexes into Qdrant.
 
 Used by: make ingest-sample
 """
@@ -23,35 +27,47 @@ from lex_agents_ingest.sources.eurlex import EurlexSource
 from lex_agents_ingest.storage import IngestStorage
 from qdrant_client import QdrantClient
 
-FIXTURES = Path(__file__).parent.parent / "packages" / "ingest" / "tests" / "fixtures"
 DATA_DIR = Path("data")
+RAW_DIR = DATA_DIR / "raw"
 
-SAMPLE_BOE = ["BOE-A-2014-6732", "BOE-A-2015-1510"]
-SAMPLE_EURLEX = ["32013R0575", "32013L0036"]
+# Fall back to test fixtures if data/raw/ not populated
+FIXTURES = Path(__file__).parent.parent / "packages" / "ingest" / "tests" / "fixtures"
 
 
-def _make_mock_source(source_name: str, ids: list[str], fixture_dir: Path) -> MagicMock:
+def _make_source_from_dir(
+    source_name: str,
+    raw_dir: Path,
+    parse_fn: object,
+    ext: str = "xml",
+) -> MagicMock:
+    """Create a mock source that reads from a local directory."""
     src = MagicMock()
     src.source_id = source_name
     src._rate_limiter = MagicMock()
     src._rate_limiter.acquire = AsyncMock()
+    src.parse_to_canonical = parse_fn
 
-    fixture_map = {
-        doc_id: (fixture_dir / f"{doc_id}.xml").read_bytes()
-        for doc_id in ids
-        if (fixture_dir / f"{doc_id}.xml").exists()
-    }
+    # Gather all documents in the directory
+    doc_files = {p.stem: p for p in raw_dir.glob(f"*.{ext}")} if raw_dir.exists() else {}
+
+    if not doc_files:
+        # Fall back to fixtures
+        fixture_dir = FIXTURES / source_name
+        doc_files = {p.stem: p for p in fixture_dir.glob(f"*.{ext}")} if fixture_dir.exists() else {}
+        if doc_files:
+            print(f"  [{source_name}] using test fixtures (data/raw/{source_name}/ is empty)")
 
     async def list_docs() -> list[str]:
-        return [d for d in ids if d in fixture_map]
+        return list(doc_files.keys())
 
     async def fetch(doc_id: str) -> RawDocument:
+        path = doc_files[doc_id]
         return RawDocument(
             source=source_name,
             source_id=doc_id,
-            raw_url=f"fixture://{source_name}/{doc_id}.xml",
-            content_type="xml",
-            raw_bytes=fixture_map[doc_id],
+            raw_url=f"file://{path}",
+            content_type=ext,  # type: ignore[arg-type]
+            raw_bytes=path.read_bytes(),
         )
 
     src.list_documents = list_docs
@@ -61,13 +77,12 @@ def _make_mock_source(source_name: str, ids: list[str], fixture_dir: Path) -> Ma
 
 async def _run_source(
     source_name: str,
-    ids: list[str],
-    fixture_dir: Path,
+    raw_dir: Path,
     parse_fn: object,
     anthropic_key: str,
+    qdrant_url: str,
 ) -> None:
-    mock_src = _make_mock_source(source_name, ids, fixture_dir)
-    mock_src.parse_to_canonical = parse_fn
+    mock_src = _make_source_from_dir(source_name, raw_dir, parse_fn)
 
     storage = IngestStorage(base_dir=DATA_DIR)
     chunker = LegalChunker(max_tokens=1024)
@@ -82,7 +97,7 @@ async def _run_source(
         contextualizer = ctx_mock  # type: ignore[assignment]
 
     embedder = BgeM3Embedder()
-    qdrant = QdrantClient(url=os.getenv("QDRANT_URL", "http://localhost:6333"))
+    qdrant = QdrantClient(url=qdrant_url)
     indexer = QdrantIndexer(qdrant)
 
     pipeline = IngestPipeline(mock_src, chunker, contextualizer, embedder, indexer, storage)
@@ -95,13 +110,14 @@ async def _run_source(
 
 async def main() -> None:
     anthropic_key = os.getenv("ANTHROPIC_API_KEY", "")
-    print("=== ingest-sample (fixture-based) ===")
+    qdrant_url = os.getenv("QDRANT_URL", "http://localhost:6333")
+    print(f"=== ingest-sample === qdrant={qdrant_url}")
 
     boe = BoeSource()
-    await _run_source("boe", SAMPLE_BOE, FIXTURES / "boe", boe.parse_to_canonical, anthropic_key)
+    await _run_source("boe", RAW_DIR / "boe", boe.parse_to_canonical, anthropic_key, qdrant_url)
 
     eurlex = EurlexSource()
-    await _run_source("eurlex", SAMPLE_EURLEX, FIXTURES / "eurlex", eurlex.parse_to_canonical, anthropic_key)
+    await _run_source("eurlex", RAW_DIR / "eurlex", eurlex.parse_to_canonical, anthropic_key, qdrant_url)
 
     print("Done.")
 

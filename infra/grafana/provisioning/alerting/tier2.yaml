@@ -16,6 +16,9 @@ groups:
         condition: A
         data:
           - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
             datasourceUid: prometheus
             model:
               expr: >
@@ -50,6 +53,9 @@ groups:
         condition: A
         data:
           - refId: A
+            relativeTimeRange:
+              from: 3600
+              to: 0
             datasourceUid: prometheus
             model:
               expr: >
@@ -83,6 +89,9 @@ groups:
         condition: A
         data:
           - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
             datasourceUid: prometheus
             model:
               expr: "audit_samples_pending > 30"
@@ -111,6 +120,9 @@ groups:
         condition: A
         data:
           - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
             datasourceUid: prometheus
             model:
               expr: "lex_prompt_evolution_prs_pending > 5"

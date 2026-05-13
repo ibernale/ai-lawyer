@@ -170,25 +170,35 @@ class LegalChunker:
 
     def _node_text(self, doc: CanonicalDocument, node: HierarchyNode) -> str:
         """Extract text for a node from full_text using a heuristic search."""
-        # Try to find article marker in full_text
-        markers = [
-            f"Artículo {node.number}",
-            f"articulo {node.number}",
-            f"Art. {node.number}",
-            f"ARTICLE {node.number}",
-            f"Considerando {node.number}",
-            f"RECITAL {node.number}",
-            f"Anexo {node.number}",
-        ]
         text = doc.full_text
+
+        # Build candidate search markers in priority order
+        markers: list[str] = []
+        if node.number:
+            markers += [
+                f"Artículo {node.number}",
+                f"articulo {node.number}",
+                f"Art. {node.number}",
+                f"ARTICLE {node.number}",
+                f"Considerando {node.number}",
+                f"RECITAL {node.number}",
+                f"Anexo {node.number}",
+            ]
+        # When number is empty (flat BOE format) search by node title
+        if node.title:
+            markers.append(node.title)
+
         for marker in markers:
+            if not marker:
+                continue
             idx = text.find(marker)
             if idx != -1:
                 # Take text from this marker to the next section marker or end
                 end = self._find_next_section(text, idx + 1)
                 return text[idx:end].strip()
+
         # Node not found in full_text — return node title as minimal text
-        return f"{node.level.capitalize()} {node.number}. {node.title}"
+        return f"{node.level.capitalize()} {node.number}. {node.title}".strip()
 
     def _find_next_section(self, text: str, start: int) -> int:
         """Find the position of the next major section heading after start."""

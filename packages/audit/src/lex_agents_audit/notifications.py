@@ -94,7 +94,7 @@ class NotificationManager:
     ) -> int:
         import json as _json
 
-        ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S")
+        ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         payload_str = _json.dumps(payload) if payload is not None else None
         async with aiosqlite.connect(self._db_path) as db:
             cur = await db.execute(
@@ -144,7 +144,7 @@ class NotificationManager:
         return int(row[0]) if row else 0
 
     async def mark_read(self, notification_id: int, read_by: str) -> None:
-        ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S")
+        ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         async with aiosqlite.connect(self._db_path) as db:
             await db.execute(
                 "UPDATE notifications SET read_at=?, read_by=? WHERE id=? AND read_at IS NULL",
@@ -153,7 +153,7 @@ class NotificationManager:
             await db.commit()
 
     async def mark_all_read(self, read_by: str) -> None:
-        ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S")
+        ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         async with aiosqlite.connect(self._db_path) as db:
             await db.execute(
                 "UPDATE notifications SET read_at=?, read_by=? WHERE read_at IS NULL",

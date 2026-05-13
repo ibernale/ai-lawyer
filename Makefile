@@ -95,13 +95,8 @@ build-images: ## Build all Docker images
 	$(DOCKER) $(DC_FILE) build
 
 # ─── Data / ingestion ─────────────────────────────────────────────────────────
-ingest-sample: ## Ingest fixture sample docs via Dagster (BOE + EUR-Lex fixtures)
-	$(UV) run dagster job execute \
-		-f packages/pipeline/src/lex_agents_pipeline/definitions.py \
-		-j ingest_boe_job
-	$(UV) run dagster job execute \
-		-f packages/pipeline/src/lex_agents_pipeline/definitions.py \
-		-j ingest_eurlex_job
+ingest-sample: ## Ingest fixture sample docs directly (BOE + EUR-Lex fixtures, no Dagster subprocess)
+	$(UV) run python scripts/ingest_sample.py
 
 ingest-real: ## Ingest from live BOE + EUR-Lex APIs via Dagster (requires ANTHROPIC_API_KEY)
 	$(UV) run dagster job execute \
