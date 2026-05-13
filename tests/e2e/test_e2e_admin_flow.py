@@ -64,10 +64,10 @@ async def managers(tmp_path):
 @pytest.fixture
 def admin_client(managers):
     from lex_agents_admin.state import set_system_state_manager
-    from lex_agents_audit.audit_trail import set_audit_trail_manager
-    from lex_agents_audit.notifications import set_notification_manager
     from lex_agents_api.auth import CurrentUser, require_auth
     from lex_agents_api.main import app
+    from lex_agents_audit.audit_trail import set_audit_trail_manager
+    from lex_agents_audit.notifications import set_notification_manager
 
     async def _admin() -> CurrentUser:
         return CurrentUser(username="admin", role="admin")
@@ -85,10 +85,10 @@ def admin_client(managers):
 @pytest.fixture
 def operator_client(managers):
     from lex_agents_admin.state import set_system_state_manager
-    from lex_agents_audit.audit_trail import set_audit_trail_manager
-    from lex_agents_audit.notifications import set_notification_manager
     from lex_agents_api.auth import CurrentUser, require_auth
     from lex_agents_api.main import app
+    from lex_agents_audit.audit_trail import set_audit_trail_manager
+    from lex_agents_audit.notifications import set_notification_manager
 
     async def _operator() -> CurrentUser:
         return CurrentUser(username="operator1", role="operator")

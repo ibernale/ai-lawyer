@@ -1,3 +1,4 @@
+# ruff: noqa: T201
 """
 Langfuse alert configuration for lex-agents.
 

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 from lex_agents_admin.rbac import Role, role_gte
 
 
