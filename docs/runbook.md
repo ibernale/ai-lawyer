@@ -21,6 +21,7 @@ operator or admin performs from day-to-day operations to incident response.
 8. [Backup y restore](#8-backup-y-restore)
 9. [Rotación de credenciales](#9-rotación-de-credenciales)
 10. [Emergencias](#10-emergencias)
+11. [AWS Foundation (Fase 9.1)](#11-aws-foundation-fase-91)
 
 ---
 
@@ -779,4 +780,184 @@ docker compose logs api | grep -iE "nif|dni|nombre|email" | wc -l
 #    RGPD Art. 33 — notificación a AEPD en 72h si hay brecha confirmada.
 
 # 6. Una vez contenido, release kill switch y documentar en audit trail.
+```
+
+---
+
+## 11. AWS Foundation (Fase 9.1)
+
+Operaciones sobre la infraestructura AWS (multi-account, CDK, IAM Identity
+Center). Prerequisito: Control Tower activo en eu-central-1 y cuentas creadas.
+
+Ver también: `docs/aws/account-bootstrap.md` (primer despliegue),
+`docs/aws/access.md` (cómo entrar), `docs/aws/foundation.md` (arquitectura).
+
+### 11.1 Levantar foundation desde cero
+
+```bash
+# 1. Completar prerequisitos humanos (ver docs/aws/account-bootstrap.md):
+#    - Crear cuentas en Control Tower Account Factory
+#    - Habilitar IAM Identity Center en management account
+
+# 2. Rellenar account IDs en el contexto CDK
+cd infra/cdk
+cp cdk.context.json.example cdk.context.json
+# Editar cdk.context.json con los account IDs reales:
+#   management, logArchive, security, network, workloadsDev
+
+# 3. Verificar synthesización (sin AWS credentials)
+make cdk-synth
+
+# 4. CDK bootstrap en cada cuenta (ejecutar desde management account)
+for ACCOUNT in LOG_ARCHIVE_ID SECURITY_ID NETWORK_ID WORKLOADS_DEV_ID; do
+  cdk bootstrap aws://${ACCOUNT}/eu-central-1 \
+    --trust MANAGEMENT_ACCOUNT_ID \
+    --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess
+done
+
+# 5. Desplegar en orden de dependencias
+# Management account (Organizations, Identity Center)
+cdk deploy LexAgents-Organizations --profile lex-agents-management
+cdk deploy LexAgents-IdentityCenter --profile lex-agents-management
+
+# Log archive account
+cdk deploy LexAgents-LogArchive-Kms --profile lex-agents-logarchive
+cdk deploy LexAgents-LogArchive --profile lex-agents-logarchive
+
+# Security account
+cdk deploy LexAgents-SecurityBaseline --profile lex-agents-security
+
+# Network account
+cdk deploy LexAgents-NetworkHub --profile lex-agents-network
+
+# Workloads-dev account
+cdk deploy LexAgents-Dev-Kms --profile lex-agents-dev
+cdk deploy LexAgents-Dev-Network --profile lex-agents-dev
+cdk deploy LexAgents-Dev-GithubOidc --profile lex-agents-dev
+```
+
+### 11.2 Añadir un usuario IAM Identity Center
+
+```bash
+# Ver instrucciones del script interactivo
+make idc-bootstrap
+
+# O manualmente vía consola:
+# 1. https://eu-central-1.console.aws.amazon.com/singlesignon/home
+# 2. Users → Add user → Introducir email corporativo
+# 3. Groups → Asignar al grupo apropiado:
+#    admins / developers / data-analysts / security-auditors
+# 4. Account assignments → asignar permission set al account objetivo
+# 5. Usuario recibe email de invitación y configura MFA WebAuthn
+
+# Verificar assignment (requiere CLI con permisos de Identity Center):
+aws sso-admin list-account-assignments \
+  --instance-arn $(aws sso-admin list-instances --query 'Instances[0].InstanceArn' --output text) \
+  --account-id WORKLOADS_DEV_ACCOUNT_ID \
+  --permission-set-arn DEVELOPER_PS_ARN
+```
+
+### 11.3 Rotar KMS keys
+
+Las CMK de lex-agents tienen rotación automática anual activada. No se
+requiere acción manual rutinaria.
+
+Para verificar el estado de rotación:
+
+```bash
+# Listar keys y estado de rotación en workloads-dev
+aws kms list-aliases --profile lex-agents-dev | \
+  jq '.Aliases[] | select(.AliasName | startswith("alias/lex-agents"))'
+
+# Verificar que la rotación está habilitada en una key específica
+aws kms get-key-rotation-status \
+  --key-id alias/lex-agents-dev-rds \
+  --profile lex-agents-dev
+# Esperado: {"KeyRotationEnabled": true}
+
+# Si la rotación está desactivada (no debería ocurrir con CDK):
+aws kms enable-key-rotation \
+  --key-id KEY_ID \
+  --profile lex-agents-dev
+```
+
+En caso de compromiso de una key (ver `docs/incident-response.md`):
+
+```bash
+# 1. Crear nueva key vía CDK (actualizar alias en kms.ts + cdk deploy)
+# 2. Re-cifrar los datos con la nueva key (Aurora: managed rotation; S3: batch re-encrypt)
+# 3. Programar eliminación de la key comprometida (30 días window)
+aws kms schedule-key-deletion \
+  --key-id KEY_ID \
+  --pending-window-in-days 30 \
+  --profile lex-agents-dev
+```
+
+### 11.4 Investigar GuardDuty findings
+
+```bash
+# Ver findings activos en security account (delegated admin)
+aws guardduty list-findings \
+  --detector-id $(aws guardduty list-detectors --query 'DetectorIds[0]' --output text \
+                  --profile lex-agents-security) \
+  --finding-criteria '{"Criterion":{"severity":{"Gte":7}}}' \
+  --profile lex-agents-security
+
+# Obtener detalle de un finding específico
+aws guardduty get-findings \
+  --detector-id DETECTOR_ID \
+  --finding-ids FINDING_ID \
+  --profile lex-agents-security | jq '.Findings[0]'
+
+# Findings también visibles en Security Hub con contexto adicional:
+# https://eu-central-1.console.aws.amazon.com/securityhub/home (security account)
+
+# Escalado a SNS (automático para severity ≥ 7 vía EventBridge):
+# → Topic lex-agents-security-alerts → CloudWatch Logs /lex-agents/security/alerts
+# En Fase 10: → Slack/PagerDuty
+
+# Marcar finding como archivado tras investigación:
+aws guardduty archive-findings \
+  --detector-id DETECTOR_ID \
+  --finding-ids FINDING_ID \
+  --profile lex-agents-security
+```
+
+Clasificación de severidad GuardDuty:
+
+| Severidad | Rango | Acción |
+| --------- | ----- | ------ |
+| CRITICAL | 9.0–10.0 | P1 — respuesta inmediata, activar kill switch si procede |
+| HIGH | 7.0–8.9 | P2 — investigar en < 4h (DORA Art.19) |
+| MEDIUM | 4.0–6.9 | P3 — revisar en el día |
+| LOW | 1.0–3.9 | P4 — revisar semanalmente |
+
+### 11.5 Acceso vía SSM Session Manager
+
+> **Nota Fase 9.1:** SSM Session Manager se configura en Fase 9.2 cuando se
+> despliegan los contenedores ECS. Esta sección es un placeholder.
+
+En Fase 9.2+, para conectar a un container ECS en workloads-dev **sin SSH**:
+
+```bash
+# Prerequisito: aws session-manager-plugin instalado localmente
+# https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html
+
+# Listar tasks ECS del servicio API
+aws ecs list-tasks \
+  --cluster lex-agents-dev \
+  --service-name lex-agents-api \
+  --profile lex-agents-dev
+
+# Iniciar sesión interactiva en el container
+aws ecs execute-command \
+  --cluster lex-agents-dev \
+  --task TASK_ID \
+  --container lex-agents-api \
+  --interactive \
+  --command "/bin/sh" \
+  --profile lex-agents-dev
+
+# Todas las sesiones quedan registradas en CloudTrail:
+# aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=StartSession
 ```

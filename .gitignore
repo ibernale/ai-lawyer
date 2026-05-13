@@ -80,6 +80,15 @@ secrets/
 data/raw/
 data/canonical/
 data/processed/
+data/chunked/
+data/contexts/
+data/contextualized/
+data/embedded/
+data/*.db
+
+# ─── Claude Code local state ──────────────────────────────────────────────────
+.claude/plans/
+.claude/worktrees/
 
 # ─── Qdrant local indexes ─────────────────────────────────────────────────────
 .qdrant/
@@ -117,6 +126,14 @@ logs/
 .playwright/
 playwright-report/
 test-results/
+
+# ─── CDK ──────────────────────────────────────────────────────────────────────
+infra/cdk/cdk.out/
+infra/cdk/cdk.context.json
+infra/cdk/dist/
+infra/cdk/*.js
+infra/cdk/*.d.ts
+infra/cdk/node_modules/
 
 # ─── Misc ─────────────────────────────────────────────────────────────────────
 *.bak

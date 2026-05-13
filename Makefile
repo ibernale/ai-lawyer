@@ -140,3 +140,38 @@ admin-bootstrap:
 
 user-add:
 	@python scripts/admin_bootstrap.py --role $(ROLE) --username $(USERNAME)
+
+# ── CDK ──────────────────────────────────────────────────────────────────────
+.PHONY: cdk-install cdk-synth cdk-diff cdk-deploy-dev cdk-nag cdk-test idc-bootstrap
+
+cdk-install: ## Install CDK dependencies
+	cd infra/cdk && npm ci
+
+cdk-synth: cdk-install ## Synthesize all CDK stacks (uses example context)
+	cd infra/cdk && cp -n cdk.context.json.example cdk.context.json 2>/dev/null || true
+	cd infra/cdk && npx cdk synth --all \
+		--context lexAgents:rootOuId=$${AWS_ROOT_OU_ID:-r-placeholder} \
+		--context lexAgents:identityCenterInstanceArn=$${AWS_IDC_INSTANCE_ARN:-arn:aws:sso:::instance/placeholder}
+
+cdk-diff: cdk-install ## Show CDK diff for workloads-dev stacks
+	cd infra/cdk && npx cdk diff LexAgents-Dev-Kms LexAgents-Dev-Network LexAgents-Dev-GithubOidc
+
+cdk-deploy-dev: cdk-install ## Deploy workloads-dev stacks (requires AWS credentials)
+	cd infra/cdk && npx cdk deploy \
+		LexAgents-Dev-Kms \
+		LexAgents-Dev-Network \
+		LexAgents-Dev-GithubOidc \
+		--require-approval never
+
+cdk-nag: cdk-install ## Run cdk-nag compliance checks
+	cd infra/cdk && cp -n cdk.context.json.example cdk.context.json 2>/dev/null || true
+	cd infra/cdk && npx cdk synth --all \
+		--context lexAgents:rootOuId=$${AWS_ROOT_OU_ID:-r-placeholder} \
+		--context lexAgents:identityCenterInstanceArn=$${AWS_IDC_INSTANCE_ARN:-arn:aws:sso:::instance/placeholder} \
+		2>&1 | grep -E '\[Error\]|\[Warning\]|NagPack' || echo "cdk-nag: no unsuppressed findings"
+
+cdk-test: cdk-install ## Run CDK unit tests
+	cd infra/cdk && npx jest --coverage
+
+idc-bootstrap: ## Print IAM Identity Center bootstrap instructions
+	bash scripts/idc-bootstrap.sh
