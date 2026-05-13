@@ -10,19 +10,21 @@ RUN pnpm install --frozen-lockfile --filter @lex-agents/web
 
 FROM base AS builder
 WORKDIR /app
+# Workspace manifests needed for Turbopack root detection in Next.js 16
+COPY package.json pnpm-workspace.yaml ./
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY apps/web ./apps/web
-# next.config needs to emit standalone output
-RUN cd apps/web && pnpm build
+WORKDIR /app/apps/web
+RUN pnpm build
 
 FROM node:22-alpine AS runner
 ENV NODE_ENV=production
 WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 COPY --from=builder /app/apps/web/.next/standalone ./
-COPY --from=builder /app/apps/web/.next/static .next/static
-COPY --from=builder /app/apps/web/public public
+COPY --from=builder /app/apps/web/.next/static ./.next/static
+COPY --from=builder /app/apps/web/public ./public
 HEALTHCHECK --interval=15s --timeout=5s --retries=5 \
   CMD wget -qO- http://localhost:3000/ || exit 1
 USER nextjs
