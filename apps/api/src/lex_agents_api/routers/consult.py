@@ -6,7 +6,7 @@ import json
 import re
 from datetime import UTC, datetime
 from functools import lru_cache
-from typing import Any
+from typing import Any, Literal
 
 import anthropic as _anthropic
 import structlog
@@ -54,7 +54,7 @@ class ConsultRequestBody(BaseModel):
     jurisdiction_hint: str | None = None
     jurisdictions: list[str] | None = None
     output_type: str | None = None  # dictamen|nota|memo_comite|analisis_riesgo|analisis_comparativo
-    depth: str | None = None  # "shallow" | "standard" | "deep"
+    depth: Literal["shallow", "standard", "deep"] | None = None
 
     @field_validator("output_type")
     @classmethod
@@ -74,7 +74,9 @@ class ConsultRequestBody(BaseModel):
 
     @field_validator("depth")
     @classmethod
-    def validate_depth(cls, v: str | None) -> str | None:
+    def validate_depth(
+        cls, v: Literal["shallow", "standard", "deep"] | None
+    ) -> Literal["shallow", "standard", "deep"] | None:
         if v is not None and v not in ("shallow", "standard", "deep"):
             raise ValueError("depth must be 'shallow', 'standard', or 'deep'")
         return v
@@ -237,7 +239,7 @@ async def consult(
         query=body.query,
         jurisdiction_hint=jurisdiction_hint,
         output_type=body.output_type,
-        depth=body.depth,  # type: ignore[arg-type]  # validated by field_validator
+        depth=body.depth,
     )
 
     # Short-circuit for queries outside supported scope (no RAG/LLM needed)
