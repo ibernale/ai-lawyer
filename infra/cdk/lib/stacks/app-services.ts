@@ -54,15 +54,18 @@ export class AppServicesStack extends cdk.Stack {
 
     // Image digests are required so task definitions never reference :latest.
     // In CI these come from --context flags set after docker/build-push-action.
-    const imageDigestApi = this.node.tryGetContext('imageDigestApi') as string | undefined;
-    const imageDigestWeb = this.node.tryGetContext('imageDigestWeb') as string | undefined;
+    const imageDigestApi = this.node.tryGetContext("imageDigestApi") as
+      | string
+      | undefined;
+    const imageDigestWeb = this.node.tryGetContext("imageDigestWeb") as
+      | string
+      | undefined;
     if (!imageDigestApi || !imageDigestWeb) {
       throw new Error(
-        'CDK context keys imageDigestApi and imageDigestWeb are required. ' +
-        'Pass them via --context imageDigestApi=sha256:... --context imageDigestWeb=sha256:...',
+        "CDK context keys imageDigestApi and imageDigestWeb are required. " +
+          "Pass them via --context imageDigestApi=sha256:... --context imageDigestWeb=sha256:...",
       );
     }
-
 
     // ── CloudWatch log group ───────────────────────────────────────────────
     const logGroup = new logs.LogGroup(this, "AppLogGroup", {

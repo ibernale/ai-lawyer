@@ -237,7 +237,7 @@ async def consult(
         query=body.query,
         jurisdiction_hint=jurisdiction_hint,
         output_type=body.output_type,
-        depth=body.depth,
+        depth=body.depth,  # type: ignore[arg-type]  # validated by field_validator
     )
 
     # Short-circuit for queries outside supported scope (no RAG/LLM needed)
