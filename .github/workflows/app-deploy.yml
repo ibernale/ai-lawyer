@@ -64,7 +64,9 @@ jobs:
         run: uv run --with "mypy>=1.0" mypy packages/shared/src packages/audit/src packages/admin/src apps/api/src
 
       - name: Test (pytest)
-        run: uv run pytest packages/ apps/api/ -x -q --tb=short --ignore=packages/evals_advanced
+        # Only test the packages installed above; other packages (agents, verifier,
+        # rag, ingest, evals_advanced…) are tested by ci.yml which runs uv sync --all-packages.
+        run: uv run pytest packages/shared packages/audit packages/admin apps/api/ -x -q --tb=short
 
       - name: Upload test results
         if: always()
