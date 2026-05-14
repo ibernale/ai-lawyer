@@ -71,11 +71,20 @@ export class NetworkSpokeStack extends cdk.Stack {
     this.sgAlb = new ec2.SecurityGroup(this, 'SgAlb', {
       vpc: this.vpc,
       securityGroupName: `lex-agents-${envName}-alb`,
-      description: 'ALB security group — ingress from CloudFront only',
+      description: 'ALB security group - ingress from CloudFront only',
       allowAllOutbound: true,
     });
-    // CloudFront managed prefix list for eu-central-1
-    const cloudfrontPrefixList = ec2.Peer.prefixList('pl-9ea0e7f7'); // CloudFront eu-central-1
+    // CloudFront managed prefix list — ID varies by region
+    const cloudfrontPrefixListIds: Record<string, string> = {
+      'eu-west-1':   'pl-4fa04526',
+      'eu-west-2':   'pl-93a247fa',
+      'eu-west-3':   'pl-75b1541c',
+      'eu-central-1':'pl-9ea0e7f7',
+      'us-east-1':   'pl-3b927c52',
+    };
+    const cloudfrontPrefixList = ec2.Peer.prefixList(
+      cloudfrontPrefixListIds[this.region] ?? 'pl-4fa04526',
+    );
     this.sgAlb.addIngressRule(cloudfrontPrefixList, ec2.Port.tcp(443), 'HTTPS from CloudFront');
 
     // ECS API
@@ -110,7 +119,7 @@ export class NetworkSpokeStack extends cdk.Stack {
     this.sgAgentcore = new ec2.SecurityGroup(this, 'SgAgentcore', {
       vpc: this.vpc,
       securityGroupName: `lex-agents-${envName}-agentcore`,
-      description: 'AgentCore runtime — egress only',
+      description: 'AgentCore runtime - egress only',
       allowAllOutbound: false,
     });
     this.sgAgentcore.addEgressRule(ec2.Peer.ipv4(cfg.vpcCidr), ec2.Port.tcp(443), 'Bedrock VPC endpoint');

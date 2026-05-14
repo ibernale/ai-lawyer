@@ -26,7 +26,7 @@ export class GithubOidcStack extends cdk.Stack {
     // ── Deploy Role ───────────────────────────────────────────────────────
     this.deployRole = new iam.Role(this, 'GitHubDeployRole', {
       roleName: `github-deploy-${envName}`,
-      description: `GitHub Actions OIDC deploy role for ${envName} — lex-agents`,
+      description: `GitHub Actions OIDC deploy role for ${envName} - lex-agents`,
       assumedBy: new iam.WebIdentityPrincipal(provider.openIdConnectProviderArn, {
         StringEquals: {
           'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',

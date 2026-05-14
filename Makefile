@@ -145,7 +145,7 @@ user-add:
 .PHONY: cdk-install cdk-synth cdk-diff cdk-deploy-dev cdk-nag cdk-test idc-bootstrap
 
 cdk-install: ## Install CDK dependencies
-	cd infra/cdk && npm ci
+	pnpm install --filter @lex-agents/infra-cdk
 
 cdk-synth: cdk-install ## Synthesize all CDK stacks (uses example context)
 	cd infra/cdk && cp -n cdk.context.json.example cdk.context.json 2>/dev/null || true

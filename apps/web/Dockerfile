@@ -25,10 +25,14 @@ RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 COPY --from=builder /app/apps/web/.next/standalone ./
 COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder /app/apps/web/public ./apps/web/public
-HEALTHCHECK --interval=15s --timeout=5s --retries=5 \
-  CMD wget -qO- http://127.0.0.1:3000/ || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=60s \
+  CMD ["node", "-e", "require('http').get('http://127.0.0.1:3000/',r=>process.exit(r.statusCode<400?0:1)).on('error',()=>process.exit(1))"]
 USER nextjs
 EXPOSE 3000
-ENV PORT=3000 HOSTNAME="0.0.0.0"
+# PORT is read by Next.js standalone server.js.
+# HOSTNAME: Docker/ECS overrides this with the container's EC2 hostname; we force it
+# back to 0.0.0.0 via the CMD wrapper so Next.js listens on all interfaces.
+ENV PORT=3000
 WORKDIR /app/apps/web
-CMD ["node", "server.js"]
+# Use shell wrapper to force HOSTNAME=0.0.0.0 regardless of what Docker injected.
+CMD ["/bin/sh", "-c", "HOSTNAME=0.0.0.0 exec node server.js"]

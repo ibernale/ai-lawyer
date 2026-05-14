@@ -12,6 +12,8 @@ import { SecurityBaselineStack } from '../lib/stacks/security-baseline';
 import { NetworkHubStack } from '../lib/stacks/network-hub';
 import { NetworkSpokeStack } from '../lib/stacks/network-spoke';
 import { GithubOidcStack } from '../lib/stacks/github-oidc';
+import { AppEcrStack } from '../lib/stacks/app-ecr';
+import { AppServicesStack } from '../lib/stacks/app-services';
 
 const app = new cdk.App();
 const accounts = getAccounts(app);
@@ -60,10 +62,22 @@ const _devKms = new KmsStack(app, 'LexAgents-Dev-Kms', {
   includeWorkloadKeys: true,
 });
 
-new NetworkSpokeStack(app, 'LexAgents-Dev-Network', {
+const networkSpoke = new NetworkSpokeStack(app, 'LexAgents-Dev-Network', {
   env: devEnv,
   envName: 'dev',
   logArchiveAccountId: accounts.logArchive,
+});
+
+const devEcr = new AppEcrStack(app, 'LexAgents-Dev-Ecr', {
+  env: devEnv,
+  envName: 'dev',
+});
+
+new AppServicesStack(app, 'LexAgents-Dev-App', {
+  env: devEnv,
+  envName: 'dev',
+  networkStack: networkSpoke,
+  ecrStack: devEcr,
 });
 
 new GithubOidcStack(app, 'LexAgents-Dev-GithubOidc', {

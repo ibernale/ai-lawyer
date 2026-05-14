@@ -26,7 +26,7 @@ export class NetworkHubStack extends cdk.Stack {
     // ── Hub VPC ───────────────────────────────────────────────────────────
     const hubConstruct = new VpcWithEndpoints(this, 'HubVpc', {
       vpcCidr: HUB_VPC_CIDR,
-      availabilityZones: ['eu-central-1a', 'eu-central-1b'], // hub needs only 2 AZs
+      availabilityZones: [`${this.region}a`, `${this.region}b`], // hub needs only 2 AZs
       natGateways: 0, // Hub VPC is private-only; endpoints serve all attached VPCs
       createPublicSubnets: false,
     });
