@@ -16,11 +16,11 @@ RPO and RTO targets. The platform currently has no DR capability.
 
 Three DR tiers were considered:
 
-| Tier | Description | RTO | RPO | Monthly cost |
-|---|---|---|---|---|
-| **Backup-Restore** | Periodic backups replicated cross-region; restore on DR event | 4–8h | 24h | ~$30–50/month |
-| **Pilot Light** | Minimal infrastructure running in eu-west-1; scale up on event | 1–2h | 1h | ~$200–400/month |
-| **Warm Standby** | Full-capacity replica always running | 15–30min | 5min | ~$800–1200/month |
+| Tier               | Description                                                    | RTO      | RPO  | Monthly cost     |
+| ------------------ | -------------------------------------------------------------- | -------- | ---- | ---------------- |
+| **Backup-Restore** | Periodic backups replicated cross-region; restore on DR event  | 4–8h     | 24h  | ~$30–50/month    |
+| **Pilot Light**    | Minimal infrastructure running in eu-west-1; scale up on event | 1–2h     | 1h   | ~$200–400/month  |
+| **Warm Standby**   | Full-capacity replica always running                           | 15–30min | 5min | ~$800–1200/month |
 
 For the development phase (Fase 9), cost justification for Pilot Light or Warm Standby
 does not exist. Backup-Restore satisfies DORA requirements for non-production environments
@@ -35,39 +35,44 @@ production launch (Fase 10).
 
 ### RPO / RTO targets
 
-| Environment | RPO | RTO |
-|---|---|---|
-| Dev (Fase 9) | 24h | 8h |
-| Staging (Fase 9.5) | 4h | 4h |
-| Production (Fase 10) | 1h | 2h (Pilot Light) |
+| Environment          | RPO | RTO              |
+| -------------------- | --- | ---------------- |
+| Dev (Fase 9)         | 24h | 8h               |
+| Staging (Fase 9.5)   | 4h  | 4h               |
+| Production (Fase 10) | 1h  | 2h (Pilot Light) |
 
 ### Aurora Serverless v2 backup
 
 **Automated backups** (already enabled in DataStack with 7-day retention):
+
 - `backupRetentionPeriod: 7` covers point-in-time recovery within the retention window.
 - Cross-region: AWS Backup `BackupPlan` copies Aurora snapshots to eu-west-1.
   Retention: 30 days in eu-west-1.
 
 **AWS Backup configuration** (in DataStack):
+
 ```typescript
-const backupPlan = new backup.BackupPlan(this, 'AuroraBackupPlan', {
+const backupPlan = new backup.BackupPlan(this, "AuroraBackupPlan", {
   backupPlanName: `lex-agents-${envName}-aurora-dr`,
   backupPlanRules: [
     backup.BackupPlanRule.daily({
       completionWindow: Duration.hours(2),
       startWindow: Duration.hours(1),
       deleteAfter: Duration.days(7),
-      copyActions: [{
-        destinationBackupVault: backup.BackupVault.fromBackupVaultArn(
-          this, 'DrVault',
-          `arn:aws:backup:${DR_REGION}:${this.account}:backup-vault:lex-agents-${envName}-dr`,
-        ),
-        deleteAfter: Duration.days(30),
-      }],
+      copyActions: [
+        {
+          destinationBackupVault: backup.BackupVault.fromBackupVaultArn(
+            this,
+            "DrVault",
+            `arn:aws:backup:${DR_REGION}:${this.account}:backup-vault:lex-agents-${envName}-dr`,
+          ),
+          deleteAfter: Duration.days(30),
+        },
+      ],
     }),
   ],
 });
-backupPlan.addSelection('AuroraSelection', {
+backupPlan.addSelection("AuroraSelection", {
   resources: [backup.BackupResource.fromRdsDatabaseCluster(this.aurora)],
 });
 ```
@@ -78,6 +83,7 @@ requires a separate CloudFormation stack in eu-west-1). Documented in `docs/aws/
 ### S3 cross-region replication (CRR)
 
 S3 CRR enabled on three buckets in DataStack:
+
 - `lex-agents-raw-${env}` → replica in eu-west-1
 - `lex-agents-canonical-${env}` → replica in eu-west-1
 - `lex-agents-backups-${env}` → replica in eu-west-1
@@ -106,6 +112,7 @@ Langfuse S3 export (migration scripts from ADR 0048) also stored in the backups 
 ## DR Runbook location
 
 `docs/aws/dr-plan.md` — step-by-step procedure including:
+
 1. DR trigger criteria (detection, escalation, decision matrix)
 2. Aurora restore from eu-west-1 snapshot
 3. S3 replication verification
@@ -118,12 +125,14 @@ Langfuse S3 export (migration scripts from ADR 0048) also stored in the backups 
 ## Consequences
 
 ### Positive
+
 - DORA Art. 12 (business continuity) satisfied for dev phase with documented RPO/RTO.
 - AWS Backup + S3 CRR are fully managed; minimal operational overhead.
 - Runbook established now; promotion to Pilot Light at Fase 10 requires adding
   infrastructure resources to eu-west-1, not rewriting procedures.
 
 ### Negative / mitigations
+
 - **24h RPO in dev**: acceptable given dev data is largely reproducible (re-ingest
   from sources). User consultation data is the only non-reproducible asset;
   7-day automated Aurora backups provide intra-region PITR.

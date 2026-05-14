@@ -12,11 +12,11 @@
 Este documento describe la estructura del evidence pack de compliance DORA para
 lex-agents. Las evidencias se recopilan de dos formas:
 
-| Tipo | Frecuencia | Fuente | Ubicación en S3 |
-|------|------------|--------|-----------------|
-| **Automática** | Diaria (02:00 UTC) | Lambda `evidence_collector` | `evidence/{YYYY-MM-DD}/{check}.json` |
-| **Resumen diario** | Diaria (02:00 UTC) | Lambda `evidence_collector` | `reports/{YYYY-MM-DD}/summary.md` |
-| **Manual trimestral** | Trimestral | Auditoría humana | `manual/{YYYY-Q{N}}/evidence.md` |
+| Tipo                  | Frecuencia         | Fuente                      | Ubicación en S3                      |
+| --------------------- | ------------------ | --------------------------- | ------------------------------------ |
+| **Automática**        | Diaria (02:00 UTC) | Lambda `evidence_collector` | `evidence/{YYYY-MM-DD}/{check}.json` |
+| **Resumen diario**    | Diaria (02:00 UTC) | Lambda `evidence_collector` | `reports/{YYYY-MM-DD}/summary.md`    |
+| **Manual trimestral** | Trimestral         | Auditoría humana            | `manual/{YYYY-Q{N}}/evidence.md`     |
 
 **Bucket:** `s3://lex-agents-{env}-compliance-docs-{account-id}/`
 **Retención:** Object Lock COMPLIANCE, 7 años (DORA Art. 28 ICT record keeping)
@@ -35,6 +35,7 @@ de compliance entre 0 y 100%:
 **Baseline esperado:** Todas las CMK del account tienen rotación anual activada
 
 Campos del evidence JSON:
+
 ```json
 {
   "check": "kms_rotation_enabled",
@@ -45,6 +46,7 @@ Campos del evidence JSON:
 ```
 
 Acción si falla: activar rotación vía CDK (`enableKeyRotation: true`) o:
+
 ```bash
 aws kms enable-key-rotation --key-id <KEY_ID> --profile lex-agents-dev
 ```
@@ -57,6 +59,7 @@ aws kms enable-key-rotation --key-id <KEY_ID> --profile lex-agents-dev
 **Baseline esperado:** Trail multi-región activo con log file validation
 
 Campos del evidence JSON:
+
 ```json
 {
   "check": "cloudtrail_enabled",
@@ -68,6 +71,7 @@ Campos del evidence JSON:
 ```
 
 Acción si falla:
+
 ```bash
 aws cloudtrail start-logging --name <TRAIL_ARN> --profile lex-agents-management
 ```
@@ -80,6 +84,7 @@ aws cloudtrail start-logging --name <TRAIL_ARN> --profile lex-agents-management
 **Baseline esperado:** Detector activo, 0 findings HIGH/CRITICAL sin resolver
 
 Campos del evidence JSON:
+
 ```json
 {
   "check": "guardduty_enabled",
@@ -99,6 +104,7 @@ Acción si hay findings HIGH/CRITICAL: ver runbook §11.4 (Investigar GuardDuty 
 **Baseline esperado:** Recorder activo, ≥ 80% de reglas en estado COMPLIANT
 
 Campos del evidence JSON:
+
 ```json
 {
   "check": "config_compliance",
@@ -180,6 +186,7 @@ TBLPROPERTIES ('has_encrypted_data'='true');
 ```
 
 Consulta de tendencia:
+
 ```sql
 SELECT
   date_parse(split_part("$path", '/', 5), '%Y-%m-%d') AS evidence_date,
@@ -215,6 +222,7 @@ grep -h "Score:" ./reports/*/summary.md | sort
 ### 5.2 Controles que requieren verificación manual
 
 **Art. 9.2 — IAM MFA enforcement:**
+
 ```bash
 aws iam generate-credential-report --profile lex-agents-management
 aws iam get-credential-report --profile lex-agents-management \
@@ -225,6 +233,7 @@ aws iam get-credential-report --profile lex-agents-management \
 - [ ] 0 usuarios IAM con acceso consola sin MFA activo
 
 **Art. 9.4 — Network segmentation:**
+
 ```bash
 aws ec2 describe-security-groups \
   --filters "Name=ip-permission.cidr,Values=0.0.0.0/0" \
@@ -236,6 +245,7 @@ aws ec2 describe-security-groups \
 - [ ] 0 SGs con ingress 0.0.0.0/0 en puertos != 443
 
 **Art. 10.2 — CloudTrail log integrity:**
+
 ```bash
 aws cloudtrail validate-logs \
   --trail-arn <TRAIL_ARN> \
@@ -248,6 +258,7 @@ aws cloudtrail validate-logs \
 - [ ] CloudTrail log integrity validation: 0 invalid/missing files
 
 **Art. 11.2 — Backup verification:**
+
 ```bash
 # Verificar que AWS Backup ha ejecutado al menos un backup exitoso
 aws backup list-backup-jobs \
@@ -261,10 +272,12 @@ aws backup list-backup-jobs \
 - [ ] AWS Backup: al menos 1 backup Aurora completado en los últimos 30 días
 
 **Art. 11.1 — DR plan validation:**
+
 - [ ] `docs/aws/dr-plan.md` revisado y sin cambios pendientes
 - [ ] RTO/RPO documentados cumplen el objetivo del trimestre
 
 **Art. 28 — Terceros ICT:**
+
 - [ ] AWS Enterprise Support SLA vigente
 - [ ] Anthropic/Bedrock DPA actualizada
 - [ ] Registro de proveedores ICT actualizado en Santander GRC
@@ -274,14 +287,14 @@ aws backup list-backup-jobs \
 ```markdown
 ## Firma de auditoría
 
-| Campo | Valor |
-|-------|-------|
-| Auditor | [Nombre y cargo] |
-| Fecha | YYYY-MM-DD |
-| Período cubierto | Q{N} YYYY (YYYY-MM-DD — YYYY-MM-DD) |
-| Resultado | PASS / PASS con observaciones / FAIL |
-| Observaciones | [Si las hay] |
-| Próxima revisión | YYYY-MM-DD |
+| Campo            | Valor                                |
+| ---------------- | ------------------------------------ |
+| Auditor          | [Nombre y cargo]                     |
+| Fecha            | YYYY-MM-DD                           |
+| Período cubierto | Q{N} YYYY (YYYY-MM-DD — YYYY-MM-DD)  |
+| Resultado        | PASS / PASS con observaciones / FAIL |
+| Observaciones    | [Si las hay]                         |
+| Próxima revisión | YYYY-MM-DD                           |
 ```
 
 ---
@@ -309,22 +322,22 @@ detecta un fallo en un control DORA:
 
 ## 7. Mapa de evidencias → artículos DORA
 
-| Check automático / control manual | Artículo DORA | Periodicidad |
-|-----------------------------------|---------------|--------------|
-| `kms_rotation_enabled` | Art. 9.3 Encryption | Diaria |
-| `cloudtrail_enabled` | Art. 10.2 Logging | Diaria |
-| `guardduty_enabled` | Art. 10.1 Detection | Diaria |
-| `config_compliance` | Art. 8.1, 8.4 Risk mgmt | Diaria |
-| IAM MFA coverage | Art. 9.2 Access control | Trimestral |
-| SG no 0.0.0.0/0 | Art. 9.4 Network | Trimestral |
-| CloudTrail log validation | Art. 10.2 Audit | Trimestral |
-| AWS Backup completado | Art. 11.2 Recovery | Trimestral |
-| DR plan reviewed | Art. 11.1 Continuity | Trimestral |
-| ICT provider register | Art. 28 Third-party | Trimestral |
-| Audit Manager DORA assessment | Arts. 8–11 (agregado) | Trimestral |
-| Security Hub DORA insights | Arts. 9, 10 | Continuo |
+| Check automático / control manual | Artículo DORA           | Periodicidad |
+| --------------------------------- | ----------------------- | ------------ |
+| `kms_rotation_enabled`            | Art. 9.3 Encryption     | Diaria       |
+| `cloudtrail_enabled`              | Art. 10.2 Logging       | Diaria       |
+| `guardduty_enabled`               | Art. 10.1 Detection     | Diaria       |
+| `config_compliance`               | Art. 8.1, 8.4 Risk mgmt | Diaria       |
+| IAM MFA coverage                  | Art. 9.2 Access control | Trimestral   |
+| SG no 0.0.0.0/0                   | Art. 9.4 Network        | Trimestral   |
+| CloudTrail log validation         | Art. 10.2 Audit         | Trimestral   |
+| AWS Backup completado             | Art. 11.2 Recovery      | Trimestral   |
+| DR plan reviewed                  | Art. 11.1 Continuity    | Trimestral   |
+| ICT provider register             | Art. 28 Third-party     | Trimestral   |
+| Audit Manager DORA assessment     | Arts. 8–11 (agregado)   | Trimestral   |
+| Security Hub DORA insights        | Arts. 9, 10             | Continuo     |
 
 ---
 
-*Documento mantenido por el Platform Team. Actualizar en cada release mayor.*
-*Versión: 0.5.0 — 2026-05-14*
+_Documento mantenido por el Platform Team. Actualizar en cada release mayor._
+_Versión: 0.5.0 — 2026-05-14_

@@ -12,14 +12,15 @@
 
 El procedimiento de DR se activa cuando concurren **todos** los criterios siguientes:
 
-| Criterio | Descripción |
-|---|---|
-| **Región primaria inaccesible** | eu-central-1 no responde a peticiones durante > 30 minutos |
-| **Impacto confirmado en datos** | Aurora o S3 no disponibles (no solo latencia elevada) |
-| **Decisión escalada** | Responsable de plataforma + responsable de negocio aprueban activación |
-| **SLA incumplido o en riesgo** | RTO dev: 8h / RTO staging: 4h / RTO prod: 2h |
+| Criterio                        | Descripción                                                            |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| **Región primaria inaccesible** | eu-central-1 no responde a peticiones durante > 30 minutos             |
+| **Impacto confirmado en datos** | Aurora o S3 no disponibles (no solo latencia elevada)                  |
+| **Decisión escalada**           | Responsable de plataforma + responsable de negocio aprueban activación |
+| **SLA incumplido o en riesgo**  | RTO dev: 8h / RTO staging: 4h / RTO prod: 2h                           |
 
 **No activar DR por:**
+
 - Latencia elevada transitoria (< 30 min)
 - Degradación parcial de un servicio individual (escalar dentro de la región primaria)
 - Fallo de una única AZ (Aurora Serverless v2 es multi-AZ por diseño)
@@ -30,15 +31,15 @@ El procedimiento de DR se activa cuando concurren **todos** los criterios siguie
 
 ## 2. Inventario de activos con RPO/RTO
 
-| Activo | Región primaria | Región DR | RPO dev | RTO dev | Mecanismo |
-|---|---|---|---|---|---|
-| Aurora PostgreSQL (`lex-agents-dev`) | eu-central-1 | eu-west-1 | 24h | 8h | AWS Backup daily snapshot |
-| Aurora Langfuse (`langfuse-dev`) | eu-central-1 | eu-west-1 | 24h | 8h | AWS Backup daily snapshot |
-| S3 raw (`lex-agents-raw-dev`) | eu-central-1 | eu-west-1 | ~15min | — | S3 CRR continuo |
-| S3 canonical (`lex-agents-canonical-dev`) | eu-central-1 | eu-west-1 | ~15min | — | S3 CRR continuo |
-| S3 backups (`lex-agents-backups-dev`) | eu-central-1 | eu-west-1 | ~15min | — | S3 CRR continuo |
-| Código de aplicación | GitHub | GitHub | 0 | 30min | Redesplegar desde rama `main` |
-| Infraestructura CDK | GitHub | GitHub | 0 | 30min | `cdk deploy` en cuenta DR |
+| Activo                                    | Región primaria | Región DR | RPO dev | RTO dev | Mecanismo                     |
+| ----------------------------------------- | --------------- | --------- | ------- | ------- | ----------------------------- |
+| Aurora PostgreSQL (`lex-agents-dev`)      | eu-central-1    | eu-west-1 | 24h     | 8h      | AWS Backup daily snapshot     |
+| Aurora Langfuse (`langfuse-dev`)          | eu-central-1    | eu-west-1 | 24h     | 8h      | AWS Backup daily snapshot     |
+| S3 raw (`lex-agents-raw-dev`)             | eu-central-1    | eu-west-1 | ~15min  | —       | S3 CRR continuo               |
+| S3 canonical (`lex-agents-canonical-dev`) | eu-central-1    | eu-west-1 | ~15min  | —       | S3 CRR continuo               |
+| S3 backups (`lex-agents-backups-dev`)     | eu-central-1    | eu-west-1 | ~15min  | —       | S3 CRR continuo               |
+| Código de aplicación                      | GitHub          | GitHub    | 0       | 30min   | Redesplegar desde rama `main` |
+| Infraestructura CDK                       | GitHub          | GitHub    | 0       | 30min   | `cdk deploy` en cuenta DR     |
 
 > **Nota:** S3 evals está excluido del CRR. Los datos de evaluación son reproducibles mediante re-ingestión.
 
@@ -274,14 +275,15 @@ aws rds stop-db-cluster \
 
 ## 8. Contactos y escalado
 
-| Rol | Nombre | Canal | Disponibilidad |
-|---|---|---|---|
-| Responsable de plataforma | Ignacio Bernal | Slack #lex-agents-ops / email ibernale@gruposantander.com | L-V 09:00-18:00 CET |
-| Escalado técnico AWS | AWS Support (Business/Enterprise) | Console > Support Center | 24/7 (tiempo respuesta SLA) |
-| Responsable de negocio | Por definir en Fase 10 | Por definir | Por definir |
-| CISO / Riesgo TIC | Por definir en Fase 10 | Por definir | Por definir |
+| Rol                       | Nombre                            | Canal                                                     | Disponibilidad              |
+| ------------------------- | --------------------------------- | --------------------------------------------------------- | --------------------------- |
+| Responsable de plataforma | Ignacio Bernal                    | Slack #lex-agents-ops / email ibernale@gruposantander.com | L-V 09:00-18:00 CET         |
+| Escalado técnico AWS      | AWS Support (Business/Enterprise) | Console > Support Center                                  | 24/7 (tiempo respuesta SLA) |
+| Responsable de negocio    | Por definir en Fase 10            | Por definir                                               | Por definir                 |
+| CISO / Riesgo TIC         | Por definir en Fase 10            | Por definir                                               | Por definir                 |
 
 **Matriz de escalado:**
+
 1. Ingeniero de guardia → Responsable de plataforma (si no resuelve en 30 min)
 2. Responsable de plataforma → Responsable de negocio (decisión de activar DR)
 3. Responsable de plataforma → AWS Support (incidencia en servicios AWS)
@@ -307,6 +309,7 @@ aws backup create-backup-vault \
 ## Apéndice B: Test DR programado
 
 Realizar DR test simulado en entorno dev cada **6 meses**:
+
 1. Activar el procedimiento completo en entorno dev (sin afectar staging/prod)
 2. Medir RTO real vs objetivo
 3. Actualizar este documento con lecciones aprendidas

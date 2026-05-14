@@ -28,28 +28,28 @@ graph TD
 
 Service Control Policies applied at OU level:
 
-| SCP | Applied to OUs | Purpose |
-|-----|---------------|---------|
-| DenyNonEuRegions | Security, Infrastructure, Workloads | DORA data residency — only eu-central-1 and eu-west-1 |
-| DenyRootUsage | Workloads | Prevent root account use without MFA |
-| DenyUnencryptedStorage | Workloads | Force SSE-KMS on S3 PutObject; deny unencrypted EBS |
-| RequireMFASensitiveActions | Workloads | MFA required for IAM/KMS/Org destructive operations |
+| SCP                        | Applied to OUs                      | Purpose                                               |
+| -------------------------- | ----------------------------------- | ----------------------------------------------------- |
+| DenyNonEuRegions           | Security, Infrastructure, Workloads | DORA data residency — only eu-central-1 and eu-west-1 |
+| DenyRootUsage              | Workloads                           | Prevent root account use without MFA                  |
+| DenyUnencryptedStorage     | Workloads                           | Force SSE-KMS on S3 PutObject; deny unencrypted EBS   |
+| RequireMFASensitiveActions | Workloads                           | MFA required for IAM/KMS/Org destructive operations   |
 
 ---
 
 ## Stacks
 
-| Stack name | Target account | Purpose |
-|---|---|---|
-| LexAgents-Organizations | management | OUs + 4 SCPs + policy attachments |
-| LexAgents-IdentityCenter | management | SSO permission sets (Admin, Developer, DataAnalyst, SecurityAudit) |
-| LexAgents-LogArchive-Kms | log-archive | KMS logs key (CloudTrail, VPC flow logs) |
-| LexAgents-LogArchive | log-archive | Org CloudTrail S3 WORM bucket, Athena workgroup, CW log group |
-| LexAgents-SecurityBaseline | security | GuardDuty detector, Security Hub, SNS alerts, EventBridge rules |
-| LexAgents-NetworkHub | network | Transit Gateway, hub VPC, VPC endpoints, Route53 Resolver inbound |
-| LexAgents-Dev-Kms | workloads-dev | KMS keys: logs + rds + s3 + secrets + ebs |
-| LexAgents-Dev-Network | workloads-dev | Spoke VPC (3 AZ × 3 tier), SGs, NACLs, VPC flow logs |
-| LexAgents-Dev-GithubOidc | workloads-dev | OIDC provider + scoped deploy role for GitHub Actions |
+| Stack name                 | Target account | Purpose                                                            |
+| -------------------------- | -------------- | ------------------------------------------------------------------ |
+| LexAgents-Organizations    | management     | OUs + 4 SCPs + policy attachments                                  |
+| LexAgents-IdentityCenter   | management     | SSO permission sets (Admin, Developer, DataAnalyst, SecurityAudit) |
+| LexAgents-LogArchive-Kms   | log-archive    | KMS logs key (CloudTrail, VPC flow logs)                           |
+| LexAgents-LogArchive       | log-archive    | Org CloudTrail S3 WORM bucket, Athena workgroup, CW log group      |
+| LexAgents-SecurityBaseline | security       | GuardDuty detector, Security Hub, SNS alerts, EventBridge rules    |
+| LexAgents-NetworkHub       | network        | Transit Gateway, hub VPC, VPC endpoints, Route53 Resolver inbound  |
+| LexAgents-Dev-Kms          | workloads-dev  | KMS keys: logs + rds + s3 + secrets + ebs                          |
+| LexAgents-Dev-Network      | workloads-dev  | Spoke VPC (3 AZ × 3 tier), SGs, NACLs, VPC flow logs               |
+| LexAgents-Dev-GithubOidc   | workloads-dev  | OIDC provider + scoped deploy role for GitHub Actions              |
 
 ---
 
@@ -70,6 +70,7 @@ Dependencies flow top-to-bottom. Stacks on the same level can deploy in parallel
 ```
 
 Bootstrap each account before first deploy:
+
 ```bash
 cdk bootstrap aws://ACCOUNT_ID/eu-central-1 --trust MANAGEMENT_ACCOUNT_ID
 ```

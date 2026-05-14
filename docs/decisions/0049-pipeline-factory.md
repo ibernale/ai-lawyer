@@ -16,10 +16,10 @@ parse complexity, and operational concerns (e.g., CENDOJ quota management).
 
 The options are:
 
-| Option | Description |
-|---|---|
-| A | One monolithic state machine with `Choice` branches per source |
-| B | One state machine per source, created via a CDK factory construct |
+| Option | Description                                                       |
+| ------ | ----------------------------------------------------------------- |
+| A      | One monolithic state machine with `Choice` branches per source    |
+| B      | One state machine per source, created via a CDK factory construct |
 
 ### Option A — Monolithic state machine
 
@@ -44,21 +44,21 @@ The options are:
 
 ### Source catalogue (Fase 9.4)
 
-| Source | Status | Schedule (UTC) | Trigger | Fetch runtime |
-|---|---|---|---|---|
-| `boe` | GREEN | `cron(0 7 * * ? *)` | EventBridge | Lambda |
-| `eur_lex` | GREEN | `cron(0 6 ? * MON *)` | EventBridge | Lambda |
-| `aepd` | GREEN | `cron(0 6 ? * FRI *)` | EventBridge | Lambda |
-| `edpb` | GREEN | `cron(0 6 ? * MON *)` | EventBridge | Lambda |
-| `bde` | GREEN | `cron(0 7 * * ? *)` | EventBridge | Lambda |
-| `eba` | GREEN | `cron(0 6 ? * MON *)` | EventBridge | Lambda |
-| `esma` | GREEN | `cron(0 6 ? * MON *)` | EventBridge | Lambda |
-| `legislation_uk` | GREEN | `cron(0 6 ? * MON *)` | EventBridge | Lambda |
-| `fca` | GREEN | `cron(0 6 ? * MON *)` | EventBridge | Lambda |
-| `tribunal_constitucional` | AMBER | `cron(0 6 ? * MON *)` | EventBridge (disabled) | Lambda |
-| `cendoj` | AMBER | *(manual only)* | `workflow_dispatch` or console | Lambda + quota check |
-| `inlabs` | STUB | `cron(0 4 * * ? *)` | EventBridge | Lambda (stub) |
-| `sidof` | STUB | `cron(0 13 * * ? *)` | EventBridge | Lambda (stub) |
+| Source                    | Status | Schedule (UTC)        | Trigger                        | Fetch runtime        |
+| ------------------------- | ------ | --------------------- | ------------------------------ | -------------------- |
+| `boe`                     | GREEN  | `cron(0 7 * * ? *)`   | EventBridge                    | Lambda               |
+| `eur_lex`                 | GREEN  | `cron(0 6 ? * MON *)` | EventBridge                    | Lambda               |
+| `aepd`                    | GREEN  | `cron(0 6 ? * FRI *)` | EventBridge                    | Lambda               |
+| `edpb`                    | GREEN  | `cron(0 6 ? * MON *)` | EventBridge                    | Lambda               |
+| `bde`                     | GREEN  | `cron(0 7 * * ? *)`   | EventBridge                    | Lambda               |
+| `eba`                     | GREEN  | `cron(0 6 ? * MON *)` | EventBridge                    | Lambda               |
+| `esma`                    | GREEN  | `cron(0 6 ? * MON *)` | EventBridge                    | Lambda               |
+| `legislation_uk`          | GREEN  | `cron(0 6 ? * MON *)` | EventBridge                    | Lambda               |
+| `fca`                     | GREEN  | `cron(0 6 ? * MON *)` | EventBridge                    | Lambda               |
+| `tribunal_constitucional` | AMBER  | `cron(0 6 ? * MON *)` | EventBridge (disabled)         | Lambda               |
+| `cendoj`                  | AMBER  | _(manual only)_       | `workflow_dispatch` or console | Lambda + quota check |
+| `inlabs`                  | STUB   | `cron(0 4 * * ? *)`   | EventBridge                    | Lambda (stub)        |
+| `sidof`                   | STUB   | `cron(0 13 * * ? *)`  | EventBridge                    | Lambda (stub)        |
 
 AMBER sources: EventBridge rule created but `State: DISABLED`. Activation via CDK context
 key `lexAgents:enable${PascalSource}Pipeline: true`.
@@ -71,26 +71,28 @@ state machine and schedule created so infrastructure is ready for implementation
 ```typescript
 // infra/cdk/lib/constructs/source-pipeline.ts
 interface SourcePipelineProps {
-  source: string;                // e.g. "boe", "eur_lex"
-  schedule?: events.Schedule;    // undefined = manual only
-  scheduleEnabled?: boolean;     // default true; false for AMBER
+  source: string; // e.g. "boe", "eur_lex"
+  schedule?: events.Schedule; // undefined = manual only
+  scheduleEnabled?: boolean; // default true; false for AMBER
   fetchRawFn: lambda.IFunction;
   parseCanonicalFn: lambda.IFunction;
   chunkDocumentFn: lambda.IFunction;
   contextualizeChunksFn: lambda.IFunction;
-  appServicesStack: AppServicesStack;  // for ECS RunTask ARN
+  appServicesStack: AppServicesStack; // for ECS RunTask ARN
   vpc: ec2.IVpc;
-  sfnRole: iam.IRole;            // shared across all state machines
+  sfnRole: iam.IRole; // shared across all state machines
   alertTopic: sns.ITopic;
 }
 ```
 
 Each `SourcePipeline` creates:
+
 1. `CfnStateMachine` — 8-state ASL (identical structure to Fase 9.2)
 2. `events.Rule` — EventBridge schedule (if `schedule` provided)
 3. `CloudWatch.Alarm` — execution failure alarm → `alertTopic`
 
 CENDOJ additionally creates:
+
 - `check_quota` Lambda step as the first state
 - `decrement_quota` Lambda step after each successful document fetch
 - DynamoDB `QuotaTracker` table (shared across CENDOJ state machine executions)
@@ -98,6 +100,7 @@ CENDOJ additionally creates:
 ### Format change sensor
 
 A separate Lambda `lex-agents-${env}-format-sensor` runs on `rate(1 hour)`:
+
 - Makes HTTP HEAD requests to each source's canonical URL
 - Compares `ETag` / `Last-Modified` / content-length hash against DynamoDB
   `lex-agents-${env}-format-fingerprints` table
@@ -137,12 +140,14 @@ Each source's `fetch_raw/handler.py` imports from `packages/ingest/sources/<sour
 ## Consequences
 
 ### Positive
+
 - Each source pipeable independently; a CENDOJ quota block does not affect EUR-Lex.
 - CDK `SourcePipeline` construct means adding a new source is ~10 lines in `pipelines.ts`.
 - AMBER/STUB sources have infra pre-provisioned; activation is one CDK context flag.
 - Per-source CloudWatch alarms enable precise paging.
 
 ### Negative / mitigations
+
 - **13+ state machines in CloudFormation**: template grows. CloudFormation limit is
   500 resources per stack; PipelinesStack at ~13 sources × ~15 resources ≈ 195 resources —
   well within limit. Monitor with `cdk synth | grep -c '"Type"'`.
@@ -154,8 +159,8 @@ Each source's `fetch_raw/handler.py` imports from `packages/ingest/sources/<sour
 
 ## Alternatives considered
 
-| Option | Reason rejected |
-|---|---|
-| Monolithic state machine | Source isolation, operational clarity (see above) |
-| Reuse existing `packages/pipeline/` Dagster assets | Dagster daemon cost + complexity (ADR 0047) |
-| AWS Glue workflows | Glue is ETL-focused; overkill for HTTP-fetch pipelines; Step Functions tighter AWS integration |
+| Option                                             | Reason rejected                                                                                |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Monolithic state machine                           | Source isolation, operational clarity (see above)                                              |
+| Reuse existing `packages/pipeline/` Dagster assets | Dagster daemon cost + complexity (ADR 0047)                                                    |
+| AWS Glue workflows                                 | Glue is ETL-focused; overkill for HTTP-fetch pipelines; Step Functions tighter AWS integration |

@@ -1,11 +1,11 @@
 name: Release
 on:
   push:
-    tags: ['v*.*.*']
+    tags: ["v*.*.*"]
 permissions:
   contents: write
   packages: write
-  id-token: write   # for cosign keyless OIDC
+  id-token: write # for cosign keyless OIDC
 jobs:
   build-and-release:
     runs-on: ubuntu-24.04

@@ -926,12 +926,12 @@ aws guardduty archive-findings \
 
 Clasificación de severidad GuardDuty:
 
-| Severidad | Rango | Acción |
-| --------- | ----- | ------ |
-| CRITICAL | 9.0–10.0 | P1 — respuesta inmediata, activar kill switch si procede |
-| HIGH | 7.0–8.9 | P2 — investigar en < 4h (DORA Art.19) |
-| MEDIUM | 4.0–6.9 | P3 — revisar en el día |
-| LOW | 1.0–3.9 | P4 — revisar semanalmente |
+| Severidad | Rango    | Acción                                                   |
+| --------- | -------- | -------------------------------------------------------- |
+| CRITICAL  | 9.0–10.0 | P1 — respuesta inmediata, activar kill switch si procede |
+| HIGH      | 7.0–8.9  | P2 — investigar en < 4h (DORA Art.19)                    |
+| MEDIUM    | 4.0–6.9  | P3 — revisar en el día                                   |
+| LOW       | 1.0–3.9  | P4 — revisar semanalmente                                |
 
 ### 11.5 Acceso vía SSM Session Manager
 
@@ -974,6 +974,7 @@ documentadas en el **runbook AWS consolidado**:
 📖 **[docs/aws/runbook.md](aws/runbook.md)**
 
 Este runbook AWS cubre:
+
 - Despliegue y rollback CDK
 - Escalado manual de ECS services
 - Rotación de credenciales AWS (KMS, Secrets Manager, OIDC)
@@ -991,6 +992,7 @@ Este runbook AWS cubre:
 - Evidencias DORA (evidence_collector Lambda + Audit Manager)
 
 Ver también:
+
 - `docs/aws/architecture.md` — diagrama completo de la arquitectura
 - `docs/aws/security-controls.md` — lista exhaustiva de controles
 - `docs/aws/dora-mapping.md` — tabla de controles DORA y evidencias

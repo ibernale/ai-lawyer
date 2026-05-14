@@ -16,11 +16,11 @@ deben ejecutarse en la infra cloud sin mantener un proceso Dagster permanente.
 
 Las opciones evaluadas son:
 
-| Opción | Descripción |
-|---|---|
-| 1 | **Dagster Cloud** (managed SaaS) |
-| 2 | **Dagster self-hosted** en ECS Fargate |
-| 3 | **AWS Step Functions + Lambda** nativo |
+| Opción | Descripción                            |
+| ------ | -------------------------------------- |
+| 1      | **Dagster Cloud** (managed SaaS)       |
+| 2      | **Dagster self-hosted** en ECS Fargate |
+| 3      | **AWS Step Functions + Lambda** nativo |
 
 ### Opción 1 — Dagster Cloud
 
@@ -81,6 +81,7 @@ Machine porque pueden superar el timeout de Lambda de 15 minutos con documentos 
 #### Idempotencia
 
 DynamoDB tabla `lex-agents-${env}-pipeline-state`:
+
 - Clave primaria: `doc_id` (e.g., `BOE-A-2019-3814`)
 - Atributos: `stage`, `s3_raw_key`, `s3_canonical_key`, `chunks_count`, `embedded_at`,
   `indexed_at`, `last_run_id`
@@ -88,14 +89,14 @@ DynamoDB tabla `lex-agents-${env}-pipeline-state`:
 
 #### Mapping de assets Dagster → Step Functions
 
-| Asset Dagster (`packages/pipeline/`) | Handler AWS (`packages/pipeline_aws/`) | Runtime |
-|---|---|---|
-| `raw.py` — `raw_boe_documents` | `fetch_handler.py` | Lambda 512 MB, 5 min |
-| `canonical.py` — `canonical_boe` | `parse_handler.py` | Lambda 512 MB, 5 min |
-| `chunked.py` — `chunked_boe` | `chunk_handler.py` | Lambda 512 MB, 5 min |
-| `contextualized.py` — `contextualized_boe` | `contextualize_handler.py` | Lambda 1 GB, 15 min |
-| `embedded.py` — `embedded_boe` | `embed_handler.py` | ECS RunTask |
-| `indexed.py` — `indexed_boe` | `index_handler.py` | ECS RunTask |
+| Asset Dagster (`packages/pipeline/`)       | Handler AWS (`packages/pipeline_aws/`) | Runtime              |
+| ------------------------------------------ | -------------------------------------- | -------------------- |
+| `raw.py` — `raw_boe_documents`             | `fetch_handler.py`                     | Lambda 512 MB, 5 min |
+| `canonical.py` — `canonical_boe`           | `parse_handler.py`                     | Lambda 512 MB, 5 min |
+| `chunked.py` — `chunked_boe`               | `chunk_handler.py`                     | Lambda 512 MB, 5 min |
+| `contextualized.py` — `contextualized_boe` | `contextualize_handler.py`             | Lambda 1 GB, 15 min  |
+| `embedded.py` — `embedded_boe`             | `embed_handler.py`                     | ECS RunTask          |
+| `indexed.py` — `indexed_boe`               | `index_handler.py`                     | ECS RunTask          |
 
 Los sensores Dagster (`sensors/format_change.py`) no se migran en Fase 9.2; se sustituyen
 por EventBridge rules estáticas. Los sensores dinámicos (detección de cambio de formato) se
@@ -105,6 +106,7 @@ consideran para Fase 10.
 
 Los siguientes assets de `packages/pipeline/` eran stubs y permanecen como stubs también
 en `packages/pipeline_aws/`:
+
 - CENDOJ (fuente judicial)
 - Fuentes comerciales (Westlaw, Aranzadi) — RED, no activar hasta acuerdo de licencia
 

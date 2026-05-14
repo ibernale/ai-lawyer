@@ -1,9 +1,9 @@
-import * as cdk from 'aws-cdk-lib';
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as logs from 'aws-cdk-lib/aws-logs';
-import { Construct } from 'constructs';
-import { NagSuppressions } from 'cdk-nag';
-import { DEV_VPC_CONFIG } from '../config/environments';
+import * as cdk from "aws-cdk-lib";
+import * as ec2 from "aws-cdk-lib/aws-ec2";
+import * as logs from "aws-cdk-lib/aws-logs";
+import { Construct } from "constructs";
+import { NagSuppressions } from "cdk-nag";
+import { DEV_VPC_CONFIG } from "../config/environments";
 
 export interface NetworkSpokeStackProps extends cdk.StackProps {
   envName: string;
@@ -28,31 +28,31 @@ export class NetworkSpokeStack extends cdk.Stack {
     //   aws ec2 create-flow-logs --resource-type VPC --resource-ids <vpc-id> \
     //     --traffic-type ALL --log-destination-type s3 \
     //     --log-destination arn:aws:s3:::org-trail-logs-<log-archive-account>/AWSLogs/
-    const flowLogGroup = new logs.LogGroup(this, 'VpcFlowLogGroup', {
+    const flowLogGroup = new logs.LogGroup(this, "VpcFlowLogGroup", {
       logGroupName: `/lex-agents/${envName}/vpc-flow-logs`,
       retention: logs.RetentionDays.ONE_YEAR,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
     // ── VPC ───────────────────────────────────────────────────────────────
-    this.vpc = new ec2.Vpc(this, 'Vpc', {
+    this.vpc = new ec2.Vpc(this, "Vpc", {
       ipAddresses: ec2.IpAddresses.cidr(cfg.vpcCidr),
       availabilityZones: cfg.azs,
       natGateways: 3, // one per AZ for HA
       subnetConfiguration: [
         {
-          name: 'public',
+          name: "public",
           subnetType: ec2.SubnetType.PUBLIC,
           cidrMask: 24,
           mapPublicIpOnLaunch: false,
         },
         {
-          name: 'private-app',
+          name: "private-app",
           subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
           cidrMask: 24,
         },
         {
-          name: 'private-data',
+          name: "private-data",
           subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
           cidrMask: 24,
         },
@@ -68,71 +68,111 @@ export class NetworkSpokeStack extends cdk.Stack {
     // ── Security Groups ───────────────────────────────────────────────────
 
     // ALB: ingress 443 from CloudFront managed prefix list
-    this.sgAlb = new ec2.SecurityGroup(this, 'SgAlb', {
+    this.sgAlb = new ec2.SecurityGroup(this, "SgAlb", {
       vpc: this.vpc,
       securityGroupName: `lex-agents-${envName}-alb`,
-      description: 'ALB security group - ingress from CloudFront only',
+      description: "ALB security group - ingress from CloudFront only",
       allowAllOutbound: true,
     });
     // CloudFront managed prefix list — ID varies by region
     const cloudfrontPrefixListIds: Record<string, string> = {
-      'eu-west-1':   'pl-4fa04526',
-      'eu-west-2':   'pl-93a247fa',
-      'eu-west-3':   'pl-75b1541c',
-      'eu-central-1':'pl-9ea0e7f7',
-      'us-east-1':   'pl-3b927c52',
+      "eu-west-1": "pl-4fa04526",
+      "eu-west-2": "pl-93a247fa",
+      "eu-west-3": "pl-75b1541c",
+      "eu-central-1": "pl-9ea0e7f7",
+      "us-east-1": "pl-3b927c52",
     };
     const cloudfrontPrefixList = ec2.Peer.prefixList(
-      cloudfrontPrefixListIds[this.region] ?? 'pl-4fa04526',
+      cloudfrontPrefixListIds[this.region] ?? "pl-4fa04526",
     );
-    this.sgAlb.addIngressRule(cloudfrontPrefixList, ec2.Port.tcp(443), 'HTTPS from CloudFront');
+    this.sgAlb.addIngressRule(
+      cloudfrontPrefixList,
+      ec2.Port.tcp(443),
+      "HTTPS from CloudFront",
+    );
 
     // ECS API
-    this.sgEcsApi = new ec2.SecurityGroup(this, 'SgEcsApi', {
+    this.sgEcsApi = new ec2.SecurityGroup(this, "SgEcsApi", {
       vpc: this.vpc,
       securityGroupName: `lex-agents-${envName}-ecs-api`,
-      description: 'ECS API service',
+      description: "ECS API service",
       allowAllOutbound: false,
     });
-    this.sgEcsApi.addIngressRule(this.sgAlb, ec2.Port.tcp(8000), 'API port from ALB');
-    this.sgEcsApi.addEgressRule(ec2.Peer.ipv4(cfg.vpcCidr), ec2.Port.tcp(443), 'HTTPS to VPC endpoints');
+    this.sgEcsApi.addIngressRule(
+      this.sgAlb,
+      ec2.Port.tcp(8000),
+      "API port from ALB",
+    );
+    this.sgEcsApi.addEgressRule(
+      ec2.Peer.ipv4(cfg.vpcCidr),
+      ec2.Port.tcp(443),
+      "HTTPS to VPC endpoints",
+    );
 
     // ECS Web
-    this.sgEcsWeb = new ec2.SecurityGroup(this, 'SgEcsWeb', {
+    this.sgEcsWeb = new ec2.SecurityGroup(this, "SgEcsWeb", {
       vpc: this.vpc,
       securityGroupName: `lex-agents-${envName}-ecs-web`,
-      description: 'ECS Web (Next.js) service',
+      description: "ECS Web (Next.js) service",
       allowAllOutbound: false,
     });
-    this.sgEcsWeb.addIngressRule(this.sgAlb, ec2.Port.tcp(3000), 'Web port from ALB');
-    this.sgEcsWeb.addEgressRule(this.sgEcsApi, ec2.Port.tcp(8000), 'API backend');
+    this.sgEcsWeb.addIngressRule(
+      this.sgAlb,
+      ec2.Port.tcp(3000),
+      "Web port from ALB",
+    );
+    this.sgEcsWeb.addEgressRule(
+      this.sgEcsApi,
+      ec2.Port.tcp(8000),
+      "API backend",
+    );
 
     // Aurora
-    this.sgAurora = new ec2.SecurityGroup(this, 'SgAurora', {
+    this.sgAurora = new ec2.SecurityGroup(this, "SgAurora", {
       vpc: this.vpc,
       securityGroupName: `lex-agents-${envName}-aurora`,
-      description: 'Aurora PostgreSQL cluster',
+      description: "Aurora PostgreSQL cluster",
       allowAllOutbound: false,
     });
 
     // AgentCore
-    this.sgAgentcore = new ec2.SecurityGroup(this, 'SgAgentcore', {
+    this.sgAgentcore = new ec2.SecurityGroup(this, "SgAgentcore", {
       vpc: this.vpc,
       securityGroupName: `lex-agents-${envName}-agentcore`,
-      description: 'AgentCore runtime - egress only',
+      description: "AgentCore runtime - egress only",
       allowAllOutbound: false,
     });
-    this.sgAgentcore.addEgressRule(ec2.Peer.ipv4(cfg.vpcCidr), ec2.Port.tcp(443), 'Bedrock VPC endpoint');
+    this.sgAgentcore.addEgressRule(
+      ec2.Peer.ipv4(cfg.vpcCidr),
+      ec2.Port.tcp(443),
+      "Bedrock VPC endpoint",
+    );
 
     // Cross-SG rules
-    this.sgAurora.addIngressRule(this.sgEcsApi, ec2.Port.tcp(5432), 'PostgreSQL from ECS API');
-    this.sgAurora.addIngressRule(this.sgAgentcore, ec2.Port.tcp(5432), 'PostgreSQL from AgentCore');
-    this.sgEcsApi.addEgressRule(this.sgAurora, ec2.Port.tcp(5432), 'PostgreSQL to Aurora');
-    this.sgAgentcore.addEgressRule(this.sgAurora, ec2.Port.tcp(5432), 'PostgreSQL to Aurora');
+    this.sgAurora.addIngressRule(
+      this.sgEcsApi,
+      ec2.Port.tcp(5432),
+      "PostgreSQL from ECS API",
+    );
+    this.sgAurora.addIngressRule(
+      this.sgAgentcore,
+      ec2.Port.tcp(5432),
+      "PostgreSQL from AgentCore",
+    );
+    this.sgEcsApi.addEgressRule(
+      this.sgAurora,
+      ec2.Port.tcp(5432),
+      "PostgreSQL to Aurora",
+    );
+    this.sgAgentcore.addEgressRule(
+      this.sgAurora,
+      ec2.Port.tcp(5432),
+      "PostgreSQL to Aurora",
+    );
 
     // ── NACLs for private-data subnets ────────────────────────────────────
     const dataSubnets = this.vpc.isolatedSubnets;
-    const dataNacl = new ec2.NetworkAcl(this, 'PrivateDataNacl', {
+    const dataNacl = new ec2.NetworkAcl(this, "PrivateDataNacl", {
       vpc: this.vpc,
       subnetSelection: { subnets: dataSubnets },
     });
@@ -148,7 +188,7 @@ export class NetworkSpokeStack extends cdk.Stack {
       });
     });
     // Allow ephemeral return traffic
-    dataNacl.addEntry('AllowEphemeralOut', {
+    dataNacl.addEntry("AllowEphemeralOut", {
       cidr: ec2.AclCidr.ipv4(cfg.vpcCidr),
       ruleNumber: 100,
       traffic: ec2.AclTraffic.tcpPortRange(1024, 65535),
@@ -156,7 +196,7 @@ export class NetworkSpokeStack extends cdk.Stack {
       ruleAction: ec2.Action.ALLOW,
     });
     // Deny everything else
-    dataNacl.addEntry('DenyAllIn', {
+    dataNacl.addEntry("DenyAllIn", {
       cidr: ec2.AclCidr.anyIpv4(),
       ruleNumber: 32766,
       traffic: ec2.AclTraffic.allTraffic(),
@@ -165,47 +205,55 @@ export class NetworkSpokeStack extends cdk.Stack {
     });
 
     // Outputs
-    new cdk.CfnOutput(this, 'VpcId', {
+    new cdk.CfnOutput(this, "VpcId", {
       value: this.vpc.vpcId,
       exportName: `LexAgents-${envName}-VpcId`,
     });
-    new cdk.CfnOutput(this, 'SgAuroraId', {
+    new cdk.CfnOutput(this, "SgAuroraId", {
       value: this.sgAurora.securityGroupId,
       exportName: `LexAgents-${envName}-SgAuroraId`,
     });
 
     NagSuppressions.addStackSuppressions(this, [
       {
-        id: 'AwsSolutions-VPC7',
-        reason: 'VPC Flow Logs are sent to CloudWatch Logs in this account. Post-deploy, an S3 export to log-archive is configured via AWS CLI to avoid cross-account stack dependencies at synth time.',
+        id: "AwsSolutions-VPC7",
+        reason:
+          "VPC Flow Logs are sent to CloudWatch Logs in this account. Post-deploy, an S3 export to log-archive is configured via AWS CLI to avoid cross-account stack dependencies at synth time.",
       },
       {
-        id: 'AwsSolutions-EC23',
-        reason: 'CloudFront managed prefix list ingress on port 443 is intentional for ALB. All other SGs are locked down to specific SG sources.',
+        id: "AwsSolutions-EC23",
+        reason:
+          "CloudFront managed prefix list ingress on port 443 is intentional for ALB. All other SGs are locked down to specific SG sources.",
       },
       {
-        id: 'HIPAA.Security-VPCFlowLogsEnabled',
-        reason: 'VPC Flow Logs are enabled and directed to CloudWatch Logs (VpcFlowLogGroup). The suppression applies to the auto-created VPC resource node which CDK instruments separately.',
+        id: "HIPAA.Security-VPCFlowLogsEnabled",
+        reason:
+          "VPC Flow Logs are enabled and directed to CloudWatch Logs (VpcFlowLogGroup). The suppression applies to the auto-created VPC resource node which CDK instruments separately.",
       },
       {
-        id: 'HIPAA.Security-CloudWatchLogGroupEncrypted',
-        reason: 'VPC Flow Log group will be encrypted with the KMS logs key in the workloads-dev account once KMS stack is deployed. Cross-stack KMS reference at synth time would create circular dependency.',
+        id: "HIPAA.Security-CloudWatchLogGroupEncrypted",
+        reason:
+          "VPC Flow Log group will be encrypted with the KMS logs key in the workloads-dev account once KMS stack is deployed. Cross-stack KMS reference at synth time would create circular dependency.",
       },
       {
-        id: 'HIPAA.Security-VPCDefaultSecurityGroupClosed',
-        reason: 'The default VPC security group is not used by any resource. CDK creates the VPC default SG; actual workloads use dedicated SGs defined above.',
+        id: "HIPAA.Security-VPCDefaultSecurityGroupClosed",
+        reason:
+          "The default VPC security group is not used by any resource. CDK creates the VPC default SG; actual workloads use dedicated SGs defined above.",
       },
       {
-        id: 'HIPAA.Security-VPCNoUnrestrictedRouteToIGW',
-        reason: 'Public subnets require an IGW route by design — they host only the ALB and NAT Gateways (no ECS containers). All application workloads run in private-app subnets with no public route.',
+        id: "HIPAA.Security-VPCNoUnrestrictedRouteToIGW",
+        reason:
+          "Public subnets require an IGW route by design — they host only the ALB and NAT Gateways (no ECS containers). All application workloads run in private-app subnets with no public route.",
       },
       {
-        id: 'AwsSolutions-VPC3',
-        reason: 'NACLs on private-data subnets are intentional as a defence-in-depth control per DORA Art.9. Warning acknowledged; NACLs are a positive security control here.',
+        id: "AwsSolutions-VPC3",
+        reason:
+          "NACLs on private-data subnets are intentional as a defence-in-depth control per DORA Art.9. Warning acknowledged; NACLs are a positive security control here.",
       },
       {
-        id: 'HIPAA.Security-IAMNoInlinePolicy',
-        reason: 'Auto-generated CDK inline policy for VPC Flow Logs CloudWatch Logs role. Standard CDK pattern; policy is scoped to the specific flow log group.',
+        id: "HIPAA.Security-IAMNoInlinePolicy",
+        reason:
+          "Auto-generated CDK inline policy for VPC Flow Logs CloudWatch Logs role. Standard CDK pattern; policy is scoped to the specific flow log group.",
       },
     ]);
   }

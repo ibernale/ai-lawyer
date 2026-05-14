@@ -29,11 +29,11 @@ Step-by-step guide to bring the lex-agents AWS foundation from zero to a working
 
 In Control Tower, go to **Account Factory → Enroll account** for each:
 
-| Account name | Email | OU |
-|---|---|---|
-| lex-agents-network | aws+network@yourdomain.com | Infrastructure |
-| lex-agents-workloads-dev | aws+dev@yourdomain.com | Workloads |
-| lex-agents-workloads-pre | aws+pre@yourdomain.com | Workloads |
+| Account name             | Email                      | OU             |
+| ------------------------ | -------------------------- | -------------- |
+| lex-agents-network       | aws+network@yourdomain.com | Infrastructure |
+| lex-agents-workloads-dev | aws+dev@yourdomain.com     | Workloads      |
+| lex-agents-workloads-pre | aws+pre@yourdomain.com     | Workloads      |
 
 Wait for all accounts to be provisioned (5-10 minutes each).
 
@@ -76,11 +76,11 @@ Edit `cdk.context.json` and replace the placeholder values:
 ```json
 {
   "lexAgents:accounts": {
-    "management":    "REAL_MANAGEMENT_ACCOUNT_ID",
-    "logArchive":    "REAL_LOG_ARCHIVE_ACCOUNT_ID",
-    "security":      "REAL_SECURITY_ACCOUNT_ID",
-    "network":       "REAL_NETWORK_ACCOUNT_ID",
-    "workloadsDev":  "REAL_WORKLOADS_DEV_ACCOUNT_ID"
+    "management": "REAL_MANAGEMENT_ACCOUNT_ID",
+    "logArchive": "REAL_LOG_ARCHIVE_ACCOUNT_ID",
+    "security": "REAL_SECURITY_ACCOUNT_ID",
+    "network": "REAL_NETWORK_ACCOUNT_ID",
+    "workloadsDev": "REAL_WORKLOADS_DEV_ACCOUNT_ID"
   },
   "lexAgents:rootOuId": "r-XXXX",
   "lexAgents:identityCenterInstanceArn": "arn:aws:sso:::instance/ssoins-XXXXXXXXXXXXXXXX"
@@ -88,6 +88,7 @@ Edit `cdk.context.json` and replace the placeholder values:
 ```
 
 To get the root OU ID:
+
 ```bash
 aws organizations list-roots --query 'Roots[0].Id' --output text
 ```
@@ -170,6 +171,7 @@ This prints step-by-step instructions for creating the first admin user via the 
 **`BUCKET_NOT_FOUND` during deploy** — CDK bootstrap not run in that account. Run Step 6 for the affected account.
 
 **`Organizations policy type not enabled`** — Enable SCP policy type in Organizations before deploying the Organizations stack:
+
 ```bash
 aws organizations enable-policy-type \
   --root-id r-XXXX \

@@ -2,7 +2,7 @@ name: Adversarial Robustness
 
 on:
   schedule:
-    - cron: "0 4 * * 1"  # Monday 04:00 UTC — full 180-case suite
+    - cron: "0 4 * * 1" # Monday 04:00 UTC — full 180-case suite
   workflow_dispatch:
     inputs:
       subset:
