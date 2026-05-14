@@ -10,6 +10,9 @@ dependencies = [
     "anthropic>=0.100.0",
     "qdrant-client>=1.17.0",
     "tenacity>=9.1.0",
+    # Database — asyncpg for Aurora (Fase 9.2); aiosqlite still used by packages
+    # that fall back to SQLite when DATABASE_URL is not set.
+    "asyncpg>=0.30.0",
 ]
 
 [project.optional-dependencies]

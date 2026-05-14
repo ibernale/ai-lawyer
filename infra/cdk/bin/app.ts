@@ -14,6 +14,9 @@ import { NetworkSpokeStack } from '../lib/stacks/network-spoke';
 import { GithubOidcStack } from '../lib/stacks/github-oidc';
 import { AppEcrStack } from '../lib/stacks/app-ecr';
 import { AppServicesStack } from '../lib/stacks/app-services';
+import { DataStack } from '../lib/stacks/data';
+import { ObservabilityStack } from '../lib/stacks/observability';
+import { PipelineStack } from '../lib/stacks/pipeline';
 
 const app = new cdk.App();
 const accounts = getAccounts(app);
@@ -55,8 +58,7 @@ new NetworkHubStack(app, 'LexAgents-NetworkHub', { env: networkEnv });
 // ── Workloads-dev account ─────────────────────────────────────────────────
 const devEnv = { account: accounts.workloadsDev, region: PRIMARY_REGION };
 
-// devKms is retained for future DataStack in Fase 9.2
-const _devKms = new KmsStack(app, 'LexAgents-Dev-Kms', {
+const devKms = new KmsStack(app, 'LexAgents-Dev-Kms', {
   env: devEnv,
   envName: 'dev',
   includeWorkloadKeys: true,
@@ -73,11 +75,35 @@ const devEcr = new AppEcrStack(app, 'LexAgents-Dev-Ecr', {
   envName: 'dev',
 });
 
-new AppServicesStack(app, 'LexAgents-Dev-App', {
+const devData = new DataStack(app, 'LexAgents-Dev-Data', {
+  env: devEnv,
+  envName: 'dev',
+  networkStack: networkSpoke,
+  kmsStack: devKms,
+});
+
+const devApp = new AppServicesStack(app, 'LexAgents-Dev-App', {
   env: devEnv,
   envName: 'dev',
   networkStack: networkSpoke,
   ecrStack: devEcr,
+  dataStack: devData,
+});
+
+new ObservabilityStack(app, 'LexAgents-Dev-Observability', {
+  env: devEnv,
+  envName: 'dev',
+  networkStack: networkSpoke,
+  appServicesStack: devApp,
+  dataStack: devData,
+});
+
+new PipelineStack(app, 'LexAgents-Dev-Pipeline', {
+  env: devEnv,
+  envName: 'dev',
+  networkStack: networkSpoke,
+  dataStack: devData,
+  appServicesStack: devApp,
 });
 
 new GithubOidcStack(app, 'LexAgents-Dev-GithubOidc', {

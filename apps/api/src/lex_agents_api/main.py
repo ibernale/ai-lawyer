@@ -98,6 +98,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         auth_enabled=settings.auth_enabled,
     )
 
+    # Propagate DATABASE_URL so is_postgres() works across all packages.
+    # Settings reads it from env; we write it back to os.environ so the
+    # shared db module (which reads os.environ directly) picks it up.
+    import os as _os
+    if settings.database_url:
+        _os.environ.setdefault("DATABASE_URL", settings.database_url)
+
     store = ConsultationStore(settings.consultation_db_path)
     await store.init()
 
@@ -174,6 +181,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
 
     logger.info("shutdown")
+
+    # Gracefully close the asyncpg pool if it was opened (Aurora mode)
+    try:
+        from lex_agents_shared.db import close_pool
+        await close_pool()
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------------------------

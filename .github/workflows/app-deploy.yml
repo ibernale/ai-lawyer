@@ -1,0 +1,233 @@
+name: App Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'infra/cdk/**'
+      - '.github/workflows/app-deploy.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'infra/cdk/**'
+
+# Minimum required permissions at workflow level; jobs add what they need.
+permissions: {}
+
+env:
+  AWS_REGION: eu-central-1
+  ECR_API_REPO: lex-agents-dev-api
+  ECR_WEB_REPO: lex-agents-dev-web
+
+jobs:
+  lint-and-test:
+    name: Lint and test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: 'latest'
+
+      - name: Restore uv cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install deps
+        run: |
+          uv pip install --system \
+            -e "packages/shared[dev]" \
+            -e "packages/audit[dev]" \
+            -e "packages/admin[dev]" \
+            -e "apps/api[dev]"
+
+      - name: Lint (ruff)
+        run: uv run ruff check packages/ apps/api/
+
+      - name: Type check (mypy)
+        run: uv run mypy packages/shared/src packages/audit/src packages/admin/src apps/api/src
+
+      - name: Test (pytest)
+        run: uv run pytest packages/ apps/api/ -x -q --tb=short
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results
+          path: .pytest_cache/
+          retention-days: 7
+
+  build-and-push:
+    name: Build and push images
+    needs: lint-and-test
+    # Only push images on main branch pushes (not on PRs)
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      api-image: ${{ steps.meta-api.outputs.digest }}
+      web-image: ${{ steps.meta-web.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_WORKLOADS_DEV_ACCOUNT_ID }}:role/github-deploy-dev
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push API image
+        id: meta-api
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_API_REPO }}:${{ github.sha }}
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_API_REPO }}:latest
+          build-args: |
+            COMMIT_SHA=${{ github.sha }}
+            BUILD_TIME=${{ github.event.head_commit.timestamp }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Web image
+        id: meta-web
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/web
+          file: apps/web/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_WEB_REPO }}:${{ github.sha }}
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_WEB_REPO }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  security-scan:
+    name: Security scan
+    runs-on: ubuntu-24.04
+    # Runs independently — not blocked by other job failures
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+      - name: Run gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    name: CDK deploy
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    environment: aws-dev
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_WORKLOADS_DEV_ACCOUNT_ID }}:role/github-deploy-dev
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: infra/cdk/package-lock.json
+
+      - name: Install CDK deps
+        working-directory: infra/cdk
+        run: npm ci
+
+      - name: CDK synth (validate)
+        working-directory: infra/cdk
+        run: npx cdk synth --all --quiet
+
+      - name: CDK deploy AppServicesStack
+        working-directory: infra/cdk
+        run: |
+          npx cdk deploy LexAgents-Dev-App \
+            --require-approval never \
+            --outputs-file /tmp/cdk-outputs.json
+
+      - name: Upload CDK outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: cdk-outputs
+          path: /tmp/cdk-outputs.json
+          retention-days: 7
+
+      - name: Force rolling update — API service
+        run: |
+          aws ecs update-service \
+            --cluster lex-agents-dev \
+            --service lex-agents-dev-api \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Force rolling update — Web service
+        run: |
+          aws ecs update-service \
+            --cluster lex-agents-dev \
+            --service lex-agents-dev-web \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Wait for API service stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster lex-agents-dev \
+            --services lex-agents-dev-api \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Wait for Web service stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster lex-agents-dev \
+            --services lex-agents-dev-web \
+            --region ${{ env.AWS_REGION }}

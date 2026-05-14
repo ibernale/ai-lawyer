@@ -60,6 +60,12 @@ class Settings(BaseSettings):
     # Governance & audit trail (ADR 0035)
     governance_db_path: str = "data/governance.db"
 
+    # Database — Aurora (Fase 9.2) vs local SQLite
+    # When set, all DB stores switch to asyncpg (PostgreSQL).
+    # Format: postgresql+asyncpg://user:pass@host:5432/dbname
+    # Leave unset for local dev (SQLite via aiosqlite).
+    database_url: str = ""
+
     # Notifications webhook secret (used by Grafana/Langfuse/Dagster to POST /ingest)
     # Must be a long random string; leave empty to disable the ingest endpoint.
     notification_webhook_secret: str = ""

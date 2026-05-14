@@ -11,6 +11,8 @@ members = [
     "packages/memory",
     "packages/audit",
     "packages/admin",
+    "packages/migrations",
+    "packages/pipeline_aws",
     "evals",
 ]
 
@@ -26,6 +28,8 @@ lex-agents-evals-advanced = { workspace = true }
 lex-agents-memory = { workspace = true }
 lex-agents-audit = { workspace = true }
 lex-agents-admin = { workspace = true }
+lex-agents-migrations = { workspace = true }
+lex-pipeline-aws = { workspace = true }
 
 # ─── Shared ruff config (inherited by all packages) ───────────────────────────
 [tool.ruff]
@@ -66,6 +70,10 @@ known-first-party = ["shared", "agents", "rag", "verifier", "ingest"]
 "scripts/**/*.py" = ["T20", "S"]
 # pipeline scripts and Dagster assets use print for progress and have expected unused vars
 "packages/pipeline/**/*.py" = ["T20", "S607", "S310", "F841", "RUF100"]
+# pipeline_aws Lambda handlers use urllib (S310 false positive) and boto3 calls
+"packages/pipeline_aws/**/*.py" = ["T20", "S310", "S603", "S607"]
+# migration scripts use print for CLI output and raw SQL
+"packages/migrations/scripts/**/*.py" = ["T20", "S608"]
 # ingest sources use legacy patterns (XML parsing, temp files, try-except-pass)
 "packages/ingest/src/**/*.py" = ["S", "F841", "RUF022"]
 # CLI entry points use print
@@ -141,6 +149,11 @@ module = [
     "lxml.*",
     "pdfminer.*",
     "sklearn.*",
+    "asyncpg.*",
+    "boto3.*",
+    "botocore.*",
+    "aiosqlite.*",
+    "alembic.*",
 ]
 ignore_missing_imports = true
 
@@ -152,13 +165,15 @@ module = [
     "lex_agents_pipeline.*",
     "lex_agents_evals_advanced",
     "lex_agents_evals_advanced.*",
+    "lex_pipeline_aws",
+    "lex_pipeline_aws.*",
 ]
 ignore_errors = true
 
 # ─── Shared pytest config ─────────────────────────────────────────────────────
 [tool.pytest.ini_options]
 testpaths = ["apps", "packages", "evals", "tests"]
-pythonpath = ["apps/api/src", "packages/agents/src", "packages/rag/src", "packages/verifier/src", "packages/ingest/src", "packages/shared/src", "packages/memory/src", "packages/evals_advanced/src", "packages/audit/src", "packages/admin/src", "evals/src"]
+pythonpath = ["apps/api/src", "packages/agents/src", "packages/rag/src", "packages/verifier/src", "packages/ingest/src", "packages/shared/src", "packages/memory/src", "packages/evals_advanced/src", "packages/audit/src", "packages/admin/src", "packages/pipeline_aws/src", "evals/src"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

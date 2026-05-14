@@ -32,7 +32,10 @@ describe('OrganizationsStack', () => {
       p.Properties.Name === 'DenyNonEuRegions'
     );
     expect(denyNonEu).toBeDefined();
-    const content = JSON.parse((denyNonEu as any).Properties.Content);
+    // CfnPolicy.content is synthesised as a plain object (CDK serialises it
+    // at deploy time); JSON.parse is not needed here.
+    const raw = (denyNonEu as any).Properties.Content;
+    const content = typeof raw === 'string' ? JSON.parse(raw) : raw;
     const regions = content.Statement[0].Condition.StringNotEquals['aws:RequestedRegion'];
     expect(regions).toContain('eu-central-1');
     expect(regions).toContain('eu-west-1');
