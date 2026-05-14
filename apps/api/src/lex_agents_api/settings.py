@@ -32,9 +32,9 @@ class Settings(BaseSettings):
 
     # RAG
     rag_top_k: int = 10
-    embedder_model: str = "BAAI/bge-m3"
-    reranker_enabled: bool = True
-    reranker_model: str = "BAAI/bge-reranker-v2-m3"
+    embedder_model: str = "voyage-multilingual-2"
+    reranker_enabled: bool = False  # Voyage AI has no reranker; disabled until replaced
+    reranker_model: str = "BAAI/bge-reranker-v2-m3"  # unused while reranker_enabled=False
 
     # OpenTelemetry
     otel_exporter_otlp_endpoint: str = "http://localhost:4317"
