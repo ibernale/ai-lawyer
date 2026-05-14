@@ -2238,7 +2238,7 @@ wheels = [
 
 [[package]]
 name = "lex-agents-admin"
-version = "0.1.0"
+version = "0.5.0"
 source = { editable = "packages/admin" }
 dependencies = [
     { name = "bcrypt" },
@@ -2259,7 +2259,7 @@ requires-dist = [
 
 [[package]]
 name = "lex-agents-agents"
-version = "0.1.0"
+version = "0.5.0"
 source = { editable = "packages/agents" }
 dependencies = [
     { name = "aiosqlite" },
@@ -2299,7 +2299,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "lex-agents-api"
-version = "0.1.0"
+version = "0.5.0"
 source = { editable = "apps/api" }
 dependencies = [
     { name = "aiosqlite" },
@@ -2367,7 +2367,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "lex-agents-audit"
-version = "0.1.0"
+version = "0.5.0"
 source = { editable = "packages/audit" }
 dependencies = [
     { name = "aiosqlite" },
@@ -2431,7 +2431,7 @@ provides-extras = ["notebook"]
 
 [[package]]
 name = "lex-agents-evals-advanced"
-version = "0.1.0"
+version = "0.5.0"
 source = { editable = "packages/evals_advanced" }
 dependencies = [
     { name = "anthropic" },
@@ -2469,7 +2469,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "lex-agents-ingest"
-version = "0.1.0"
+version = "0.5.0"
 source = { editable = "packages/ingest" }
 dependencies = [
     { name = "anthropic" },
@@ -2517,7 +2517,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "lex-agents-memory"
-version = "0.1.0"
+version = "0.5.0"
 source = { editable = "packages/memory" }
 dependencies = [
     { name = "jsonschema" },
@@ -2543,7 +2543,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "lex-agents-migrations"
-version = "0.1.0"
+version = "0.5.0"
 source = { editable = "packages/migrations" }
 dependencies = [
     { name = "alembic" },
@@ -2573,7 +2573,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "lex-agents-pipeline"
-version = "0.1.0"
+version = "0.5.0"
 source = { editable = "packages/pipeline" }
 dependencies = [
     { name = "dagster" },
@@ -2607,7 +2607,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "lex-agents-rag"
-version = "0.1.0"
+version = "0.5.0"
 source = { editable = "packages/rag" }
 dependencies = [
     { name = "anthropic" },
@@ -2641,7 +2641,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "lex-agents-shared"
-version = "0.1.0"
+version = "0.5.0"
 source = { editable = "packages/shared" }
 dependencies = [
     { name = "anthropic" },
@@ -2673,7 +2673,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "lex-agents-verifier"
-version = "0.1.0"
+version = "0.5.0"
 source = { editable = "packages/verifier" }
 dependencies = [
     { name = "anthropic" },
@@ -2707,10 +2707,11 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "lex-pipeline-aws"
-version = "0.1.0"
+version = "0.5.0"
 source = { editable = "packages/pipeline_aws" }
 dependencies = [
     { name = "boto3" },
+    { name = "lex-agents-ingest" },
     { name = "lex-agents-shared" },
     { name = "structlog" },
 ]
@@ -2725,6 +2726,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "boto3", specifier = ">=1.35.0" },
+    { name = "lex-agents-ingest", editable = "packages/ingest" },
     { name = "lex-agents-shared", editable = "packages/shared" },
     { name = "moto", extras = ["s3", "stepfunctions", "dynamodb"], marker = "extra == 'dev'", specifier = ">=5.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },

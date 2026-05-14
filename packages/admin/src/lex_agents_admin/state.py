@@ -17,8 +17,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import structlog
-
-from lex_agents_shared.db import is_postgres, pg_conn, pg_transaction
+from lex_agents_shared.db import is_postgres, pg_conn
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
@@ -225,7 +224,6 @@ class SystemStateManager:
                 )
         else:
             import aiosqlite
-            ts_str = ts.strftime("%Y-%m-%dT%H:%M:%S")
             async with aiosqlite.connect(self._db_path) as db:
                 await db.execute(
                     """INSERT INTO kill_switches (target, engaged, engaged_at, engaged_by, reason)

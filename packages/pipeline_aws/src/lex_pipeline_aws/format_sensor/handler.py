@@ -17,7 +17,7 @@ import hashlib
 import logging
 import os
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import boto3
@@ -73,7 +73,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
 
     table = dynamodb.Table(FINGERPRINTS_TABLE)
     changes: list[str] = []
-    checked_at = datetime.now(timezone.utc).isoformat()
+    checked_at = datetime.now(UTC).isoformat()
 
     for source, url in SOURCE_URLS.items():
         fingerprint = _get_fingerprint(url)

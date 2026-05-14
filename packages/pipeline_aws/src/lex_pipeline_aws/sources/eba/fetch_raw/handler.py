@@ -47,19 +47,18 @@ async def _fetch_documents() -> list[tuple[str, bytes, str]]:
     from lex_agents_ingest.sources.eba import EbaSource
 
     source = EbaSource()
-    try:
-        doc_ids = await source.list_documents()
-        logger.info("eba.fetch_raw.list_done", count=len(doc_ids))
+    doc_ids = await source.list_documents()
+    logger.info("eba.fetch_raw.list_done", count=len(doc_ids))
 
-        results: list[tuple[str, bytes, str]] = []
-        for doc_id in doc_ids:
-            try:
-                raw = await source.fetch(doc_id)
-                results.append((doc_id, raw.raw_bytes, "text/html"))
-                logger.info("eba.fetch_raw.fetched", doc_id=doc_id, bytes=len(raw.raw_bytes))
-            except Exception as exc:
-                logger.warning("eba.fetch_raw.fetch_failed", doc_id=doc_id, error=str(exc))
-        return results
+    results: list[tuple[str, bytes, str]] = []
+    for doc_id in doc_ids:
+        try:
+            raw = await source.fetch(doc_id)
+            results.append((doc_id, raw.raw_bytes, "text/html"))
+            logger.info("eba.fetch_raw.fetched", doc_id=doc_id, bytes=len(raw.raw_bytes))
+        except Exception as exc:
+            logger.warning("eba.fetch_raw.fetch_failed", doc_id=doc_id, error=str(exc))
+    return results
 
 
 def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:

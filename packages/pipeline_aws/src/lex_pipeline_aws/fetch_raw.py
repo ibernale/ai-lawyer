@@ -26,7 +26,6 @@ from __future__ import annotations
 
 import os
 import urllib.request
-from datetime import date, datetime
 from typing import Any
 
 import boto3

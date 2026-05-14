@@ -48,8 +48,8 @@ def _read_s3_object(s3_uri: str) -> bytes:
 
 def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """Step Functions Lambda handler for the FCA ParseCanonical stage."""
-    from lex_agents_ingest.sources.fca import FcaSource, COVERED_SECTIONS
     from lex_agents_ingest.canonical import RawDocument
+    from lex_agents_ingest.sources.fca import COVERED_SECTIONS, FcaSource
 
     evt = PipelineEvent.from_dict(event)
     logger.info("fca.parse_canonical_start", doc_id=evt.doc_id)

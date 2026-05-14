@@ -96,7 +96,7 @@ def get_secret_str(
 
 
 def build_aurora_dsn(
-    secret_id: str = "db/app-user",
+    secret_id: str = "db/app-user",  # noqa: S107 — AWS Secrets Manager path, not a password
     *,
     region: str = _REGION,
     asyncpg_dialect: bool = True,

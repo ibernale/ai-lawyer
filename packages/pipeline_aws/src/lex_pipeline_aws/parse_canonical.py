@@ -27,7 +27,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import xml.etree.ElementTree as ET
 from typing import Any
 from urllib.parse import urlparse
@@ -55,7 +54,7 @@ CANONICAL_BUCKET = os.environ.get("CANONICAL_BUCKET_NAME", "")
 
 def _parse_boe_sumario(xml_bytes: bytes) -> dict[str, Any]:
     """Parse BOE daily summary XML into canonical dict."""
-    root = ET.fromstring(xml_bytes)
+    root = ET.fromstring(xml_bytes)  # noqa: S314 — trusted official XML source (BOE/legislation)
 
     # Extract date from <sumario><meta><fecha>DD/MM/YYYY</fecha></meta></sumario>
     fecha_el = root.find(".//fecha")
@@ -96,7 +95,7 @@ def _parse_eur_lex_xml(xml_bytes: bytes) -> dict[str, Any]:
     Fase 9.2 stub — returns minimal structure.
     Full parser implemented in Fase 9.3.
     """
-    root = ET.fromstring(xml_bytes)
+    root = ET.fromstring(xml_bytes)  # noqa: S314 — trusted official XML source (BOE/legislation)
     date_attr = root.get("date", "")
 
     return {

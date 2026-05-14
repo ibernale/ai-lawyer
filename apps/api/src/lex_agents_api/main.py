@@ -185,9 +185,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Gracefully close the asyncpg pool if it was opened (Aurora mode)
     try:
         from lex_agents_shared.db import close_pool
+
         await close_pool()
-    except Exception:
-        pass
+    except Exception:  # noqa: S110
+        pass  # pool may not be initialised in SQLite mode
 
 
 # ---------------------------------------------------------------------------

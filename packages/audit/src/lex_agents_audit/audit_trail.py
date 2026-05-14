@@ -19,7 +19,6 @@ from datetime import UTC, datetime
 from typing import Any
 
 import structlog
-
 from lex_agents_shared.db import is_postgres, pg_conn, pg_transaction
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
