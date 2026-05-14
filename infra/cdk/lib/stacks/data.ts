@@ -13,6 +13,7 @@
  */
 
 import * as cdk from 'aws-cdk-lib';
+import * as backup from 'aws-cdk-lib/aws-backup';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as s3 from 'aws-cdk-lib/aws-s3';
@@ -21,6 +22,8 @@ import * as logs from 'aws-cdk-lib/aws-logs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 import { NagSuppressions } from 'cdk-nag';
+
+import { DR_REGION } from '../config/environments';
 
 import { NetworkSpokeStack } from './network-spoke';
 import { KmsStack } from './kms';
@@ -158,16 +161,11 @@ export class DataStack extends cdk.Stack {
       port: 5432,
     });
 
-    // NOTE: Automatic credential rotation via addRotationSingleUser() is deferred
-    // to Fase 9.3.  The rotation Lambda calls aurora.connections.allowDefaultPortFrom()
-    // internally, which resolves AuroraCluster/Resource.Endpoint.Port and creates a
-    // cross-stack dependency cycle (DataStack → NetworkSpokeStack → DataStack).
-    // Fix: create a dedicated VPC-internal Secrets Manager VPC endpoint first, then
-    // configure the rotation Lambda with an explicit SG that avoids the cycle.
+    // NOTE: Master credentials rotation was deferred in Fase 9.2.
     // For now: rotate master credentials manually via:
     //   aws secretsmanager rotate-secret --secret-id /lex-agents/dev/db/master
 
-    // ── App-user secret (no automatic rotation — application manages lifecycle) ─
+    // ── App-user secret ────────────────────────────────────────────────────────
     // The application reads this at startup.  Populate after deploy:
     //   aws secretsmanager put-secret-value \
     //     --secret-id /lex-agents/dev/db/app-user \
@@ -182,6 +180,45 @@ export class DataStack extends cdk.Stack {
         excludeCharacters: '"@/\\',
         passwordLength: 32,
       },
+    });
+
+    // ── Secrets rotation — app-user secret (Fase 9.4, ADR 0050) ──────────────
+    // Uses CfnRotationSchedule (L1) directly to avoid the CDK cross-stack cycle
+    // that addRotationSingleUser() would introduce via aurora.connections.
+    // The rotation Lambda SG is created here (DataStack) with an explicit egress
+    // rule to the Aurora SG — no Endpoint.Port token resolution required.
+    const sgRotation = new ec2.SecurityGroup(this, 'SgRotationLambda', {
+      vpc,
+      description: 'SM rotation Lambda for Aurora app-user',
+      allowAllOutbound: false,
+    });
+    // Use standalone L1 resources instead of addEgressRule/addIngressRule to
+    // avoid the CloudFormation cyclic dependency (SgAurora ↔ SgRotationLambda).
+    new ec2.CfnSecurityGroupEgress(this, 'SgRotationEgressToAurora', {
+      groupId: sgRotation.securityGroupId,
+      ipProtocol: 'tcp',
+      fromPort: 5432,
+      toPort: 5432,
+      destinationSecurityGroupId: this.sgAurora.securityGroupId,
+      description: 'PostgreSQL to Aurora for rotation',
+    });
+    new ec2.CfnSecurityGroupIngress(this, 'SgAuroraIngressFromRotation', {
+      groupId: this.sgAurora.securityGroupId,
+      ipProtocol: 'tcp',
+      fromPort: 5432,
+      toPort: 5432,
+      sourceSecurityGroupId: sgRotation.securityGroupId,
+      description: 'Secrets Manager rotation Lambda',
+    });
+
+    new secretsmanager.CfnRotationSchedule(this, 'AppUserRotation', {
+      secretId: this.dbAppUserSecret.secretArn,
+      hostedRotationLambda: {
+        rotationType: 'PostgreSQLSingleUser',
+        vpcSecurityGroupIds: sgRotation.securityGroupId,
+        vpcSubnetIds: vpc.selectSubnets({ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }).subnetIds.join(','),
+      },
+      rotationRules: { automaticallyAfterDays: 30 },
     });
 
     // ── CfnOutput: Aurora endpoints ───────────────────────────────────────────
@@ -331,6 +368,184 @@ export class DataStack extends cdk.Stack {
       backups: backupsBucket,
     };
 
+    // ── S3 Cross-Region Replication (CRR) — eu-west-1 DR replicas (Fase 9.4) ─
+    // ADR 0051: raw, canonical, backups buckets are replicated to eu-west-1.
+    // evals bucket is excluded (eval fixtures are reproducible; CRR cost not justified).
+
+    // CRR IAM role — S3 service assumes this to replicate objects
+    const crrRole = new iam.Role(this, 'S3CrrRole', {
+      roleName: `lex-agents-${envName}-s3-crr`,
+      assumedBy: new iam.ServicePrincipal('s3.amazonaws.com'),
+    });
+
+    // DR replica buckets — NOTE: Cross-region S3 buckets must be deployed in separate
+    // CloudFormation stacks targeting eu-west-1. These CfnBucket resources represent
+    // the bucket definitions; in production, deploy a separate DataDrStack in eu-west-1.
+    // The buckets are defined here for CDK synthesis validation and CRR role IAM grants.
+    // See docs/aws/dr-plan.md Appendix A for bootstrap procedure.
+    const rawDrBucket = new s3.CfnBucket(this, 'RawDrBucket', {
+      bucketName: `lex-agents-raw-${envName}-dr`,
+      bucketEncryption: {
+        serverSideEncryptionConfiguration: [
+          { serverSideEncryptionByDefault: { sseAlgorithm: 'AES256' } },
+        ],
+      },
+      versioningConfiguration: { status: 'Enabled' },
+      publicAccessBlockConfiguration: {
+        blockPublicAcls: true,
+        blockPublicPolicy: true,
+        ignorePublicAcls: true,
+        restrictPublicBuckets: true,
+      },
+    });
+
+    const canonicalDrBucket = new s3.CfnBucket(this, 'CanonicalDrBucket', {
+      bucketName: `lex-agents-canonical-${envName}-dr`,
+      bucketEncryption: {
+        serverSideEncryptionConfiguration: [
+          { serverSideEncryptionByDefault: { sseAlgorithm: 'AES256' } },
+        ],
+      },
+      versioningConfiguration: { status: 'Enabled' },
+      publicAccessBlockConfiguration: {
+        blockPublicAcls: true,
+        blockPublicPolicy: true,
+        ignorePublicAcls: true,
+        restrictPublicBuckets: true,
+      },
+    });
+
+    const backupsDrBucket = new s3.CfnBucket(this, 'BackupsDrBucket', {
+      bucketName: `lex-agents-backups-${envName}-dr`,
+      bucketEncryption: {
+        serverSideEncryptionConfiguration: [
+          { serverSideEncryptionByDefault: { sseAlgorithm: 'AES256' } },
+        ],
+      },
+      versioningConfiguration: { status: 'Enabled' },
+      publicAccessBlockConfiguration: {
+        blockPublicAcls: true,
+        blockPublicPolicy: true,
+        ignorePublicAcls: true,
+        restrictPublicBuckets: true,
+      },
+    });
+
+    // Grant CRR role read on source buckets and write on DR replicas
+    crrRole.addToPolicy(new iam.PolicyStatement({
+      sid: 'CrrSourceRead',
+      actions: [
+        's3:GetReplicationConfiguration',
+        's3:ListBucket',
+      ],
+      resources: [
+        rawBucket.bucketArn,
+        canonicalBucket.bucketArn,
+        backupsBucket.bucketArn,
+      ],
+    }));
+    crrRole.addToPolicy(new iam.PolicyStatement({
+      sid: 'CrrObjectRead',
+      actions: [
+        's3:GetObjectVersionForReplication',
+        's3:GetObjectVersionAcl',
+        's3:GetObjectVersionTagging',
+      ],
+      resources: [
+        `${rawBucket.bucketArn}/*`,
+        `${canonicalBucket.bucketArn}/*`,
+        `${backupsBucket.bucketArn}/*`,
+      ],
+    }));
+    // KMS grants for SSE-KMS encrypted source objects.
+    // The CRR role must be able to decrypt source objects and re-encrypt them
+    // in the destination.  Both the source KMS key (Decrypt) and the destination
+    // KMS key (GenerateDataKey / Encrypt) permissions are required.
+    // IMPORTANT: for production cross-region DR, replace s3Key with a CMK that
+    // has a key policy granting access from eu-west-1 (or use a multi-region key).
+    crrRole.addToPolicy(new iam.PolicyStatement({
+      sid: 'CrrKmsDecryptSource',
+      actions: ['kms:Decrypt', 'kms:GenerateDataKey'],
+      resources: [s3Key.keyArn],
+    }));
+    crrRole.addToPolicy(new iam.PolicyStatement({
+      sid: 'CrrDestWrite',
+      actions: [
+        's3:ReplicateObject',
+        's3:ReplicateDelete',
+        's3:ReplicateTags',
+      ],
+      resources: [
+        `arn:aws:s3:::lex-agents-raw-${envName}-dr/*`,
+        `arn:aws:s3:::lex-agents-canonical-${envName}-dr/*`,
+        `arn:aws:s3:::lex-agents-backups-${envName}-dr/*`,
+      ],
+    }));
+
+    // CfnBucketReplication on source buckets — applied via L1 overrides
+    // CRR replication rule helper — includes SSE-KMS source selection criteria
+    // so KMS-encrypted objects are replicated.  The destination must have a KMS
+    // key accessible from the DR region; s3Key.keyArn is a placeholder for CDK
+    // synthesis.  Replace with a CMK in eu-west-1 before enabling live CRR.
+    const makeCrrRule = (destBucketName: string): s3.CfnBucket.ReplicationRuleProperty => ({
+      id: 'ReplicateToDrRegion',
+      status: 'Enabled',
+      sourceSelectionCriteria: {
+        sseKmsEncryptedObjects: { status: 'Enabled' },
+      },
+      destination: {
+        bucket: `arn:aws:s3:::${destBucketName}`,
+        storageClass: 'STANDARD_IA',
+        encryptionConfiguration: {
+          // PRODUCTION: replace with a CMK key ARN in eu-west-1.
+          replicaKmsKeyId: s3Key.keyArn,
+        },
+      },
+    });
+
+    const rawBucketCfn = rawBucket.node.defaultChild as s3.CfnBucket;
+    rawBucketCfn.replicationConfiguration = {
+      role: crrRole.roleArn,
+      rules: [makeCrrRule(`lex-agents-raw-${envName}-dr`)],
+    };
+
+    const canonicalBucketCfn = canonicalBucket.node.defaultChild as s3.CfnBucket;
+    canonicalBucketCfn.replicationConfiguration = {
+      role: crrRole.roleArn,
+      rules: [makeCrrRule(`lex-agents-canonical-${envName}-dr`)],
+    };
+
+    const backupsBucketCfn = backupsBucket.node.defaultChild as s3.CfnBucket;
+    backupsBucketCfn.replicationConfiguration = {
+      role: crrRole.roleArn,
+      rules: [makeCrrRule(`lex-agents-backups-${envName}-dr`)],
+    };
+
+    // ── AWS Backup — Aurora cross-region DR (Fase 9.4, ADR 0051) ──────────────
+    // Cross-region copy action requires DR vault bootstrap in eu-west-1 —
+    // see docs/aws/dr-plan.md for the bootstrap procedure.
+    // For now, we create only the local backup vault and plan.
+
+    const backupVault = new backup.BackupVault(this, 'AuroraBackupVault', {
+      backupVaultName: `lex-agents-${envName}-aurora-backup`,
+      // Encrypt backup vault with the same KMS key used for Aurora storage.
+      encryptionKey: rdsKey,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
+    const backupPlan = new backup.BackupPlan(this, 'AuroraBackupPlan', {
+      // Named "local-backup" (not "dr") until cross-region copy action is
+      // configured with a DR vault in eu-west-1 (see docs/aws/dr-plan.md).
+      backupPlanName: `lex-agents-${envName}-aurora-local-backup`,
+      backupVault,
+    });
+
+    backupPlan.addRule(backup.BackupPlanRule.daily());
+
+    backupPlan.addSelection('AuroraSelection', {
+      resources: [backup.BackupResource.fromRdsDatabaseCluster(this.aurora)],
+    });
+
     // ── CfnOutputs: bucket names ──────────────────────────────────────────────
     new cdk.CfnOutput(this, 'RawBucketName', {
       value: rawBucket.bucketName,
@@ -456,6 +671,18 @@ export class DataStack extends cdk.Stack {
       {
         id: 'HIPAA.Security-CloudWatchLogGroupEncrypted',
         reason: 'Aurora audit log group is encrypted with the KMS logsKey. The cdk-nag warning fires on the auto-created retention custom resource Lambda log group which is outside our control.',
+      },
+      {
+        id: 'HIPAA.Security-S3BucketReplicationEnabled',
+        reason: 'CRR is now enabled on raw, canonical, and backups buckets (Fase 9.4). evals bucket excluded — eval data is reproducible.',
+      },
+      {
+        id: 'AwsSolutions-BAK3',
+        reason: 'Cross-region backup vault copy action requires eu-west-1 DR vault bootstrap — see docs/aws/dr-plan.md. Local vault and plan are created; cross-region copy added post-bootstrap.',
+      },
+      {
+        id: 'AwsSolutions-BAK1',
+        reason: 'Backup vault access policy not required for dev environment backup vault.',
       },
     ]);
   }

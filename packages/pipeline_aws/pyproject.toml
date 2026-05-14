@@ -10,6 +10,8 @@ requires-python = ">=3.12"
 dependencies = [
     # Shared types and observability
     "lex-agents-shared",
+    # Ingest source scrapers — used by per-source Lambda handlers
+    "lex-agents-ingest",
     # AWS SDK — available in Lambda execution environment; listed for local dev
     "boto3>=1.35.0",
     "structlog>=25.0.0",

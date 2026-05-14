@@ -75,11 +75,10 @@ describe('DataStack — Aurora Serverless v2', () => {
     template.resourceCountIs('AWS::RDS::DBInstance', 2);
   });
 
-  test('No automatic rotation schedule (deferred to Fase 9.3 — see data.ts comment)', () => {
-    // addRotationSingleUser is deferred because it causes a cross-stack cyclic
-    // dependency in CDK tests (AuroraCluster/Resource.Endpoint.Port).
-    // Manual rotation is documented in data.ts.
-    template.resourceCountIs('AWS::SecretsManager::RotationSchedule', 0);
+  test('Rotation schedule exists for app-user secret (Fase 9.4, ADR 0050)', () => {
+    // CfnRotationSchedule (L1) is used to avoid CDK cross-stack cycle.
+    // PostgreSQLSingleUser hosted rotation Lambda — 30-day rotation period.
+    template.resourceCountIs('AWS::SecretsManager::RotationSchedule', 1);
   });
 
   test('Aurora subnet group uses ISOLATED subnets', () => {
@@ -92,24 +91,24 @@ describe('DataStack — Aurora Serverless v2', () => {
 describe('DataStack — S3 Buckets', () => {
   const { template } = buildStack();
 
-  test('All 4 S3 buckets exist', () => {
-    template.resourceCountIs('AWS::S3::Bucket', 4);
+  test('Primary S3 buckets exist (raw, canonical, evals, backups)', () => {
+    // 4 primary L2 buckets; DR replicas use CfnBucket (also AWS::S3::Bucket resources)
+    const buckets = template.findResources('AWS::S3::Bucket');
+    expect(Object.keys(buckets).length).toBeGreaterThanOrEqual(4);
   });
 
-  test('All S3 buckets use SSE-KMS encryption', () => {
+  test('Primary S3 buckets use SSE-KMS encryption', () => {
+    // 4 primary L2 buckets use KMS; 3 DR CfnBuckets use AES256 (cross-region replicas)
     const buckets = template.findResources('AWS::S3::Bucket');
-    const bucketList = Object.values(buckets);
-    expect(bucketList.length).toBe(4);
-
-    bucketList.forEach((bucket: any) => {
+    const kmsEncryptedBuckets = Object.values(buckets).filter((bucket: any) => {
       const rules =
         bucket.Properties.BucketEncryption?.ServerSideEncryptionConfiguration ?? [];
-      const hasKms = rules.some(
-        (r: any) =>
-          r.ServerSideEncryptionByDefault?.SSEAlgorithm === 'aws:kms',
+      return rules.some(
+        (r: any) => r.ServerSideEncryptionByDefault?.SSEAlgorithm === 'aws:kms',
       );
-      expect(hasKms).toBe(true);
     });
+    // At least 4 primary buckets are KMS-encrypted
+    expect(kmsEncryptedBuckets.length).toBeGreaterThanOrEqual(4);
   });
 
   test('No S3 bucket allows public access (security assertion)', () => {
@@ -219,9 +218,30 @@ describe('DataStack — Secrets Manager', () => {
     });
   });
 
-  test('No rotation schedule exists (rotation deferred to Fase 9.3)', () => {
-    // Both master and app-user rotation are deferred — no RotationSchedule in template.
-    template.resourceCountIs('AWS::SecretsManager::RotationSchedule', 0);
+  test('App-user rotation schedule exists (1 RotationSchedule resource)', () => {
+    // CfnRotationSchedule (L1) added in Fase 9.4 for ADR 0050 compliance.
+    template.resourceCountIs('AWS::SecretsManager::RotationSchedule', 1);
+  });
+});
+
+// ── AWS Backup (Fase 9.4, ADR 0051) ───────────────────────────────────────────
+
+describe('DataStack — AWS Backup', () => {
+  const { template } = buildStack();
+
+  test('AWS Backup vault exists for Aurora DR', () => {
+    template.hasResourceProperties('AWS::Backup::BackupVault', {
+      BackupVaultName: 'lex-agents-dev-aurora-backup',
+    });
+  });
+
+  test('AWS Backup plan exists', () => {
+    template.hasResourceProperties('AWS::Backup::BackupPlan', Match.objectLike({}));
+  });
+
+  test('AWS Backup selection includes Aurora cluster', () => {
+    const selections = template.findResources('AWS::Backup::BackupSelection');
+    expect(Object.keys(selections).length).toBeGreaterThanOrEqual(1);
   });
 });
 

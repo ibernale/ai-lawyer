@@ -16,7 +16,8 @@ import { AppEcrStack } from '../lib/stacks/app-ecr';
 import { AppServicesStack } from '../lib/stacks/app-services';
 import { DataStack } from '../lib/stacks/data';
 import { ObservabilityStack } from '../lib/stacks/observability';
-import { PipelineStack } from '../lib/stacks/pipeline';
+import { PipelinesStack } from '../lib/stacks/pipelines';
+import { LangfuseStack } from '../lib/stacks/langfuse';
 
 const app = new cdk.App();
 const accounts = getAccounts(app);
@@ -90,20 +91,27 @@ const devApp = new AppServicesStack(app, 'LexAgents-Dev-App', {
   dataStack: devData,
 });
 
+const devPipelines = new PipelinesStack(app, 'LexAgents-Dev-Pipelines', {
+  env: devEnv,
+  envName: 'dev',
+  networkStack: networkSpoke,
+  dataStack: devData,
+  appServicesStack: devApp,
+});
+
+new LangfuseStack(app, 'LexAgents-Dev-Langfuse', {
+  env: devEnv,
+  envName: 'dev',
+  networkStack: networkSpoke,
+});
+
 new ObservabilityStack(app, 'LexAgents-Dev-Observability', {
   env: devEnv,
   envName: 'dev',
   networkStack: networkSpoke,
   appServicesStack: devApp,
   dataStack: devData,
-});
-
-new PipelineStack(app, 'LexAgents-Dev-Pipeline', {
-  env: devEnv,
-  envName: 'dev',
-  networkStack: networkSpoke,
-  dataStack: devData,
-  appServicesStack: devApp,
+  pipelinesStack: devPipelines,
 });
 
 new GithubOidcStack(app, 'LexAgents-Dev-GithubOidc', {

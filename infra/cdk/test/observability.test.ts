@@ -44,7 +44,15 @@ class StubNetworkStack extends cdk.Stack {
   public readonly vpc: ec2.IVpc;
   constructor(scope: Construct, id: string, props: cdk.StackProps) {
     super(scope, id, props);
-    this.vpc = new ec2.Vpc(this, 'Vpc', { maxAzs: 1, natGateways: 0 });
+    // Include PRIVATE_WITH_EGRESS subnets — required by alert-router Lambda VPC config.
+    this.vpc = new ec2.Vpc(this, 'Vpc', {
+      maxAzs: 1,
+      natGateways: 1,
+      subnetConfiguration: [
+        { name: 'public',      subnetType: ec2.SubnetType.PUBLIC,             cidrMask: 24 },
+        { name: 'private-app', subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS, cidrMask: 24 },
+      ],
+    });
   }
 }
 
@@ -124,8 +132,8 @@ describe('ObservabilityStack — SNS', () => {
 // ── CloudWatch Alarms ─────────────────────────────────────────────────────────
 
 describe('ObservabilityStack — Alarms', () => {
-  test('Exactly 5 alarms are created', () => {
-    template.resourceCountIs('AWS::CloudWatch::Alarm', 5);
+  test('Exactly 7 alarms are created (5 original + 2 new in Fase 9.4)', () => {
+    template.resourceCountIs('AWS::CloudWatch::Alarm', 7);
   });
 
   test('API CPU alarm is configured at 80% threshold', () => {
@@ -195,8 +203,8 @@ describe('ObservabilityStack — Dashboard', () => {
     });
   });
 
-  test('Exactly one dashboard is created', () => {
-    template.resourceCountIs('AWS::CloudWatch::Dashboard', 1);
+  test('Exactly 3 dashboards are created (main, pipeline, dora) — updated Fase 9.4', () => {
+    template.resourceCountIs('AWS::CloudWatch::Dashboard', 3);
   });
 
   test('Dashboard body contains ECS CPU and Memory widgets', () => {
@@ -240,6 +248,90 @@ describe('ObservabilityStack — Outputs', () => {
 
   test('DashboardUrl output exists', () => {
     template.hasOutput('DashboardUrl', Match.anyValue());
+  });
+});
+
+// ── CloudWatch Logs Insights QueryDefinitions (Fase 9.4) ─────────────────────
+
+describe('ObservabilityStack — Logs Insights Queries', () => {
+  test('3 CloudWatch Logs Insights QueryDefinitions exist', () => {
+    template.resourceCountIs('AWS::Logs::QueryDefinition', 3);
+  });
+
+  test('errors-last-hour query definition exists', () => {
+    template.hasResourceProperties('AWS::Logs::QueryDefinition', {
+      Name: 'lex-agents-dev-errors-last-hour',
+    });
+  });
+
+  test('slow-queries-by-trace query definition exists', () => {
+    template.hasResourceProperties('AWS::Logs::QueryDefinition', {
+      Name: 'lex-agents-dev-slow-queries-by-trace',
+    });
+  });
+
+  test('agent-invocations-by-branch query definition exists', () => {
+    template.hasResourceProperties('AWS::Logs::QueryDefinition', {
+      Name: 'lex-agents-dev-agent-invocations-by-branch',
+    });
+  });
+});
+
+// ── Additional Dashboards (Fase 9.4) ─────────────────────────────────────────
+
+describe('ObservabilityStack — Pipeline & DORA Dashboards', () => {
+  test('3 CloudWatch Dashboards exist (main, pipeline, dora)', () => {
+    template.resourceCountIs('AWS::CloudWatch::Dashboard', 3);
+  });
+
+  test('Pipeline dashboard exists with correct name', () => {
+    template.hasResourceProperties('AWS::CloudWatch::Dashboard', {
+      DashboardName: 'lex-agents-dev-pipeline',
+    });
+  });
+
+  test('DORA dashboard exists with correct name', () => {
+    template.hasResourceProperties('AWS::CloudWatch::Dashboard', {
+      DashboardName: 'lex-agents-dev-dora',
+    });
+  });
+
+  test('Pipeline dashboard body contains Step Functions metrics', () => {
+    const dashboards = template.findResources('AWS::CloudWatch::Dashboard');
+    const pipelineDash = Object.values(dashboards).find((d: any) =>
+      d.Properties.DashboardName === 'lex-agents-dev-pipeline',
+    );
+    expect(pipelineDash).toBeDefined();
+    const rawBody = (pipelineDash as any).Properties.DashboardBody;
+    const bodyStr = typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody);
+    expect(bodyStr).toContain('ExecutionsFailed');
+  });
+
+  test('DORA dashboard body contains security metrics', () => {
+    const dashboards = template.findResources('AWS::CloudWatch::Dashboard');
+    const doraDash = Object.values(dashboards).find((d: any) =>
+      d.Properties.DashboardName === 'lex-agents-dev-dora',
+    );
+    expect(doraDash).toBeDefined();
+    const rawBody = (doraDash as any).Properties.DashboardBody;
+    const bodyStr = typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody);
+    expect(bodyStr).toContain('LoginFailures');
+  });
+});
+
+// ── Alert router Lambda (Fase 9.4) ────────────────────────────────────────────
+
+describe('ObservabilityStack — Alert Router Lambda', () => {
+  test('alert-router Lambda exists', () => {
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      FunctionName: 'lex-agents-dev-alert-router',
+    });
+  });
+
+  test('EventBridge alarm fanout rule exists', () => {
+    template.hasResourceProperties('AWS::Events::Rule', {
+      Name: 'lex-agents-dev-alarm-fanout',
+    });
   });
 });
 
