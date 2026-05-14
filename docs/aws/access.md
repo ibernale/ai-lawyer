@@ -32,12 +32,12 @@ The URL format is: `https://d-XXXXXXXXXX.awsapps.com/start`
 
 ## Roles and permissions
 
-| Role | Permission Set | What you can do |
-|------|---------------|-----------------|
-| Platform engineer | AdministratorAccess | Full access to all resources. Session: 4h. Requires MFA. |
-| Developer | DeveloperAccess | PowerUser — all AWS services except IAM admin and billing. Session: 8h. |
-| Data analyst | DataAnalystAccess | Read-only across all services + full Athena for log queries. Session: 8h. |
-| Security team | SecurityAuditAccess | Read-only security audit across all accounts. Session: 8h. |
+| Role              | Permission Set      | What you can do                                                           |
+| ----------------- | ------------------- | ------------------------------------------------------------------------- |
+| Platform engineer | AdministratorAccess | Full access to all resources. Session: 4h. Requires MFA.                  |
+| Developer         | DeveloperAccess     | PowerUser — all AWS services except IAM admin and billing. Session: 8h.   |
+| Data analyst      | DataAnalystAccess   | Read-only across all services + full Athena for log queries. Session: 8h. |
+| Security team     | SecurityAuditAccess | Read-only security audit across all accounts. Session: 8h.                |
 
 Permission sets are managed via CDK in `LexAgents-IdentityCenter` stack. Group assignments are done manually in the Identity Center console (see `docs/aws/account-bootstrap.md`).
 
@@ -52,6 +52,7 @@ aws configure sso --profile lex-agents-dev
 ```
 
 Follow the prompts:
+
 - SSO start URL: `https://d-XXXXXXXXXX.awsapps.com/start`
 - SSO region: `eu-central-1`
 - Account ID: (workloads-dev account ID)
@@ -60,16 +61,19 @@ Follow the prompts:
 - Default region: `eu-central-1`
 
 Then use it:
+
 ```bash
 aws s3 ls --profile lex-agents-dev
 ```
 
 To login (opens browser):
+
 ```bash
 aws sso login --profile lex-agents-dev
 ```
 
 To set as default for the shell session:
+
 ```bash
 export AWS_PROFILE=lex-agents-dev
 ```
@@ -108,6 +112,7 @@ region = eu-central-1
 ## Switching roles in the browser
 
 In the AWS Console:
+
 1. Click your account name (top right) → **Switch role**
 2. Or use the IAM Identity Center portal to jump directly to an account/role combination
 3. The console will prompt for MFA when accessing Administrator permission sets
@@ -119,6 +124,7 @@ In the AWS Console:
 CI/CD never uses long-lived credentials. The `LexAgents-Dev-GithubOidc` stack creates an OIDC provider and a scoped deploy role.
 
 Set up in GitHub repository settings:
+
 1. Go to **Settings → Environments → aws-dev**
 2. Add variable `AWS_DEPLOY_ROLE_ARN` = value from `DeployRoleArn` CDK output
 3. The CDK Deploy workflow will authenticate automatically via `aws-actions/configure-aws-credentials@v4`

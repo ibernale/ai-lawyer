@@ -8,17 +8,17 @@
  * directly from the synthesised template.
  */
 
-import * as cdk from 'aws-cdk-lib';
-import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
-import * as ecs from 'aws-cdk-lib/aws-ecs';
-import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as rds from 'aws-cdk-lib/aws-rds';
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
-import * as s3 from 'aws-cdk-lib/aws-s3';
-import { Match, Template } from 'aws-cdk-lib/assertions';
-import { Construct } from 'constructs';
-import { ObservabilityStack } from '../lib/stacks/observability';
+import * as cdk from "aws-cdk-lib";
+import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch";
+import * as ecs from "aws-cdk-lib/aws-ecs";
+import * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
+import * as ec2 from "aws-cdk-lib/aws-ec2";
+import * as rds from "aws-cdk-lib/aws-rds";
+import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
+import * as s3 from "aws-cdk-lib/aws-s3";
+import { Match, Template } from "aws-cdk-lib/assertions";
+import { Construct } from "constructs";
+import { ObservabilityStack } from "../lib/stacks/observability";
 
 // ── Stub stacks that satisfy the type contracts without cross-stack grants ─────
 
@@ -29,10 +29,13 @@ class StubAppServicesStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: cdk.StackProps) {
     super(scope, id, props);
-    const vpc = new ec2.Vpc(this, 'Vpc', { maxAzs: 1, natGateways: 0 });
-    this.cluster = new ecs.Cluster(this, 'Cluster', { clusterName: 'lex-agents-dev', vpc });
-    this.alb = new elbv2.ApplicationLoadBalancer(this, 'Alb', {
-      loadBalancerName: 'lex-agents-dev',
+    const vpc = new ec2.Vpc(this, "Vpc", { maxAzs: 1, natGateways: 0 });
+    this.cluster = new ecs.Cluster(this, "Cluster", {
+      clusterName: "lex-agents-dev",
+      vpc,
+    });
+    this.alb = new elbv2.ApplicationLoadBalancer(this, "Alb", {
+      loadBalancerName: "lex-agents-dev",
       vpc,
       internetFacing: false,
     });
@@ -45,12 +48,16 @@ class StubNetworkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: cdk.StackProps) {
     super(scope, id, props);
     // Include PRIVATE_WITH_EGRESS subnets — required by alert-router Lambda VPC config.
-    this.vpc = new ec2.Vpc(this, 'Vpc', {
+    this.vpc = new ec2.Vpc(this, "Vpc", {
       maxAzs: 1,
       natGateways: 1,
       subnetConfiguration: [
-        { name: 'public',      subnetType: ec2.SubnetType.PUBLIC,             cidrMask: 24 },
-        { name: 'private-app', subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS, cidrMask: 24 },
+        { name: "public", subnetType: ec2.SubnetType.PUBLIC, cidrMask: 24 },
+        {
+          name: "private-app",
+          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+          cidrMask: 24,
+        },
       ],
     });
   }
@@ -61,31 +68,44 @@ class StubDataStack extends cdk.Stack {
   public readonly aurora: rds.IDatabaseCluster;
   public readonly dbAppUserSecret: secretsmanager.ISecret;
   public readonly buckets: {
-    raw: s3.IBucket; canonical: s3.IBucket; evals: s3.IBucket; backups: s3.IBucket;
+    raw: s3.IBucket;
+    canonical: s3.IBucket;
+    evals: s3.IBucket;
+    backups: s3.IBucket;
   };
 
   constructor(scope: Construct, id: string, props: cdk.StackProps) {
     super(scope, id, props);
     // Stub aurora — only clusterEndpoint.hostname is read by ObservabilityStack
-    this.aurora = rds.DatabaseCluster.fromDatabaseClusterAttributes(this, 'Aurora', {
-      clusterIdentifier: 'lex-agents-dev',
-      clusterEndpointAddress: 'stub.cluster.eu-central-1.rds.amazonaws.com',
-      readerEndpointAddress: 'stub.reader.eu-central-1.rds.amazonaws.com',
-      instanceEndpointAddresses: [],
-      instanceIdentifiers: [],
-      port: 5432,
-      securityGroups: [],
-    });
+    this.aurora = rds.DatabaseCluster.fromDatabaseClusterAttributes(
+      this,
+      "Aurora",
+      {
+        clusterIdentifier: "lex-agents-dev",
+        clusterEndpointAddress: "stub.cluster.eu-central-1.rds.amazonaws.com",
+        readerEndpointAddress: "stub.reader.eu-central-1.rds.amazonaws.com",
+        instanceEndpointAddresses: [],
+        instanceIdentifiers: [],
+        port: 5432,
+        securityGroups: [],
+      },
+    );
     this.dbAppUserSecret = secretsmanager.Secret.fromSecretNameV2(
-      this, 'DbSecret', '/lex-agents/dev/db/app-user',
+      this,
+      "DbSecret",
+      "/lex-agents/dev/db/app-user",
     );
     const makeBucket = (bid: string): s3.IBucket =>
-      s3.Bucket.fromBucketName(this, bid, `lex-agents-${bid.toLowerCase()}-dev-123456789012`);
+      s3.Bucket.fromBucketName(
+        this,
+        bid,
+        `lex-agents-${bid.toLowerCase()}-dev-123456789012`,
+      );
     this.buckets = {
-      raw: makeBucket('Raw'),
-      canonical: makeBucket('Canonical'),
-      evals: makeBucket('Evals'),
-      backups: makeBucket('Backups'),
+      raw: makeBucket("Raw"),
+      canonical: makeBucket("Canonical"),
+      evals: makeBucket("Evals"),
+      backups: makeBucket("Backups"),
     };
   }
 }
@@ -94,15 +114,15 @@ class StubDataStack extends cdk.Stack {
 
 function buildStack(): Template {
   const app = new cdk.App();
-  const env = { account: '123456789012', region: 'eu-central-1' };
+  const env = { account: "123456789012", region: "eu-central-1" };
 
-  const networkStack = new StubNetworkStack(app, 'TestNetwork', { env });
-  const appServicesStack = new StubAppServicesStack(app, 'TestApp', { env });
-  const dataStack = new StubDataStack(app, 'TestData', { env });
+  const networkStack = new StubNetworkStack(app, "TestNetwork", { env });
+  const appServicesStack = new StubAppServicesStack(app, "TestApp", { env });
+  const dataStack = new StubDataStack(app, "TestData", { env });
 
-  const stack = new ObservabilityStack(app, 'TestObservability', {
+  const stack = new ObservabilityStack(app, "TestObservability", {
     env,
-    envName: 'dev',
+    envName: "dev",
     networkStack: networkStack as any,
     appServicesStack: appServicesStack as any,
     dataStack: dataStack as any,
@@ -116,74 +136,74 @@ const template = buildStack();
 
 // ── SNS topic ─────────────────────────────────────────────────────────────────
 
-describe('ObservabilityStack — SNS', () => {
-  test('SNS alerts topic exists with correct name', () => {
-    template.hasResourceProperties('AWS::SNS::Topic', {
-      TopicName: 'lex-agents-dev-alerts',
-      DisplayName: 'lex-agents dev alerts',
+describe("ObservabilityStack — SNS", () => {
+  test("SNS alerts topic exists with correct name", () => {
+    template.hasResourceProperties("AWS::SNS::Topic", {
+      TopicName: "lex-agents-dev-alerts",
+      DisplayName: "lex-agents dev alerts",
     });
   });
 
-  test('Exactly one SNS topic is created', () => {
-    template.resourceCountIs('AWS::SNS::Topic', 1);
+  test("Exactly one SNS topic is created", () => {
+    template.resourceCountIs("AWS::SNS::Topic", 1);
   });
 });
 
 // ── CloudWatch Alarms ─────────────────────────────────────────────────────────
 
-describe('ObservabilityStack — Alarms', () => {
-  test('Exactly 7 alarms are created (5 original + 2 new in Fase 9.4)', () => {
-    template.resourceCountIs('AWS::CloudWatch::Alarm', 7);
+describe("ObservabilityStack — Alarms", () => {
+  test("Exactly 7 alarms are created (5 original + 2 new in Fase 9.4)", () => {
+    template.resourceCountIs("AWS::CloudWatch::Alarm", 7);
   });
 
-  test('API CPU alarm is configured at 80% threshold', () => {
-    template.hasResourceProperties('AWS::CloudWatch::Alarm', {
-      AlarmName: 'lex-agents-dev-api-cpu-high',
+  test("API CPU alarm is configured at 80% threshold", () => {
+    template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+      AlarmName: "lex-agents-dev-api-cpu-high",
       Threshold: 80,
-      MetricName: 'CPUUtilization',
-      Namespace: 'AWS/ECS',
+      MetricName: "CPUUtilization",
+      Namespace: "AWS/ECS",
     });
   });
 
-  test('API Memory alarm is configured at 85% threshold', () => {
-    template.hasResourceProperties('AWS::CloudWatch::Alarm', {
-      AlarmName: 'lex-agents-dev-api-memory-high',
+  test("API Memory alarm is configured at 85% threshold", () => {
+    template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+      AlarmName: "lex-agents-dev-api-memory-high",
       Threshold: 85,
-      MetricName: 'MemoryUtilization',
-      Namespace: 'AWS/ECS',
+      MetricName: "MemoryUtilization",
+      Namespace: "AWS/ECS",
     });
   });
 
-  test('Aurora capacity alarm targets > 7 ACU for 10 periods', () => {
-    template.hasResourceProperties('AWS::CloudWatch::Alarm', {
-      AlarmName: 'lex-agents-dev-aurora-capacity-high',
+  test("Aurora capacity alarm targets > 7 ACU for 10 periods", () => {
+    template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+      AlarmName: "lex-agents-dev-aurora-capacity-high",
       Threshold: 7,
       EvaluationPeriods: 10,
-      MetricName: 'ServerlessDatabaseCapacity',
-      Namespace: 'AWS/RDS',
+      MetricName: "ServerlessDatabaseCapacity",
+      Namespace: "AWS/RDS",
     });
   });
 
-  test('ALB 5xx alarm targets > 10 errors', () => {
-    template.hasResourceProperties('AWS::CloudWatch::Alarm', {
-      AlarmName: 'lex-agents-dev-alb-5xx-high',
+  test("ALB 5xx alarm targets > 10 errors", () => {
+    template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+      AlarmName: "lex-agents-dev-alb-5xx-high",
       Threshold: 10,
-      MetricName: 'HTTPCode_Target_5XX_Count',
-      Namespace: 'AWS/ApplicationELB',
+      MetricName: "HTTPCode_Target_5XX_Count",
+      Namespace: "AWS/ApplicationELB",
     });
   });
 
-  test('ALB P99 latency alarm targets > 10 seconds', () => {
-    template.hasResourceProperties('AWS::CloudWatch::Alarm', {
-      AlarmName: 'lex-agents-dev-alb-latency-p99',
+  test("ALB P99 latency alarm targets > 10 seconds", () => {
+    template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+      AlarmName: "lex-agents-dev-alb-latency-p99",
       Threshold: 10,
-      MetricName: 'TargetResponseTime',
-      Namespace: 'AWS/ApplicationELB',
+      MetricName: "TargetResponseTime",
+      Namespace: "AWS/ApplicationELB",
     });
   });
 
-  test('All alarms have at least one alarm action (SNS)', () => {
-    const alarms = template.findResources('AWS::CloudWatch::Alarm');
+  test("All alarms have at least one alarm action (SNS)", () => {
+    const alarms = template.findResources("AWS::CloudWatch::Alarm");
     Object.values(alarms).forEach((alarm: any) => {
       const actions: unknown[] = [
         ...(alarm.Properties.AlarmActions ?? []),
@@ -196,165 +216,168 @@ describe('ObservabilityStack — Alarms', () => {
 
 // ── CloudWatch Dashboard ──────────────────────────────────────────────────────
 
-describe('ObservabilityStack — Dashboard', () => {
-  test('CloudWatch Dashboard exists with correct name', () => {
-    template.hasResourceProperties('AWS::CloudWatch::Dashboard', {
-      DashboardName: 'lex-agents-dev',
+describe("ObservabilityStack — Dashboard", () => {
+  test("CloudWatch Dashboard exists with correct name", () => {
+    template.hasResourceProperties("AWS::CloudWatch::Dashboard", {
+      DashboardName: "lex-agents-dev",
     });
   });
 
-  test('At least 3 dashboards are created (main, pipeline, dora + optional finops)', () => {
-    const dashboards = template.findResources('AWS::CloudWatch::Dashboard');
+  test("At least 3 dashboards are created (main, pipeline, dora + optional finops)", () => {
+    const dashboards = template.findResources("AWS::CloudWatch::Dashboard");
     expect(Object.keys(dashboards).length).toBeGreaterThanOrEqual(3);
   });
 
-  test('Dashboard body contains ECS CPU and Memory widgets', () => {
-    const dashboards = template.findResources('AWS::CloudWatch::Dashboard');
+  test("Dashboard body contains ECS CPU and Memory widgets", () => {
+    const dashboards = template.findResources("AWS::CloudWatch::Dashboard");
     const dash = Object.values(dashboards)[0] as any;
     // DashboardBody may be a plain string or a Fn::Join token
     const rawBody = dash.Properties.DashboardBody;
-    const bodyStr = typeof rawBody === 'string'
-      ? rawBody
-      : JSON.stringify(rawBody);
-    expect(bodyStr).toContain('CPUUtilization');
-    expect(bodyStr).toContain('MemoryUtilization');
+    const bodyStr =
+      typeof rawBody === "string" ? rawBody : JSON.stringify(rawBody);
+    expect(bodyStr).toContain("CPUUtilization");
+    expect(bodyStr).toContain("MemoryUtilization");
   });
 
-  test('Dashboard body contains ALB metrics', () => {
-    const dashboards = template.findResources('AWS::CloudWatch::Dashboard');
+  test("Dashboard body contains ALB metrics", () => {
+    const dashboards = template.findResources("AWS::CloudWatch::Dashboard");
     const dash = Object.values(dashboards)[0] as any;
     const rawBody = dash.Properties.DashboardBody;
-    const bodyStr = typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody);
-    expect(bodyStr).toContain('RequestCount');
-    expect(bodyStr).toContain('HTTPCode_Target_5XX_Count');
-    expect(bodyStr).toContain('TargetResponseTime');
+    const bodyStr =
+      typeof rawBody === "string" ? rawBody : JSON.stringify(rawBody);
+    expect(bodyStr).toContain("RequestCount");
+    expect(bodyStr).toContain("HTTPCode_Target_5XX_Count");
+    expect(bodyStr).toContain("TargetResponseTime");
   });
 
-  test('Dashboard body contains Aurora metrics', () => {
-    const dashboards = template.findResources('AWS::CloudWatch::Dashboard');
+  test("Dashboard body contains Aurora metrics", () => {
+    const dashboards = template.findResources("AWS::CloudWatch::Dashboard");
     const dash = Object.values(dashboards)[0] as any;
     const rawBody = dash.Properties.DashboardBody;
-    const bodyStr = typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody);
-    expect(bodyStr).toContain('ServerlessDatabaseCapacity');
-    expect(bodyStr).toContain('DatabaseConnections');
+    const bodyStr =
+      typeof rawBody === "string" ? rawBody : JSON.stringify(rawBody);
+    expect(bodyStr).toContain("ServerlessDatabaseCapacity");
+    expect(bodyStr).toContain("DatabaseConnections");
   });
 });
 
 // ── Outputs ───────────────────────────────────────────────────────────────────
 
-describe('ObservabilityStack — Outputs', () => {
-  test('AlertsTopicArn output exists', () => {
-    template.hasOutput('AlertsTopicArn', Match.anyValue());
+describe("ObservabilityStack — Outputs", () => {
+  test("AlertsTopicArn output exists", () => {
+    template.hasOutput("AlertsTopicArn", Match.anyValue());
   });
 
-  test('DashboardUrl output exists', () => {
-    template.hasOutput('DashboardUrl', Match.anyValue());
+  test("DashboardUrl output exists", () => {
+    template.hasOutput("DashboardUrl", Match.anyValue());
   });
 });
 
 // ── CloudWatch Logs Insights QueryDefinitions (Fase 9.4) ─────────────────────
 
-describe('ObservabilityStack — Logs Insights Queries', () => {
-  test('3 CloudWatch Logs Insights QueryDefinitions exist', () => {
-    template.resourceCountIs('AWS::Logs::QueryDefinition', 3);
+describe("ObservabilityStack — Logs Insights Queries", () => {
+  test("3 CloudWatch Logs Insights QueryDefinitions exist", () => {
+    template.resourceCountIs("AWS::Logs::QueryDefinition", 3);
   });
 
-  test('errors-last-hour query definition exists', () => {
-    template.hasResourceProperties('AWS::Logs::QueryDefinition', {
-      Name: 'lex-agents-dev-errors-last-hour',
+  test("errors-last-hour query definition exists", () => {
+    template.hasResourceProperties("AWS::Logs::QueryDefinition", {
+      Name: "lex-agents-dev-errors-last-hour",
     });
   });
 
-  test('slow-queries-by-trace query definition exists', () => {
-    template.hasResourceProperties('AWS::Logs::QueryDefinition', {
-      Name: 'lex-agents-dev-slow-queries-by-trace',
+  test("slow-queries-by-trace query definition exists", () => {
+    template.hasResourceProperties("AWS::Logs::QueryDefinition", {
+      Name: "lex-agents-dev-slow-queries-by-trace",
     });
   });
 
-  test('agent-invocations-by-branch query definition exists', () => {
-    template.hasResourceProperties('AWS::Logs::QueryDefinition', {
-      Name: 'lex-agents-dev-agent-invocations-by-branch',
+  test("agent-invocations-by-branch query definition exists", () => {
+    template.hasResourceProperties("AWS::Logs::QueryDefinition", {
+      Name: "lex-agents-dev-agent-invocations-by-branch",
     });
   });
 });
 
 // ── Additional Dashboards (Fase 9.4) ─────────────────────────────────────────
 
-describe('ObservabilityStack — Pipeline & DORA Dashboards', () => {
-  test('At least 3 CloudWatch Dashboards exist (main, pipeline, dora + optional finops)', () => {
-    const dashboards = template.findResources('AWS::CloudWatch::Dashboard');
+describe("ObservabilityStack — Pipeline & DORA Dashboards", () => {
+  test("At least 3 CloudWatch Dashboards exist (main, pipeline, dora + optional finops)", () => {
+    const dashboards = template.findResources("AWS::CloudWatch::Dashboard");
     expect(Object.keys(dashboards).length).toBeGreaterThanOrEqual(3);
   });
 
-  test('Pipeline dashboard exists with correct name', () => {
-    template.hasResourceProperties('AWS::CloudWatch::Dashboard', {
-      DashboardName: 'lex-agents-dev-pipeline',
+  test("Pipeline dashboard exists with correct name", () => {
+    template.hasResourceProperties("AWS::CloudWatch::Dashboard", {
+      DashboardName: "lex-agents-dev-pipeline",
     });
   });
 
-  test('DORA dashboard exists with correct name', () => {
-    template.hasResourceProperties('AWS::CloudWatch::Dashboard', {
-      DashboardName: 'lex-agents-dev-dora',
+  test("DORA dashboard exists with correct name", () => {
+    template.hasResourceProperties("AWS::CloudWatch::Dashboard", {
+      DashboardName: "lex-agents-dev-dora",
     });
   });
 
-  test('Pipeline dashboard body contains Step Functions metrics', () => {
-    const dashboards = template.findResources('AWS::CloudWatch::Dashboard');
-    const pipelineDash = Object.values(dashboards).find((d: any) =>
-      d.Properties.DashboardName === 'lex-agents-dev-pipeline',
+  test("Pipeline dashboard body contains Step Functions metrics", () => {
+    const dashboards = template.findResources("AWS::CloudWatch::Dashboard");
+    const pipelineDash = Object.values(dashboards).find(
+      (d: any) => d.Properties.DashboardName === "lex-agents-dev-pipeline",
     );
     expect(pipelineDash).toBeDefined();
     const rawBody = (pipelineDash as any).Properties.DashboardBody;
-    const bodyStr = typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody);
-    expect(bodyStr).toContain('ExecutionsFailed');
+    const bodyStr =
+      typeof rawBody === "string" ? rawBody : JSON.stringify(rawBody);
+    expect(bodyStr).toContain("ExecutionsFailed");
   });
 
-  test('DORA dashboard body contains security metrics', () => {
-    const dashboards = template.findResources('AWS::CloudWatch::Dashboard');
-    const doraDash = Object.values(dashboards).find((d: any) =>
-      d.Properties.DashboardName === 'lex-agents-dev-dora',
+  test("DORA dashboard body contains security metrics", () => {
+    const dashboards = template.findResources("AWS::CloudWatch::Dashboard");
+    const doraDash = Object.values(dashboards).find(
+      (d: any) => d.Properties.DashboardName === "lex-agents-dev-dora",
     );
     expect(doraDash).toBeDefined();
     const rawBody = (doraDash as any).Properties.DashboardBody;
-    const bodyStr = typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody);
-    expect(bodyStr).toContain('LoginFailures');
+    const bodyStr =
+      typeof rawBody === "string" ? rawBody : JSON.stringify(rawBody);
+    expect(bodyStr).toContain("LoginFailures");
   });
 });
 
 // ── Alert router Lambda (Fase 9.4) ────────────────────────────────────────────
 
-describe('ObservabilityStack — Alert Router Lambda', () => {
-  test('alert-router Lambda exists', () => {
-    template.hasResourceProperties('AWS::Lambda::Function', {
-      FunctionName: 'lex-agents-dev-alert-router',
+describe("ObservabilityStack — Alert Router Lambda", () => {
+  test("alert-router Lambda exists", () => {
+    template.hasResourceProperties("AWS::Lambda::Function", {
+      FunctionName: "lex-agents-dev-alert-router",
     });
   });
 
-  test('EventBridge alarm fanout rule exists', () => {
-    template.hasResourceProperties('AWS::Events::Rule', {
-      Name: 'lex-agents-dev-alarm-fanout',
+  test("EventBridge alarm fanout rule exists", () => {
+    template.hasResourceProperties("AWS::Events::Rule", {
+      Name: "lex-agents-dev-alarm-fanout",
     });
   });
 });
 
 // ── FinOps Dashboard (Fase 9.5) ───────────────────────────────────────────────
 
-describe('ObservabilityStack — FinOps', () => {
-  test('FinOps dashboard exists', () => {
-    template.hasResourceProperties('AWS::CloudWatch::Dashboard', {
-      DashboardName: 'lex-agents-dev-finops',
+describe("ObservabilityStack — FinOps", () => {
+  test("FinOps dashboard exists", () => {
+    template.hasResourceProperties("AWS::CloudWatch::Dashboard", {
+      DashboardName: "lex-agents-dev-finops",
     });
   });
 });
 
 // ── Cost Anomaly Detection (Fase 9.5) ─────────────────────────────────────────
 
-describe('ObservabilityStack — Cost Anomaly Detection', () => {
-  test('CostAnomalyMonitor exists', () => {
-    template.resourceCountIs('AWS::CE::AnomalyMonitor', 1);
+describe("ObservabilityStack — Cost Anomaly Detection", () => {
+  test("CostAnomalyMonitor exists", () => {
+    template.resourceCountIs("AWS::CE::AnomalyMonitor", 1);
   });
-  test('CostAnomalySubscription exists', () => {
-    template.resourceCountIs('AWS::CE::AnomalySubscription', 1);
+  test("CostAnomalySubscription exists", () => {
+    template.resourceCountIs("AWS::CE::AnomalySubscription", 1);
   });
 });
 

@@ -35,9 +35,9 @@ This removes all cross-stack token references from the rotation configuration.
 
 ```typescript
 // data.ts — safe rotation without CDK cycle
-const rotationLambdaSg = new ec2.SecurityGroup(this, 'SgRotationLambda', {
+const rotationLambdaSg = new ec2.SecurityGroup(this, "SgRotationLambda", {
   vpc: networkStack.vpc,
-  description: 'Secrets Manager rotation Lambda for Aurora app-user',
+  description: "Secrets Manager rotation Lambda for Aurora app-user",
   allowAllOutbound: false,
 });
 rotationLambdaSg.addEgressRule(
@@ -45,12 +45,14 @@ rotationLambdaSg.addEgressRule(
   ec2.Port.tcp(5432),
 );
 
-new secretsmanager.CfnRotationSchedule(this, 'AppUserRotation', {
+new secretsmanager.CfnRotationSchedule(this, "AppUserRotation", {
   secretId: this.dbAppUserSecret.secretArn,
   hostedRotationLambda: {
-    rotationType: 'PostgreSQLSingleUser',
+    rotationType: "PostgreSQLSingleUser",
     vpcSecurityGroupIds: rotationLambdaSg.securityGroupId,
-    vpcSubnetIds: networkStack.vpc.selectSubnets({ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }).subnetIds.join(','),
+    vpcSubnetIds: networkStack.vpc
+      .selectSubnets({ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS })
+      .subnetIds.join(","),
   },
   rotationRules: { automaticallyAfterDays: 30 },
 });
@@ -58,17 +60,18 @@ new secretsmanager.CfnRotationSchedule(this, 'AppUserRotation', {
 
 ### Rotation schedule per secret
 
-| Secret | Path | Strategy | Rotation period | Grace period |
-|---|---|---|---|---|
-| Aurora app-user | `/lex-agents/${env}/db/app-user` | AWS-managed Lambda (PostgreSQL single-user) | 30 days | None (atomic swap) |
-| JWT signing key | `/lex-agents/${env}/jwt/signing-key` | Custom Lambda | 90 days | 24h overlap window |
-| Anthropic API key | `/lex-agents/${env}/anthropic/api-key` | Manual | Alert if > 90 days | N/A |
-| Langfuse secret-key | `/lex-agents/${env}/langfuse/secret-key` | Manual | Alert if > 90 days | N/A |
-| INLABS token | `/lex-agents/${env}/inlabs/token` | Manual (Imprensa Nacional) | As required by source | N/A |
+| Secret              | Path                                     | Strategy                                    | Rotation period       | Grace period       |
+| ------------------- | ---------------------------------------- | ------------------------------------------- | --------------------- | ------------------ |
+| Aurora app-user     | `/lex-agents/${env}/db/app-user`         | AWS-managed Lambda (PostgreSQL single-user) | 30 days               | None (atomic swap) |
+| JWT signing key     | `/lex-agents/${env}/jwt/signing-key`     | Custom Lambda                               | 90 days               | 24h overlap window |
+| Anthropic API key   | `/lex-agents/${env}/anthropic/api-key`   | Manual                                      | Alert if > 90 days    | N/A                |
+| Langfuse secret-key | `/lex-agents/${env}/langfuse/secret-key` | Manual                                      | Alert if > 90 days    | N/A                |
+| INLABS token        | `/lex-agents/${env}/inlabs/token`        | Manual (Imprensa Nacional)                  | As required by source | N/A                |
 
 ### Aurora app-user rotation (dual-password strategy)
 
 AWS-managed `PostgreSQLSingleUser` rotation Lambda:
+
 1. Generates new password.
 2. Updates the Postgres user's password in Aurora.
 3. Updates the secret value in Secrets Manager.
@@ -83,6 +86,7 @@ into the AWS rotation Lambda.
 ### JWT signing key rotation (grace period strategy)
 
 Custom rotation Lambda (`packages/pipeline_aws/src/lex_pipeline_aws/jwt_rotation/`):
+
 1. Generates new 256-bit signing key; stores as `AWSPENDING` in Secrets Manager.
 2. Updates API environment variable `JWT_SIGNING_KEY_NEW` (read from `AWSPENDING`).
 3. API accepts tokens signed by both `AWSCURRENT` and `AWSPENDING` during grace period.
@@ -105,12 +109,14 @@ Implemented as a Lambda `lex-agents-${env}-secret-age-check` scheduled at `cron(
 ## Consequences
 
 ### Positive
+
 - DORA Art. 9(4)(c) credential lifecycle management satisfied.
 - Aurora rotation is fully automated, zero-downtime.
 - JWT rotation grace period eliminates forced logout of active users during rotation.
 - CDK cycle eliminated; `DataStack` tests remain cycle-free.
 
 ### Negative / mitigations
+
 - **Custom JWT rotation Lambda**: additional Lambda to maintain. Mitigated by
   keeping it minimal (<100 lines) with comprehensive unit tests.
 - **Manual secret alerting**: Anthropic and INLABS keys still require human action.
@@ -120,8 +126,8 @@ Implemented as a Lambda `lex-agents-${env}-secret-age-check` scheduled at `cron(
 
 ## DORA mapping
 
-| Control | Article | How this ADR satisfies it |
-|---|---|---|
-| Credential lifecycle | Art. 9(4)(c) | Automated 30-day Aurora rotation + 90-day JWT rotation |
-| Access control reviews | Art. 9(4)(a) | Rotation ensures stale credentials are invalidated |
-| Audit of key changes | Art. 10(1) | All `secretsmanager:RotateSecret` API calls captured by CloudTrail (ADR 0044) |
+| Control                | Article      | How this ADR satisfies it                                                     |
+| ---------------------- | ------------ | ----------------------------------------------------------------------------- |
+| Credential lifecycle   | Art. 9(4)(c) | Automated 30-day Aurora rotation + 90-day JWT rotation                        |
+| Access control reviews | Art. 9(4)(a) | Rotation ensures stale credentials are invalidated                            |
+| Audit of key changes   | Art. 10(1)   | All `secretsmanager:RotateSecret` API calls captured by CloudTrail (ADR 0044) |

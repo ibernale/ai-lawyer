@@ -35,6 +35,7 @@ Azure AD B2B/SCIM con equipo de plataforma.
 **Coste incremental:** ~$0 (IAM Identity Center no cobra por usuarios SCIM)
 
 **Pasos:**
+
 1. Habilitar SCIM provisioning en IAM Identity Center (management account)
 2. Configurar app enterprise en Azure AD con SCIM endpoint
 3. Sincronizar grupos Azure AD → IAM IC groups (admins, developers, etc.)
@@ -53,6 +54,7 @@ y `ObservabilityStack` en la cuenta `workloads-pre` (provisionada en Fase 9.5 si
 validar el comportamiento end-to-end con datos reales antes de dar luz verde a pro.
 
 **Dependencias:**
+
 - SSO Santander (#1) debe estar completo (usuarios reales para login)
 - Datos de prueba no-producción aprobados por DPO
 - ACM certificate en eu-central-1 para dominio pre (`lex-agents-pre.santander.internal`)
@@ -90,6 +92,7 @@ datos productivos de clientes. Sin TLPT aprobado, el despliegue en producción
 real puede no ser autorizable por el supervisor bancario (BCE/Banco de España).
 
 **Dependencias:**
+
 - workloads-pre activo con app real (#2)
 - Contratación de un "red team" certificado TIBER-EU
 - Aprobación del CISO de Santander
@@ -148,6 +151,7 @@ natural es otras entidades del Grupo. Multi-tenancy multiplica el ROI de la
 plataforma sin multiplicar el coste.
 
 **Dependencias:**
+
 - Producción España estable (>3 meses)
 - Evaluación legal cross-border (datos UK post-Brexit vs GDPR EU)
 - Arquitectura tenant isolation: schema-per-tenant (simple) vs account-per-tenant
@@ -170,6 +174,7 @@ externalización, policy documents, regulación interna. Sin acceso al DMS,
 el valor es limitado.
 
 **Dependencias:**
+
 - APIs DMS habilitadas para uso externo (requiere aprobación IT Santander)
 - Clasificación de datos: los documentos del DMS pueden contener datos de clientes
   (requiere DPA y controles GDPR adicionales)
@@ -190,6 +195,7 @@ comentarios de autores y la jurisprudencia sistematizada de estas editoriales
 mejoran significativamente la calidad de las respuestas.
 
 **Dependencias:**
+
 - Contratación de licencias API (presupuesto legal Santander)
 - Negociación de condiciones de uso con las editoriales (IA y análisis está
   sujeto a condiciones especiales en algunos contratos)
@@ -211,6 +217,7 @@ con cuota mayor y acuerdo formal. El CGPJ tiene un programa de colaboración
 institucional con entidades del sector financiero.
 
 **Dependencias:**
+
 - Carta de presentación de Santander como entidad financiera regulada
 - Identificación del interlocutor en CGPJ (área de Nuevas Tecnologías)
 - Potencialmente: DPA entre Santander y CGPJ para datos de jurisprudencia
@@ -222,35 +229,35 @@ institucional con entidades del sector financiero.
 
 ## Resumen de prioridades y horizonte
 
-| # | Iniciativa | Prioridad | Horizonte | Dependencia crítica |
-|---|------------|-----------|-----------|---------------------|
-| 1 | SSO Santander (Azure AD) | P1 | H1 | Aprobación IAM Santander |
-| 2 | workloads-pre con app real | P1 | H1 | SSO (#1) + DPO sign-off |
-| 3 | Reserved Capacity Bedrock | P1 | H2 | 1 mes datos producción |
-| 4 | TLPT | P1 | H2 | workloads-pre (#2) + CISO |
-| 10 | Autorización CENDOJ/CGPJ | P1 | H1/H2 | Tramitación administrativa |
-| 5 | Madrid eu-south-2 | P2 | H2 | Disponibilidad Bedrock en región |
-| 6 | Pilot Light DR | P2 | H2 | workloads-pro activo |
-| 7 | Multi-tenencia | P2 | H3 | Producción estable >3 meses |
-| 8 | Integración DMS Santander | P2 | H3 | APIs DMS habilitadas |
-| 9 | Licencias comerciales | P2 | H3 | Presupuesto editorial |
+| #   | Iniciativa                 | Prioridad | Horizonte | Dependencia crítica              |
+| --- | -------------------------- | --------- | --------- | -------------------------------- |
+| 1   | SSO Santander (Azure AD)   | P1        | H1        | Aprobación IAM Santander         |
+| 2   | workloads-pre con app real | P1        | H1        | SSO (#1) + DPO sign-off          |
+| 3   | Reserved Capacity Bedrock  | P1        | H2        | 1 mes datos producción           |
+| 4   | TLPT                       | P1        | H2        | workloads-pre (#2) + CISO        |
+| 10  | Autorización CENDOJ/CGPJ   | P1        | H1/H2     | Tramitación administrativa       |
+| 5   | Madrid eu-south-2          | P2        | H2        | Disponibilidad Bedrock en región |
+| 6   | Pilot Light DR             | P2        | H2        | workloads-pro activo             |
+| 7   | Multi-tenencia             | P2        | H3        | Producción estable >3 meses      |
+| 8   | Integración DMS Santander  | P2        | H3        | APIs DMS habilitadas             |
+| 9   | Licencias comerciales      | P2        | H3        | Presupuesto editorial            |
 
 ---
 
 ## Proyección de coste Fase 10 (baseline)
 
-| Escenario | Coste/mes estimado |
-|-----------|-------------------|
-| Fase 9.5 (dev solo) | ~$1.350 |
-| + workloads-pre con app (H1) | ~$1.950 |
-| + Reserved Capacity Bedrock (H2) | ~$1.800 (ahorro neto) |
-| + Pilot Light DR eu-west-1 (H2) | ~$1.980 |
-| + workloads-pro (producción, H2/H3) | ~$3.500–4.000 |
+| Escenario                           | Coste/mes estimado    |
+| ----------------------------------- | --------------------- |
+| Fase 9.5 (dev solo)                 | ~$1.350               |
+| + workloads-pre con app (H1)        | ~$1.950               |
+| + Reserved Capacity Bedrock (H2)    | ~$1.800 (ahorro neto) |
+| + Pilot Light DR eu-west-1 (H2)     | ~$1.980               |
+| + workloads-pro (producción, H2/H3) | ~$3.500–4.000         |
 
-*Proyecciones sujetas a revisión tras 1 mes de datos reales de uso.*
-*Ver `docs/aws/cost-model.md` para el modelo detallado.*
+_Proyecciones sujetas a revisión tras 1 mes de datos reales de uso._
+_Ver `docs/aws/cost-model.md` para el modelo detallado._
 
 ---
 
-*Documento creado: 2026-05-14 — Fase 9.5 release*
-*Próxima revisión: 2026-08-14 (fin H1)*
+_Documento creado: 2026-05-14 — Fase 9.5 release_
+_Próxima revisión: 2026-08-14 (fin H1)_

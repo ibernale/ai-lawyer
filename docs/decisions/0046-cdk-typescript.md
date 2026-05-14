@@ -40,13 +40,13 @@ completamente tipados o tienen notas como "generated from TypeScript".
 
 Las herramientas más usadas en el ecosistema CDK asumen TypeScript:
 
-| Herramienta | TS | Python |
-|---|---|---|
-| cdk-nag (Compliance checks) | ✅ Nativo | ⚠️ Port, lag en actualizaciones |
-| projen (Project scaffolding) | ✅ Nativo | ⚠️ Soporte parcial |
-| CDK Constructs Hub | ✅ Publicados en TS | Bindings generados |
-| CDK testing (`Template.fromStack`) | ✅ Jest + `@aws-cdk/assertions` | pytest |
-| CDK Pipelines | ✅ TS first | ⚠️ Menos ejemplos |
+| Herramienta                        | TS                              | Python                          |
+| ---------------------------------- | ------------------------------- | ------------------------------- |
+| cdk-nag (Compliance checks)        | ✅ Nativo                       | ⚠️ Port, lag en actualizaciones |
+| projen (Project scaffolding)       | ✅ Nativo                       | ⚠️ Soporte parcial              |
+| CDK Constructs Hub                 | ✅ Publicados en TS             | Bindings generados              |
+| CDK testing (`Template.fromStack`) | ✅ Jest + `@aws-cdk/assertions` | pytest                          |
+| CDK Pipelines                      | ✅ TS first                     | ⚠️ Menos ejemplos               |
 
 ### 3. Mejor inferencia de tipos para props CDK
 
@@ -81,10 +81,12 @@ sin instalar Python adicional en el pipeline de infra.
 ### Mantener CDK Python (ADR 0043)
 
 **Pros:**
+
 - Mismo lenguaje que `packages/` Python
 - Sin setup de Node en el entorno de un desarrollador Python puro
 
 **Contras:**
+
 - Documentación y ejemplos requieren traducción constante
 - cdk-nag tiene lag en actualizaciones del port Python
 - Tipado inferior para props complejas
@@ -101,12 +103,12 @@ Descartado en ADR 0043 por las razones allí documentadas. No reconsiderado.
 
 ## Trade-offs y consecuencias
 
-| Trade-off | Impacto |
-|---|---|
-| ADR 0043 Python → TS | ADR 0043 queda enmendado. Los stacks CDK en Fase 9.1+ usan TypeScript. |
-| Tests con Jest no pytest | El CI necesita un job `cdk-test` que corra `jest` dentro de `infra/cdk/`. No afecta a los tests Python existentes. |
-| Node.js en imagen CI de infra | La imagen `ubuntu-latest` de GitHub Actions ya tiene Node 20. `npm install -g aws-cdk` o `pnpm exec cdk`. |
-| Curva de aprendizaje | Mínima — los CDK constructs y la lógica de stacks son similares en ambos lenguajes. Los desarrolladores Python del equipo necesitan TypeScript básico. |
+| Trade-off                     | Impacto                                                                                                                                                |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ADR 0043 Python → TS          | ADR 0043 queda enmendado. Los stacks CDK en Fase 9.1+ usan TypeScript.                                                                                 |
+| Tests con Jest no pytest      | El CI necesita un job `cdk-test` que corra `jest` dentro de `infra/cdk/`. No afecta a los tests Python existentes.                                     |
+| Node.js en imagen CI de infra | La imagen `ubuntu-latest` de GitHub Actions ya tiene Node 20. `npm install -g aws-cdk` o `pnpm exec cdk`.                                              |
+| Curva de aprendizaje          | Mínima — los CDK constructs y la lógica de stacks son similares en ambos lenguajes. Los desarrolladores Python del equipo necesitan TypeScript básico. |
 
 ### Cambios en el repositorio
 

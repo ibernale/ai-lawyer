@@ -12,21 +12,21 @@
  *     --secret-string '{"value":"sk-ant-..."}'
  */
 
-import * as cdk from 'aws-cdk-lib';
-import * as backup from 'aws-cdk-lib/aws-backup';
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as rds from 'aws-cdk-lib/aws-rds';
-import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
-import * as logs from 'aws-cdk-lib/aws-logs';
-import * as iam from 'aws-cdk-lib/aws-iam';
-import { Construct } from 'constructs';
-import { NagSuppressions } from 'cdk-nag';
+import * as cdk from "aws-cdk-lib";
+import * as backup from "aws-cdk-lib/aws-backup";
+import * as ec2 from "aws-cdk-lib/aws-ec2";
+import * as rds from "aws-cdk-lib/aws-rds";
+import * as s3 from "aws-cdk-lib/aws-s3";
+import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
+import * as logs from "aws-cdk-lib/aws-logs";
+import * as iam from "aws-cdk-lib/aws-iam";
+import { Construct } from "constructs";
+import { NagSuppressions } from "cdk-nag";
 
-import { DR_REGION } from '../config/environments';
+import { DR_REGION } from "../config/environments";
 
-import { NetworkSpokeStack } from './network-spoke';
-import { KmsStack } from './kms';
+import { NetworkSpokeStack } from "./network-spoke";
+import { KmsStack } from "./kms";
 
 export interface DataStackProps extends cdk.StackProps {
   envName: string;
@@ -59,13 +59,13 @@ export class DataStack extends cdk.Stack {
     // The NetworkSpokeStack does not provision an S3 gateway endpoint, so we
     // add it here.  Gateway endpoints are free and improve data-path security
     // by ensuring S3 traffic never leaves the AWS network.
-    const s3GatewayEndpoint = vpc.addGatewayEndpoint('S3GatewayEndpoint', {
+    const s3GatewayEndpoint = vpc.addGatewayEndpoint("S3GatewayEndpoint", {
       service: ec2.GatewayVpcEndpointAwsService.S3,
     });
 
     // ── CloudWatch log group for Aurora audit logs ────────────────────────────
     // CDK tracks this resource by construction; no reference needed after creation.
-    new logs.LogGroup(this, 'AuroraLogGroup', {
+    new logs.LogGroup(this, "AuroraLogGroup", {
       logGroupName: `/lex-agents/${envName}/aurora`,
       retention: logs.RetentionDays.ONE_YEAR,
       encryptionKey: kmsStack.logsKey,
@@ -78,15 +78,16 @@ export class DataStack extends cdk.Stack {
     // a separate SG (also attached to the cluster) that pre-wires the ECS API
     // egress rules defined at network layer.  Having two SGs on the cluster is
     // intentional: one owned by the network layer, one by the data layer.
-    this.sgAurora = new ec2.SecurityGroup(this, 'SgAurora', {
+    this.sgAurora = new ec2.SecurityGroup(this, "SgAurora", {
       vpc,
       securityGroupName: `lex-agents-${envName}-aurora-data`,
-      description: 'Aurora cluster SG (owned by DataStack — ingress from app services)',
+      description:
+        "Aurora cluster SG (owned by DataStack — ingress from app services)",
       allowAllOutbound: false,
     });
 
     // ── Subnet group — private-data subnets only ───────────────────────────────
-    const subnetGroup = new rds.SubnetGroup(this, 'AuroraSubnetGroup', {
+    const subnetGroup = new rds.SubnetGroup(this, "AuroraSubnetGroup", {
       description: `lex-agents ${envName} Aurora subnet group`,
       vpc,
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
@@ -94,24 +95,24 @@ export class DataStack extends cdk.Stack {
     });
 
     // ── Aurora Serverless v2 cluster ───────────────────────────────────────────
-    this.aurora = new rds.DatabaseCluster(this, 'AuroraCluster', {
+    this.aurora = new rds.DatabaseCluster(this, "AuroraCluster", {
       clusterIdentifier: `lex-agents-${envName}`,
       engine: rds.DatabaseClusterEngine.auroraPostgres({
         version: rds.AuroraPostgresEngineVersion.VER_16_4,
       }),
 
       // Serverless v2 capacity limits
-      serverlessV2MinCapacity: 0,    // auto-pause supported in v16.4
+      serverlessV2MinCapacity: 0, // auto-pause supported in v16.4
       serverlessV2MaxCapacity: 8,
       // Auto-pause after 5 minutes of inactivity (dev only)
       serverlessV2AutoPauseDuration: cdk.Duration.minutes(5),
 
       // Writer in first private-data AZ, reader in second
-      writer: rds.ClusterInstance.serverlessV2('writer', {
+      writer: rds.ClusterInstance.serverlessV2("writer", {
         publiclyAccessible: false,
       }),
       readers: [
-        rds.ClusterInstance.serverlessV2('reader1', {
+        rds.ClusterInstance.serverlessV2("reader1", {
           scaleWithWriter: true,
           publiclyAccessible: false,
         }),
@@ -129,11 +130,11 @@ export class DataStack extends cdk.Stack {
       storageEncryptionKey: rdsKey,
 
       // Credentials — stored in Secrets Manager under /lex-agents/${envName}/db/master
-      credentials: rds.Credentials.fromGeneratedSecret('postgres', {
+      credentials: rds.Credentials.fromGeneratedSecret("postgres", {
         secretName: `/lex-agents/${envName}/db/master`,
         encryptionKey: secretsKey,
       }),
-      defaultDatabaseName: 'lex_agents',
+      defaultDatabaseName: "lex_agents",
 
       // IAM authentication (app-side connections use IAM tokens via asyncpg)
       iamAuthentication: true,
@@ -151,7 +152,7 @@ export class DataStack extends cdk.Stack {
       },
 
       // Audit logs → CloudWatch Logs
-      cloudwatchLogsExports: ['postgresql'],
+      cloudwatchLogsExports: ["postgresql"],
       cloudwatchLogsRetention: logs.RetentionDays.ONE_MONTH,
 
       // Dev: no deletion protection (suppressed below with documented reason)
@@ -170,13 +171,13 @@ export class DataStack extends cdk.Stack {
     //   aws secretsmanager put-secret-value \
     //     --secret-id /lex-agents/dev/db/app-user \
     //     --secret-string '{"username":"lex_app","password":"<strong-password>"}'
-    this.dbAppUserSecret = new secretsmanager.Secret(this, 'DbAppUserSecret', {
+    this.dbAppUserSecret = new secretsmanager.Secret(this, "DbAppUserSecret", {
       secretName: `/lex-agents/${envName}/db/app-user`,
       description: `lex-agents ${envName} Aurora app-user credentials (managed by app)`,
       encryptionKey: secretsKey,
       generateSecretString: {
-        secretStringTemplate: JSON.stringify({ username: 'lex_app' }),
-        generateStringKey: 'password',
+        secretStringTemplate: JSON.stringify({ username: "lex_app" }),
+        generateStringKey: "password",
         excludeCharacters: '"@/\\',
         passwordLength: 32,
       },
@@ -187,61 +188,63 @@ export class DataStack extends cdk.Stack {
     // that addRotationSingleUser() would introduce via aurora.connections.
     // The rotation Lambda SG is created here (DataStack) with an explicit egress
     // rule to the Aurora SG — no Endpoint.Port token resolution required.
-    const sgRotation = new ec2.SecurityGroup(this, 'SgRotationLambda', {
+    const sgRotation = new ec2.SecurityGroup(this, "SgRotationLambda", {
       vpc,
-      description: 'SM rotation Lambda for Aurora app-user',
+      description: "SM rotation Lambda for Aurora app-user",
       allowAllOutbound: false,
     });
     // Use standalone L1 resources instead of addEgressRule/addIngressRule to
     // avoid the CloudFormation cyclic dependency (SgAurora ↔ SgRotationLambda).
-    new ec2.CfnSecurityGroupEgress(this, 'SgRotationEgressToAurora', {
+    new ec2.CfnSecurityGroupEgress(this, "SgRotationEgressToAurora", {
       groupId: sgRotation.securityGroupId,
-      ipProtocol: 'tcp',
+      ipProtocol: "tcp",
       fromPort: 5432,
       toPort: 5432,
       destinationSecurityGroupId: this.sgAurora.securityGroupId,
-      description: 'PostgreSQL to Aurora for rotation',
+      description: "PostgreSQL to Aurora for rotation",
     });
-    new ec2.CfnSecurityGroupIngress(this, 'SgAuroraIngressFromRotation', {
+    new ec2.CfnSecurityGroupIngress(this, "SgAuroraIngressFromRotation", {
       groupId: this.sgAurora.securityGroupId,
-      ipProtocol: 'tcp',
+      ipProtocol: "tcp",
       fromPort: 5432,
       toPort: 5432,
       sourceSecurityGroupId: sgRotation.securityGroupId,
-      description: 'Secrets Manager rotation Lambda',
+      description: "Secrets Manager rotation Lambda",
     });
 
-    new secretsmanager.CfnRotationSchedule(this, 'AppUserRotation', {
+    new secretsmanager.CfnRotationSchedule(this, "AppUserRotation", {
       secretId: this.dbAppUserSecret.secretArn,
       hostedRotationLambda: {
-        rotationType: 'PostgreSQLSingleUser',
+        rotationType: "PostgreSQLSingleUser",
         vpcSecurityGroupIds: sgRotation.securityGroupId,
-        vpcSubnetIds: vpc.selectSubnets({ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }).subnetIds.join(','),
+        vpcSubnetIds: vpc
+          .selectSubnets({ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS })
+          .subnetIds.join(","),
       },
       rotationRules: { automaticallyAfterDays: 30 },
     });
 
     // ── CfnOutput: Aurora endpoints ───────────────────────────────────────────
-    new cdk.CfnOutput(this, 'AuroraClusterEndpoint', {
+    new cdk.CfnOutput(this, "AuroraClusterEndpoint", {
       value: this.aurora.clusterEndpoint.socketAddress,
       exportName: `LexAgents-${envName}-AuroraEndpoint`,
-      description: 'Aurora writer endpoint (host:port)',
+      description: "Aurora writer endpoint (host:port)",
     });
-    new cdk.CfnOutput(this, 'AuroraClusterReadEndpoint', {
+    new cdk.CfnOutput(this, "AuroraClusterReadEndpoint", {
       value: this.aurora.clusterReadEndpoint.socketAddress,
       exportName: `LexAgents-${envName}-AuroraReadEndpoint`,
-      description: 'Aurora reader endpoint (host:port)',
+      description: "Aurora reader endpoint (host:port)",
     });
 
     // ── S3 helper: shared bucket policy statements ────────────────────────────
     const denyNonSsl = (bucket: s3.Bucket): iam.PolicyStatement =>
       new iam.PolicyStatement({
-        sid: 'DenyNonSSL',
+        sid: "DenyNonSSL",
         effect: iam.Effect.DENY,
         principals: [new iam.AnyPrincipal()],
-        actions: ['s3:*'],
+        actions: ["s3:*"],
         resources: [bucket.bucketArn, `${bucket.bucketArn}/*`],
-        conditions: { Bool: { 'aws:SecureTransport': 'false' } },
+        conditions: { Bool: { "aws:SecureTransport": "false" } },
       });
 
     // Restrict access to requests originating from within the VPC via the
@@ -249,18 +252,18 @@ export class DataStack extends cdk.Stack {
     // bucket policies are misconfigured.
     const denyNonVpce = (bucket: s3.Bucket): iam.PolicyStatement =>
       new iam.PolicyStatement({
-        sid: 'DenyNonVpce',
+        sid: "DenyNonVpce",
         effect: iam.Effect.DENY,
         principals: [new iam.AnyPrincipal()],
-        actions: ['s3:*'],
+        actions: ["s3:*"],
         resources: [bucket.bucketArn, `${bucket.bucketArn}/*`],
         conditions: {
           StringNotEquals: {
-            'aws:SourceVpce': s3GatewayEndpoint.vpcEndpointId,
+            "aws:SourceVpce": s3GatewayEndpoint.vpcEndpointId,
           },
           // Allow AWS services (e.g., CloudFormation, CDK deployment) to
           // bypass the VPCE restriction during stack provisioning.
-          Null: { 'aws:SourceVpce': 'false' },
+          Null: { "aws:SourceVpce": "false" },
         },
       });
 
@@ -270,7 +273,7 @@ export class DataStack extends cdk.Stack {
     };
 
     // ── S3 Bucket 1: raw ingest documents ────────────────────────────────────
-    const rawBucket = new s3.Bucket(this, 'RawBucket', {
+    const rawBucket = new s3.Bucket(this, "RawBucket", {
       bucketName: `lex-agents-raw-${envName}-${this.account}`,
       encryptionKey: s3Key,
       encryption: s3.BucketEncryption.KMS,
@@ -296,7 +299,7 @@ export class DataStack extends cdk.Stack {
     addCommonPolicies(rawBucket);
 
     // ── S3 Bucket 2: canonical (normalised) documents ─────────────────────────
-    const canonicalBucket = new s3.Bucket(this, 'CanonicalBucket', {
+    const canonicalBucket = new s3.Bucket(this, "CanonicalBucket", {
       bucketName: `lex-agents-canonical-${envName}-${this.account}`,
       encryptionKey: s3Key,
       encryption: s3.BucketEncryption.KMS,
@@ -318,7 +321,7 @@ export class DataStack extends cdk.Stack {
     addCommonPolicies(canonicalBucket);
 
     // ── S3 Bucket 3: evaluation results ──────────────────────────────────────
-    const evalsBucket = new s3.Bucket(this, 'EvalsBucket', {
+    const evalsBucket = new s3.Bucket(this, "EvalsBucket", {
       bucketName: `lex-agents-evals-${envName}-${this.account}`,
       encryptionKey: s3Key,
       encryption: s3.BucketEncryption.KMS,
@@ -332,7 +335,7 @@ export class DataStack extends cdk.Stack {
 
     // ── S3 Bucket 4: database / EFS backups (WORM, 7 years) ──────────────────
     // Object Lock requires versioning (enforced by CDK when objectLockEnabled: true)
-    const backupsBucket = new s3.Bucket(this, 'BackupsBucket', {
+    const backupsBucket = new s3.Bucket(this, "BackupsBucket", {
       bucketName: `lex-agents-backups-${envName}-${this.account}`,
       encryptionKey: s3Key,
       encryption: s3.BucketEncryption.KMS,
@@ -373,9 +376,9 @@ export class DataStack extends cdk.Stack {
     // evals bucket is excluded (eval fixtures are reproducible; CRR cost not justified).
 
     // CRR IAM role — S3 service assumes this to replicate objects
-    const crrRole = new iam.Role(this, 'S3CrrRole', {
+    const crrRole = new iam.Role(this, "S3CrrRole", {
       roleName: `lex-agents-${envName}-s3-crr`,
-      assumedBy: new iam.ServicePrincipal('s3.amazonaws.com'),
+      assumedBy: new iam.ServicePrincipal("s3.amazonaws.com"),
     });
 
     // DR replica buckets — NOTE: Cross-region S3 buckets must be deployed in separate
@@ -383,14 +386,14 @@ export class DataStack extends cdk.Stack {
     // the bucket definitions; in production, deploy a separate DataDrStack in eu-west-1.
     // The buckets are defined here for CDK synthesis validation and CRR role IAM grants.
     // See docs/aws/dr-plan.md Appendix A for bootstrap procedure.
-    const rawDrBucket = new s3.CfnBucket(this, 'RawDrBucket', {
+    const rawDrBucket = new s3.CfnBucket(this, "RawDrBucket", {
       bucketName: `lex-agents-raw-${envName}-dr`,
       bucketEncryption: {
         serverSideEncryptionConfiguration: [
-          { serverSideEncryptionByDefault: { sseAlgorithm: 'AES256' } },
+          { serverSideEncryptionByDefault: { sseAlgorithm: "AES256" } },
         ],
       },
-      versioningConfiguration: { status: 'Enabled' },
+      versioningConfiguration: { status: "Enabled" },
       publicAccessBlockConfiguration: {
         blockPublicAcls: true,
         blockPublicPolicy: true,
@@ -399,14 +402,14 @@ export class DataStack extends cdk.Stack {
       },
     });
 
-    const canonicalDrBucket = new s3.CfnBucket(this, 'CanonicalDrBucket', {
+    const canonicalDrBucket = new s3.CfnBucket(this, "CanonicalDrBucket", {
       bucketName: `lex-agents-canonical-${envName}-dr`,
       bucketEncryption: {
         serverSideEncryptionConfiguration: [
-          { serverSideEncryptionByDefault: { sseAlgorithm: 'AES256' } },
+          { serverSideEncryptionByDefault: { sseAlgorithm: "AES256" } },
         ],
       },
-      versioningConfiguration: { status: 'Enabled' },
+      versioningConfiguration: { status: "Enabled" },
       publicAccessBlockConfiguration: {
         blockPublicAcls: true,
         blockPublicPolicy: true,
@@ -415,14 +418,14 @@ export class DataStack extends cdk.Stack {
       },
     });
 
-    const backupsDrBucket = new s3.CfnBucket(this, 'BackupsDrBucket', {
+    const backupsDrBucket = new s3.CfnBucket(this, "BackupsDrBucket", {
       bucketName: `lex-agents-backups-${envName}-dr`,
       bucketEncryption: {
         serverSideEncryptionConfiguration: [
-          { serverSideEncryptionByDefault: { sseAlgorithm: 'AES256' } },
+          { serverSideEncryptionByDefault: { sseAlgorithm: "AES256" } },
         ],
       },
-      versioningConfiguration: { status: 'Enabled' },
+      versioningConfiguration: { status: "Enabled" },
       publicAccessBlockConfiguration: {
         blockPublicAcls: true,
         blockPublicPolicy: true,
@@ -432,70 +435,77 @@ export class DataStack extends cdk.Stack {
     });
 
     // Grant CRR role read on source buckets and write on DR replicas
-    crrRole.addToPolicy(new iam.PolicyStatement({
-      sid: 'CrrSourceRead',
-      actions: [
-        's3:GetReplicationConfiguration',
-        's3:ListBucket',
-      ],
-      resources: [
-        rawBucket.bucketArn,
-        canonicalBucket.bucketArn,
-        backupsBucket.bucketArn,
-      ],
-    }));
-    crrRole.addToPolicy(new iam.PolicyStatement({
-      sid: 'CrrObjectRead',
-      actions: [
-        's3:GetObjectVersionForReplication',
-        's3:GetObjectVersionAcl',
-        's3:GetObjectVersionTagging',
-      ],
-      resources: [
-        `${rawBucket.bucketArn}/*`,
-        `${canonicalBucket.bucketArn}/*`,
-        `${backupsBucket.bucketArn}/*`,
-      ],
-    }));
+    crrRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "CrrSourceRead",
+        actions: ["s3:GetReplicationConfiguration", "s3:ListBucket"],
+        resources: [
+          rawBucket.bucketArn,
+          canonicalBucket.bucketArn,
+          backupsBucket.bucketArn,
+        ],
+      }),
+    );
+    crrRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "CrrObjectRead",
+        actions: [
+          "s3:GetObjectVersionForReplication",
+          "s3:GetObjectVersionAcl",
+          "s3:GetObjectVersionTagging",
+        ],
+        resources: [
+          `${rawBucket.bucketArn}/*`,
+          `${canonicalBucket.bucketArn}/*`,
+          `${backupsBucket.bucketArn}/*`,
+        ],
+      }),
+    );
     // KMS grants for SSE-KMS encrypted source objects.
     // The CRR role must be able to decrypt source objects and re-encrypt them
     // in the destination.  Both the source KMS key (Decrypt) and the destination
     // KMS key (GenerateDataKey / Encrypt) permissions are required.
     // IMPORTANT: for production cross-region DR, replace s3Key with a CMK that
     // has a key policy granting access from eu-west-1 (or use a multi-region key).
-    crrRole.addToPolicy(new iam.PolicyStatement({
-      sid: 'CrrKmsDecryptSource',
-      actions: ['kms:Decrypt', 'kms:GenerateDataKey'],
-      resources: [s3Key.keyArn],
-    }));
-    crrRole.addToPolicy(new iam.PolicyStatement({
-      sid: 'CrrDestWrite',
-      actions: [
-        's3:ReplicateObject',
-        's3:ReplicateDelete',
-        's3:ReplicateTags',
-      ],
-      resources: [
-        `arn:aws:s3:::lex-agents-raw-${envName}-dr/*`,
-        `arn:aws:s3:::lex-agents-canonical-${envName}-dr/*`,
-        `arn:aws:s3:::lex-agents-backups-${envName}-dr/*`,
-      ],
-    }));
+    crrRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "CrrKmsDecryptSource",
+        actions: ["kms:Decrypt", "kms:GenerateDataKey"],
+        resources: [s3Key.keyArn],
+      }),
+    );
+    crrRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "CrrDestWrite",
+        actions: [
+          "s3:ReplicateObject",
+          "s3:ReplicateDelete",
+          "s3:ReplicateTags",
+        ],
+        resources: [
+          `arn:aws:s3:::lex-agents-raw-${envName}-dr/*`,
+          `arn:aws:s3:::lex-agents-canonical-${envName}-dr/*`,
+          `arn:aws:s3:::lex-agents-backups-${envName}-dr/*`,
+        ],
+      }),
+    );
 
     // CfnBucketReplication on source buckets — applied via L1 overrides
     // CRR replication rule helper — includes SSE-KMS source selection criteria
     // so KMS-encrypted objects are replicated.  The destination must have a KMS
     // key accessible from the DR region; s3Key.keyArn is a placeholder for CDK
     // synthesis.  Replace with a CMK in eu-west-1 before enabling live CRR.
-    const makeCrrRule = (destBucketName: string): s3.CfnBucket.ReplicationRuleProperty => ({
-      id: 'ReplicateToDrRegion',
-      status: 'Enabled',
+    const makeCrrRule = (
+      destBucketName: string,
+    ): s3.CfnBucket.ReplicationRuleProperty => ({
+      id: "ReplicateToDrRegion",
+      status: "Enabled",
       sourceSelectionCriteria: {
-        sseKmsEncryptedObjects: { status: 'Enabled' },
+        sseKmsEncryptedObjects: { status: "Enabled" },
       },
       destination: {
         bucket: `arn:aws:s3:::${destBucketName}`,
-        storageClass: 'STANDARD_IA',
+        storageClass: "STANDARD_IA",
         encryptionConfiguration: {
           // PRODUCTION: replace with a CMK key ARN in eu-west-1.
           replicaKmsKeyId: s3Key.keyArn,
@@ -509,7 +519,8 @@ export class DataStack extends cdk.Stack {
       rules: [makeCrrRule(`lex-agents-raw-${envName}-dr`)],
     };
 
-    const canonicalBucketCfn = canonicalBucket.node.defaultChild as s3.CfnBucket;
+    const canonicalBucketCfn = canonicalBucket.node
+      .defaultChild as s3.CfnBucket;
     canonicalBucketCfn.replicationConfiguration = {
       role: crrRole.roleArn,
       rules: [makeCrrRule(`lex-agents-canonical-${envName}-dr`)],
@@ -526,14 +537,14 @@ export class DataStack extends cdk.Stack {
     // see docs/aws/dr-plan.md for the bootstrap procedure.
     // For now, we create only the local backup vault and plan.
 
-    const backupVault = new backup.BackupVault(this, 'AuroraBackupVault', {
+    const backupVault = new backup.BackupVault(this, "AuroraBackupVault", {
       backupVaultName: `lex-agents-${envName}-aurora-backup`,
       // Encrypt backup vault with the same KMS key used for Aurora storage.
       encryptionKey: rdsKey,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
-    const backupPlan = new backup.BackupPlan(this, 'AuroraBackupPlan', {
+    const backupPlan = new backup.BackupPlan(this, "AuroraBackupPlan", {
       // Named "local-backup" (not "dr") until cross-region copy action is
       // configured with a DR vault in eu-west-1 (see docs/aws/dr-plan.md).
       backupPlanName: `lex-agents-${envName}-aurora-local-backup`,
@@ -542,24 +553,24 @@ export class DataStack extends cdk.Stack {
 
     backupPlan.addRule(backup.BackupPlanRule.daily());
 
-    backupPlan.addSelection('AuroraSelection', {
+    backupPlan.addSelection("AuroraSelection", {
       resources: [backup.BackupResource.fromRdsDatabaseCluster(this.aurora)],
     });
 
     // ── CfnOutputs: bucket names ──────────────────────────────────────────────
-    new cdk.CfnOutput(this, 'RawBucketName', {
+    new cdk.CfnOutput(this, "RawBucketName", {
       value: rawBucket.bucketName,
       exportName: `LexAgents-${envName}-RawBucket`,
     });
-    new cdk.CfnOutput(this, 'CanonicalBucketName', {
+    new cdk.CfnOutput(this, "CanonicalBucketName", {
       value: canonicalBucket.bucketName,
       exportName: `LexAgents-${envName}-CanonicalBucket`,
     });
-    new cdk.CfnOutput(this, 'EvalsBucketName', {
+    new cdk.CfnOutput(this, "EvalsBucketName", {
       value: evalsBucket.bucketName,
       exportName: `LexAgents-${envName}-EvalsBucket`,
     });
-    new cdk.CfnOutput(this, 'BackupsBucketName', {
+    new cdk.CfnOutput(this, "BackupsBucketName", {
       value: backupsBucket.bucketName,
       exportName: `LexAgents-${envName}-BackupsBucket`,
     });
@@ -570,119 +581,140 @@ export class DataStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     } as const;
 
-    new secretsmanager.Secret(this, 'AnthropicApiKeySecret', {
+    new secretsmanager.Secret(this, "AnthropicApiKeySecret", {
       ...secretDefaults,
       secretName: `/lex-agents/${envName}/anthropic/api-key`,
       description: `lex-agents ${envName} Anthropic API key — replace REPLACE_ME after deploy`,
-      secretStringValue: cdk.SecretValue.unsafePlainText('REPLACE_ME'),
+      secretStringValue: cdk.SecretValue.unsafePlainText("REPLACE_ME"),
     });
 
-    new secretsmanager.Secret(this, 'LangfuseSecretKeySecret', {
+    new secretsmanager.Secret(this, "LangfuseSecretKeySecret", {
       ...secretDefaults,
       secretName: `/lex-agents/${envName}/langfuse/secret-key`,
       description: `lex-agents ${envName} Langfuse secret key — replace REPLACE_ME after deploy`,
-      secretStringValue: cdk.SecretValue.unsafePlainText('REPLACE_ME'),
+      secretStringValue: cdk.SecretValue.unsafePlainText("REPLACE_ME"),
     });
 
-    new secretsmanager.Secret(this, 'LangfusePublicKeySecret', {
+    new secretsmanager.Secret(this, "LangfusePublicKeySecret", {
       ...secretDefaults,
       secretName: `/lex-agents/${envName}/langfuse/public-key`,
       description: `lex-agents ${envName} Langfuse public key — replace REPLACE_ME after deploy`,
-      secretStringValue: cdk.SecretValue.unsafePlainText('REPLACE_ME'),
+      secretStringValue: cdk.SecretValue.unsafePlainText("REPLACE_ME"),
     });
 
-    new secretsmanager.Secret(this, 'JwtSigningKeySecret', {
+    new secretsmanager.Secret(this, "JwtSigningKeySecret", {
       ...secretDefaults,
       secretName: `/lex-agents/${envName}/jwt/signing-key`,
       description: `lex-agents ${envName} JWT signing key — replace REPLACE_ME after deploy`,
-      secretStringValue: cdk.SecretValue.unsafePlainText('REPLACE_ME'),
+      secretStringValue: cdk.SecretValue.unsafePlainText("REPLACE_ME"),
     });
 
     // ── cdk-nag suppressions ──────────────────────────────────────────────────
     NagSuppressions.addStackSuppressions(this, [
       {
-        id: 'AwsSolutions-RDS6',
-        reason: 'IAM authentication is enabled (iamAuthentication: true). The app connects via asyncpg using IAM token auth.',
+        id: "AwsSolutions-RDS6",
+        reason:
+          "IAM authentication is enabled (iamAuthentication: true). The app connects via asyncpg using IAM token auth.",
       },
       {
-        id: 'AwsSolutions-RDS10',
-        reason: 'Deletion protection disabled for dev environment. Enabled in staging/prod environments. Suppression scoped to dev stack only.',
+        id: "AwsSolutions-RDS10",
+        reason:
+          "Deletion protection disabled for dev environment. Enabled in staging/prod environments. Suppression scoped to dev stack only.",
       },
       {
-        id: 'AwsSolutions-RDS16',
-        reason: 'Aurora Serverless v2 PostgreSQL — cloudwatchLogsExports: [postgresql] enables audit/error/slow-query logging.',
+        id: "AwsSolutions-RDS16",
+        reason:
+          "Aurora Serverless v2 PostgreSQL — cloudwatchLogsExports: [postgresql] enables audit/error/slow-query logging.",
       },
       {
-        id: 'AwsSolutions-S1',
-        reason: 'Server access logs for raw/canonical/evals/backups buckets are not required in dev. All access is captured via CloudTrail org trail in the log-archive account.',
+        id: "AwsSolutions-S1",
+        reason:
+          "Server access logs for raw/canonical/evals/backups buckets are not required in dev. All access is captured via CloudTrail org trail in the log-archive account.",
       },
       {
-        id: 'AwsSolutions-SMG4',
-        reason: 'App-user secret rotation is managed by the application lifecycle (DB user rotation requires app coordination). Master credentials use addRotationSingleUser with 30-day rotation.',
+        id: "AwsSolutions-SMG4",
+        reason:
+          "App-user secret rotation is managed by the application lifecycle (DB user rotation requires app coordination). Master credentials use addRotationSingleUser with 30-day rotation.",
       },
       {
-        id: 'HIPAA.Security-RDSLoggingEnabled',
-        reason: 'Aurora PostgreSQL cloudwatchLogsExports includes postgresql log which covers audit, error, and slow query logs.',
+        id: "HIPAA.Security-RDSLoggingEnabled",
+        reason:
+          "Aurora PostgreSQL cloudwatchLogsExports includes postgresql log which covers audit, error, and slow query logs.",
       },
       {
-        id: 'HIPAA.Security-RDSInstanceBackupEnabled',
-        reason: 'Aurora cluster backup.retention = 7 days with PITR active. HIPAA rule fires on instance-level; Aurora uses cluster-level backups.',
+        id: "HIPAA.Security-RDSInstanceBackupEnabled",
+        reason:
+          "Aurora cluster backup.retention = 7 days with PITR active. HIPAA rule fires on instance-level; Aurora uses cluster-level backups.",
       },
       {
-        id: 'HIPAA.Security-RDSInstanceDeletionProtectionEnabled',
-        reason: 'Deletion protection disabled intentionally for dev environment — dev data is ephemeral. Will be enabled in staging/prod.',
+        id: "HIPAA.Security-RDSInstanceDeletionProtectionEnabled",
+        reason:
+          "Deletion protection disabled intentionally for dev environment — dev data is ephemeral. Will be enabled in staging/prod.",
       },
       {
-        id: 'HIPAA.Security-RDSMultiAZSupport',
-        reason: 'Aurora Serverless v2 with a writer + reader instance in separate AZs provides equivalent multi-AZ resilience to RDS Multi-AZ deployments.',
+        id: "HIPAA.Security-RDSMultiAZSupport",
+        reason:
+          "Aurora Serverless v2 with a writer + reader instance in separate AZs provides equivalent multi-AZ resilience to RDS Multi-AZ deployments.",
       },
       {
-        id: 'HIPAA.Security-S3BucketLoggingEnabled',
-        reason: 'Access logging for workload S3 buckets omitted in dev. All API-level access is captured in CloudTrail. Server access logs to be enabled in prod.',
+        id: "HIPAA.Security-S3BucketLoggingEnabled",
+        reason:
+          "Access logging for workload S3 buckets omitted in dev. All API-level access is captured in CloudTrail. Server access logs to be enabled in prod.",
       },
       {
-        id: 'HIPAA.Security-S3BucketReplicationEnabled',
-        reason: 'Cross-region replication not configured in dev environment. Will be enabled for prod via AWS Backup / S3 replication rules.',
+        id: "HIPAA.Security-S3BucketReplicationEnabled",
+        reason:
+          "Cross-region replication not configured in dev environment. Will be enabled for prod via AWS Backup / S3 replication rules.",
       },
       {
-        id: 'HIPAA.Security-SecretsManagerRotationEnabled',
-        reason: 'Placeholder secrets (Anthropic, Langfuse, JWT) are populated manually post-deploy and do not require automated rotation. Master DB secret uses addRotationSingleUser.',
+        id: "HIPAA.Security-SecretsManagerRotationEnabled",
+        reason:
+          "Placeholder secrets (Anthropic, Langfuse, JWT) are populated manually post-deploy and do not require automated rotation. Master DB secret uses addRotationSingleUser.",
       },
       {
-        id: 'HIPAA.Security-IAMNoInlinePolicy',
-        reason: 'Inline policies on Lambda rotation function roles are created automatically by CDK addRotationSingleUser. These are the narrowest-scope policies possible for the rotation use case.',
+        id: "HIPAA.Security-IAMNoInlinePolicy",
+        reason:
+          "Inline policies on Lambda rotation function roles are created automatically by CDK addRotationSingleUser. These are the narrowest-scope policies possible for the rotation use case.",
       },
       {
-        id: 'AwsSolutions-IAM5',
-        reason: 'Wildcard permissions in rotation Lambda execution role are created automatically by CDK addRotationSingleUser and scoped to the specific secret and KMS key ARNs.',
+        id: "AwsSolutions-IAM5",
+        reason:
+          "Wildcard permissions in rotation Lambda execution role are created automatically by CDK addRotationSingleUser and scoped to the specific secret and KMS key ARNs.",
       },
       {
-        id: 'AwsSolutions-IAM4',
-        reason: 'AWSLambdaVPCAccessExecutionRole managed policy attached to rotation Lambda by CDK addRotationSingleUser. Required for VPC-attached Lambda execution.',
+        id: "AwsSolutions-IAM4",
+        reason:
+          "AWSLambdaVPCAccessExecutionRole managed policy attached to rotation Lambda by CDK addRotationSingleUser. Required for VPC-attached Lambda execution.",
       },
       {
-        id: 'AwsSolutions-L1',
-        reason: 'Rotation Lambda runtime is managed by the CDK SecretRotation construct and pinned to the version specified by that construct. Runtime upgrade tracked in CDK version updates.',
+        id: "AwsSolutions-L1",
+        reason:
+          "Rotation Lambda runtime is managed by the CDK SecretRotation construct and pinned to the version specified by that construct. Runtime upgrade tracked in CDK version updates.",
       },
       {
-        id: 'HIPAA.Security-LambdaInsideVPC',
-        reason: 'Rotation Lambda created by CDK addRotationSingleUser is deployed inside the VPC (vpcSubnets: PRIVATE_WITH_EGRESS) to reach the Aurora endpoint.',
+        id: "HIPAA.Security-LambdaInsideVPC",
+        reason:
+          "Rotation Lambda created by CDK addRotationSingleUser is deployed inside the VPC (vpcSubnets: PRIVATE_WITH_EGRESS) to reach the Aurora endpoint.",
       },
       {
-        id: 'HIPAA.Security-CloudWatchLogGroupEncrypted',
-        reason: 'Aurora audit log group is encrypted with the KMS logsKey. The cdk-nag warning fires on the auto-created retention custom resource Lambda log group which is outside our control.',
+        id: "HIPAA.Security-CloudWatchLogGroupEncrypted",
+        reason:
+          "Aurora audit log group is encrypted with the KMS logsKey. The cdk-nag warning fires on the auto-created retention custom resource Lambda log group which is outside our control.",
       },
       {
-        id: 'HIPAA.Security-S3BucketReplicationEnabled',
-        reason: 'CRR is now enabled on raw, canonical, and backups buckets (Fase 9.4). evals bucket excluded — eval data is reproducible.',
+        id: "HIPAA.Security-S3BucketReplicationEnabled",
+        reason:
+          "CRR is now enabled on raw, canonical, and backups buckets (Fase 9.4). evals bucket excluded — eval data is reproducible.",
       },
       {
-        id: 'AwsSolutions-BAK3',
-        reason: 'Cross-region backup vault copy action requires eu-west-1 DR vault bootstrap — see docs/aws/dr-plan.md. Local vault and plan are created; cross-region copy added post-bootstrap.',
+        id: "AwsSolutions-BAK3",
+        reason:
+          "Cross-region backup vault copy action requires eu-west-1 DR vault bootstrap — see docs/aws/dr-plan.md. Local vault and plan are created; cross-region copy added post-bootstrap.",
       },
       {
-        id: 'AwsSolutions-BAK1',
-        reason: 'Backup vault access policy not required for dev environment backup vault.',
+        id: "AwsSolutions-BAK1",
+        reason:
+          "Backup vault access policy not required for dev environment backup vault.",
       },
     ]);
   }

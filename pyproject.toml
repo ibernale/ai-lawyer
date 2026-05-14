@@ -184,5 +184,6 @@ markers = [
     "eval: evaluation suite cases",
     "slow: tests taking >5s",
     "e2e: end-to-end pipeline tests (mocked API, real logic)",
+    "e2e_aws: on-demand E2E tests requiring live AWS environment (excluded from CI)",
 ]
 asyncio_mode = "auto"

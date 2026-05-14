@@ -12,6 +12,7 @@ Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 **Fase 9 — AWS Banking-Grade Deployment (Fases 9.1–9.5)**
 
 **Multi-account AWS foundation (Fase 9.1, ADRs 0036–0046):**
+
 - AWS Organizations + Control Tower: 7-account structure (management, log-archive, security,
   network, workloads-dev, workloads-pre placeholder, workloads-pro future)
 - IAM Identity Center with hardware MFA mandatory; 4 permission sets (Administrator, Developer,
@@ -27,6 +28,7 @@ Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - GitHub Actions OIDC trust (no long-lived AWS credentials in CI)
 
 **Application stack on AWS (Fase 9.2, ADRs 0038–0043, 0047):**
+
 - ECS Fargate cluster (api, web, qdrant services) behind CloudFront + ALB
 - Aurora Serverless v2 PostgreSQL 16 (0–8 ACU, auto-pause 5 min dev) with IAM auth
 - Dual-mode DB layer: Aurora (AWS) + SQLite (local dev), zero code change
@@ -36,8 +38,9 @@ Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Step Functions + Lambda pipeline replacing Dagster (ADR 0047)
 
 **Data pipelines (Fase 9.4, ADRs 0048–0051):**
+
 - `SourcePipeline` L3 CDK construct: factory generating 1 state machine + EventBridge rule
-  + CloudWatch alarm per ingest source (FetchRaw → ParseCanonical → EmbedChunks → IndexToQdrant)
+  - CloudWatch alarm per ingest source (FetchRaw → ParseCanonical → EmbedChunks → IndexToQdrant)
 - 13 sources wired: BOE, EUR-Lex, BdE, EBA, ESMA, FCA, AEPD, EDPB, CENDOJ, INLABS, SIDOF,
   TribunalConstitucional, LegislationUK
 - Self-hosted Langfuse v3 on ECS Fargate + dedicated Aurora Serverless v2 (ADR 0048)
@@ -46,6 +49,7 @@ Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - AWS Backup for Aurora (daily, local vault encrypted with CMK)
 
 **Compliance & FinOps (Fase 9.5, ADRs 0044–0045, 0052):**
+
 - **DORA evidence collection**: Lambda `evidence_collector` runs daily at 02:00 UTC, audits
   KMS rotation, CloudTrail, GuardDuty, Config compliance; publishes `ComplianceScore` metric
   to CloudWatch; stores evidence JSON + Markdown reports to Object Lock S3 bucket (7-year WORM)
@@ -67,12 +71,14 @@ Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   (upload → parse → consult → audit trail → Langfuse → X-Ray → kill switch)
 
 **Observability (Fase 9.3+):**
+
 - CloudWatch X-Ray distributed tracing across ECS + Lambda + Step Functions
 - Triple observability: CloudWatch + X-Ray + Langfuse
 - Alert router Lambda: reads Slack webhook from Secrets Manager at runtime (not env var)
 - DORA security dashboard: MTTD, login events, KMS operations, Config drift
 
 **Documentation:**
+
 - `docs/aws/architecture.md`: complete Mermaid multi-account architecture diagram
 - `docs/aws/runbook.md`: consolidated banking-grade AWS operations runbook (16 sections)
 - `docs/aws/security-controls.md`: exhaustive security controls reference

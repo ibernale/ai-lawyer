@@ -16,6 +16,7 @@ Fase 9.4 migrates it to AWS while preserving all traces and prompt versions accu
 during development.
 
 Key constraints:
+
 - **Data residency**: All trace data (legal text fragments, model inputs/outputs) must stay
   within EEA (eu-central-1 / eu-west-1 per ADR 0036). SaaS options rejected.
 - **Banking isolation**: Langfuse must not be accessible from the public internet. Internal
@@ -79,12 +80,12 @@ VPC (private subnets)
 
 Stored in Secrets Manager, injected as environment variables via ECS task definition:
 
-| Secret name | Contents | Rotation |
-|---|---|---|
-| `/lex-agents/${env}/langfuse/database-url` | `postgresql://...` (built from Aurora credentials) | 30d (with Aurora rotation) |
-| `/lex-agents/${env}/langfuse/nextauth-secret` | 32-byte random hex | Manual (90d recommended) |
-| `/lex-agents/${env}/langfuse/salt` | 32-byte random hex | Manual |
-| `/lex-agents/${env}/langfuse/encryption-key` | 256-bit key for credential encryption | Manual |
+| Secret name                                   | Contents                                           | Rotation                   |
+| --------------------------------------------- | -------------------------------------------------- | -------------------------- |
+| `/lex-agents/${env}/langfuse/database-url`    | `postgresql://...` (built from Aurora credentials) | 30d (with Aurora rotation) |
+| `/lex-agents/${env}/langfuse/nextauth-secret` | 32-byte random hex                                 | Manual (90d recommended)   |
+| `/lex-agents/${env}/langfuse/salt`            | 32-byte random hex                                 | Manual                     |
+| `/lex-agents/${env}/langfuse/encryption-key`  | 256-bit key for credential encryption              | Manual                     |
 
 Note: the Langfuse secrets `/secret-key` and `/public-key` created in DataStack
 (Fase 9.2) are the **API keys** used by app services to send traces — distinct from
@@ -93,6 +94,7 @@ the infrastructure secrets above.
 ### Migration of historical traces
 
 Prior to cutover, export Langfuse local data via API:
+
 ```bash
 # scripts/langfuse_export.py — export traces + prompts to S3
 python scripts/langfuse_export.py --output s3://lex-agents-backups-dev/langfuse-export/
@@ -107,12 +109,14 @@ Scripts to be implemented in `packages/pipeline_aws/src/lex_pipeline_aws/langfus
 ## Consequences
 
 ### Positive
+
 - All trace data stays within EEA; banking data residency satisfied.
 - No public internet exposure; internal ALB only.
 - Aurora auto-pause keeps dev cost near zero when idle.
 - Langfuse v3 Postgres backend supports all required features (traces, evals, prompts).
 
 ### Negative / mitigations
+
 - **Second Aurora cluster**: small cost overhead in dev (~$0–5/day depending on activity).
   Mitigated by auto-pause. Revisit shared cluster at Fase 10.
 - **No ClickHouse**: Postgres is ~10× slower for analytics queries at scale.
@@ -123,6 +127,7 @@ Scripts to be implemented in `packages/pipeline_aws/src/lex_pipeline_aws/langfus
 ### ClickHouse upgrade path
 
 When monthly trace volume exceeds ~500k (estimate: ~12 months post-go-live):
+
 1. Provision ClickHouse on EC2 (or managed ClickHouse Cloud if data residency review passes).
 2. Langfuse v3 supports dual-write during migration.
 3. Keep Postgres for auth/metadata; route analytics to ClickHouse.
@@ -131,9 +136,9 @@ When monthly trace volume exceeds ~500k (estimate: ~12 months post-go-live):
 
 ## Alternatives considered
 
-| Option | Reason rejected |
-|---|---|
-| Langfuse Cloud (SaaS) | Data residency violation — trace data leaves EEA |
-| Shared Aurora cluster (DataStack) | Coupled maintenance, different query patterns |
-| Helicone | SaaS-only, data residency concern |
-| Build in-house LLM observability | High effort; rejected in ADR 0030 |
+| Option                            | Reason rejected                                  |
+| --------------------------------- | ------------------------------------------------ |
+| Langfuse Cloud (SaaS)             | Data residency violation — trace data leaves EEA |
+| Shared Aurora cluster (DataStack) | Coupled maintenance, different query patterns    |
+| Helicone                          | SaaS-only, data residency concern                |
+| Build in-house LLM observability  | High effort; rejected in ADR 0030                |

@@ -58,7 +58,7 @@ jobs:
           path: ~/.cache/uv
           key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
       - run: uv sync --all-packages
-      - run: uv run --with "pytest>=8" --with "pytest-asyncio>=0.23" --with "respx>=0.21" pytest -x -q -m "not integration"
+      - run: uv run --with "pytest>=8" --with "pytest-asyncio>=0.23" --with "respx>=0.21" pytest -x -q -m "not integration and not e2e_aws"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -127,7 +127,16 @@ jobs:
   build-images:
     name: Build Docker images
     runs-on: ubuntu-24.04
-    needs: [lint-py, typecheck-py, test-py, lint-web, typecheck-web, test-web, secrets-scan]
+    needs:
+      [
+        lint-py,
+        typecheck-py,
+        test-py,
+        lint-web,
+        typecheck-web,
+        test-web,
+        secrets-scan,
+      ]
     permissions:
       contents: read
       packages: write

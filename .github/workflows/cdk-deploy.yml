@@ -5,10 +5,10 @@ on:
     branches:
       - main
     paths:
-      - 'infra/cdk/**'
+      - "infra/cdk/**"
   pull_request:
     paths:
-      - 'infra/cdk/**'
+      - "infra/cdk/**"
 
 permissions: {}
 
@@ -26,8 +26,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: infra/cdk/package-lock.json
       - run: npm ci
       - run: npx tsc --noEmit
@@ -42,8 +42,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: infra/cdk/package-lock.json
       - run: npm ci
       # Use example context (no real account IDs) for synth validation
@@ -66,8 +66,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: infra/cdk/package-lock.json
       - run: npm ci
       - run: cp cdk.context.json.example cdk.context.json
@@ -100,8 +100,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: infra/cdk/package-lock.json
       - run: npm ci
       - run: npx jest --coverage
@@ -123,8 +123,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: infra/cdk/package-lock.json
       - run: npm ci
       - run: cp cdk.context.json.example cdk.context.json
@@ -149,8 +149,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: infra/cdk/package-lock.json
       - run: npm ci
       - name: Configure AWS credentials (OIDC)
