@@ -1,6 +1,6 @@
 [project]
 name = "lex-agents-shared"
-version = "0.1.0"
+version = "0.5.0"
 description = "Shared Pydantic types, Anthropic client, Qdrant client, and logging config for lex-agents"
 requires-python = ">=3.12"
 dependencies = [

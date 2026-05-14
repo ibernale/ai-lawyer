@@ -147,7 +147,7 @@ describe('DataStack — S3 Buckets', () => {
     });
   });
 
-  test('Raw bucket has Standard → IA after 90d lifecycle transition', () => {
+  test('Raw bucket has Standard → IA after 30d lifecycle transition (Fase 9.5)', () => {
     template.hasResourceProperties('AWS::S3::Bucket', {
       LifecycleConfiguration: {
         Rules: Match.arrayWith([
@@ -155,7 +155,42 @@ describe('DataStack — S3 Buckets', () => {
             Transitions: Match.arrayWith([
               Match.objectLike({
                 StorageClass: 'STANDARD_IA',
+                TransitionInDays: 30,
+              }),
+            ]),
+          }),
+        ]),
+      },
+    });
+  });
+
+  test('Raw bucket has Glacier lifecycle transition after 90d (Fase 9.5)', () => {
+    template.hasResourceProperties('AWS::S3::Bucket', {
+      LifecycleConfiguration: {
+        Rules: Match.arrayWith([
+          Match.objectLike({
+            Transitions: Match.arrayWith([
+              Match.objectLike({
+                StorageClass: 'GLACIER',
                 TransitionInDays: 90,
+              }),
+            ]),
+          }),
+        ]),
+      },
+    });
+  });
+
+  test('Canonical bucket has Standard → IA after 60d lifecycle transition (Fase 9.5)', () => {
+    template.hasResourceProperties('AWS::S3::Bucket', {
+      BucketName: Match.stringLikeRegexp('canonical'),
+      LifecycleConfiguration: {
+        Rules: Match.arrayWith([
+          Match.objectLike({
+            Transitions: Match.arrayWith([
+              Match.objectLike({
+                StorageClass: 'STANDARD_IA',
+                TransitionInDays: 60,
               }),
             ]),
           }),

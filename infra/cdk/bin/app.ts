@@ -18,6 +18,7 @@ import { DataStack } from '../lib/stacks/data';
 import { ObservabilityStack } from '../lib/stacks/observability';
 import { PipelinesStack } from '../lib/stacks/pipelines';
 import { LangfuseStack } from '../lib/stacks/langfuse';
+import { ComplianceStack } from '../lib/stacks/compliance';
 
 const app = new cdk.App();
 const accounts = getAccounts(app);
@@ -105,7 +106,7 @@ new LangfuseStack(app, 'LexAgents-Dev-Langfuse', {
   networkStack: networkSpoke,
 });
 
-new ObservabilityStack(app, 'LexAgents-Dev-Observability', {
+const devObservability = new ObservabilityStack(app, 'LexAgents-Dev-Observability', {
   env: devEnv,
   envName: 'dev',
   networkStack: networkSpoke,
@@ -120,6 +121,56 @@ new GithubOidcStack(app, 'LexAgents-Dev-GithubOidc', {
   githubRepo: 'ibernale/ai-lawyer',
   githubBranch: 'main',
 });
+
+// ── Compliance Stack (Fase 9.5) — DORA evidence collection ───────────────────
+new ComplianceStack(app, 'LexAgents-Dev-Compliance', {
+  env: devEnv,
+  envName: 'dev',
+  logsKey: devKms.logsKey,
+  s3Key: devKms.s3Key!,
+  alertTopic: devObservability.alertsTopic,
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// workloads-pre — infrastructure only, NO app deployed yet (Fase 9.5)
+// ══════════════════════════════════════════════════════════════════════
+const workloadsPreAccount = accounts.workloadsPre;
+if (workloadsPreAccount && workloadsPreAccount !== 'REPLACE_ME') {
+  const preEnv = { account: workloadsPreAccount, region: PRIMARY_REGION };
+
+  const kmsPreStack = new KmsStack(app, 'KmsStackPre', {
+    env: preEnv,
+    envName: 'pre',
+    includeWorkloadKeys: true,
+  });
+
+  const networkPreStack = new NetworkSpokeStack(app, 'NetworkSpokeStackPre', {
+    env: preEnv,
+    envName: 'pre',
+    logArchiveAccountId: accounts.logArchive,
+  });
+
+  const dataPreStack = new DataStack(app, 'DataStackPre', {
+    env: preEnv,
+    envName: 'pre',
+    networkStack: networkPreStack,
+    kmsStack: kmsPreStack,
+  });
+  dataPreStack.addDependency(networkPreStack);
+  dataPreStack.addDependency(kmsPreStack);
+
+  new AppEcrStack(app, 'AppEcrStackPre', {
+    env: preEnv,
+    envName: 'pre',
+  });
+
+  new GithubOidcStack(app, 'GithubOidcStackPre', {
+    env: preEnv,
+    envName: 'pre',
+    githubRepo: 'ibernale/ai-lawyer',
+    githubBranch: 'main',
+  });
+}
 
 // cdk-nag: compliance checks on all stacks
 Aspects.of(app).add(new AwsSolutionsChecks({ verbose: false }));

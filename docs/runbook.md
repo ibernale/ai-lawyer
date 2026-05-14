@@ -1,4 +1,4 @@
-# Runbook — lex-agents v0.4.0
+# Runbook — lex-agents v0.5.0
 
 Operational reference for the lex-agents platform. Covers every task an
 operator or admin performs from day-to-day operations to incident response.
@@ -22,6 +22,7 @@ operator or admin performs from day-to-day operations to incident response.
 9. [Rotación de credenciales](#9-rotación-de-credenciales)
 10. [Emergencias](#10-emergencias)
 11. [AWS Foundation (Fase 9.1)](#11-aws-foundation-fase-91)
+12. [AWS Operations (Fase 9+)](#12-aws-operations-fase-9)
 
 ---
 
@@ -961,3 +962,38 @@ aws ecs execute-command \
 # Todas las sesiones quedan registradas en CloudTrail:
 # aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=StartSession
 ```
+
+---
+
+## 12. AWS Operations (Fase 9+)
+
+Las operaciones de la infraestructura AWS completa (Fase 9.2–9.5) — despliegue,
+escalado, incidentes, DR, DORA compliance, pipelines de ingest, Langfuse — están
+documentadas en el **runbook AWS consolidado**:
+
+📖 **[docs/aws/runbook.md](aws/runbook.md)**
+
+Este runbook AWS cubre:
+- Despliegue y rollback CDK
+- Escalado manual de ECS services
+- Rotación de credenciales AWS (KMS, Secrets Manager, OIDC)
+- Backup y restore Aurora Serverless v2
+- Procedimiento de Disaster Recovery (eu-west-1)
+- Gestión de Kill Switches en AWS
+- Investigar slow query en Aurora
+- Investigar coste anómalo (Cost Anomaly Detection + Grafana FinOps dashboard)
+- Investigar alerta GuardDuty / Security Hub
+- Onboarding de nuevo admin (IAM Identity Center)
+- Onboarding de nuevo developer (GitHub OIDC + CDK bootstrap)
+- Procedimiento de incidente DORA (P1/P2/P3 con plazos DORA Art. 19)
+- Gestión de pipelines de ingest (Step Functions)
+- Gestión de traces Langfuse
+- Evidencias DORA (evidence_collector Lambda + Audit Manager)
+
+Ver también:
+- `docs/aws/architecture.md` — diagrama completo de la arquitectura
+- `docs/aws/security-controls.md` — lista exhaustiva de controles
+- `docs/aws/dora-mapping.md` — tabla de controles DORA y evidencias
+- `docs/aws/cost-model.md` — modelo de coste y optimizaciones
+- `docs/compliance/dora-evidence-pack.md` — evidences DORA y auditoría trimestral
+- `docs/aws/dr-plan.md` — procedimiento detallado de DR

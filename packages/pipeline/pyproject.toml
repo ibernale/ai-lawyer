@@ -1,6 +1,6 @@
 [project]
 name = "lex-agents-pipeline"
-version = "0.1.0"
+version = "0.5.0"
 description = "Dagster-orchestrated data pipeline for lex-agents legal source ingestion"
 requires-python = ">=3.12"
 dependencies = [

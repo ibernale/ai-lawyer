@@ -1,6 +1,6 @@
 [project]
 name = "lex-agents-memory"
-version = "0.1.0"
+version = "0.5.0"
 requires-python = ">=3.12"
 description = "Stratified memory (semantic + procedural) for lex-agents — ADR 0013"
 dependencies = [

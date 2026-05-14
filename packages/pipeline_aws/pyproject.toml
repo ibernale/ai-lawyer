@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lex-pipeline-aws"
-version = "0.1.0"
+version = "0.5.0"
 description = "AWS Step Functions ingest pipeline handlers for lex-agents (ADR 0047)"
 requires-python = ">=3.12"
 dependencies = [

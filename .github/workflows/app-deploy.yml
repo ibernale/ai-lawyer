@@ -131,6 +131,18 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: 'v2.2.4'
+
+      - name: Sign images with cosign (keyless)
+        run: |
+          cosign sign --yes \
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_API_REPO }}:${{ github.sha }} \
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_WEB_REPO }}:${{ github.sha }}
+        # COSIGN_EXPERIMENTAL not needed — keyless is default in cosign v2
+
   security-scan:
     name: Security scan
     runs-on: ubuntu-24.04
