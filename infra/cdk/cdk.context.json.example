@@ -1,0 +1,9 @@
+{
+  "lexAgents:accounts": {
+    "management": "111111111111",
+    "logArchive": "222222222222",
+    "security": "333333333333",
+    "network": "444444444444",
+    "workloadsDev": "555555555555"
+  }
+}

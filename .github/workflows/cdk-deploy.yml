@@ -1,0 +1,169 @@
+name: CDK Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'infra/cdk/**'
+  pull_request:
+    paths:
+      - 'infra/cdk/**'
+
+permissions: {}
+
+defaults:
+  run:
+    working-directory: infra/cdk
+
+jobs:
+  lint:
+    name: TypeScript lint
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: infra/cdk/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+
+  synth:
+    name: CDK synth
+    runs-on: ubuntu-24.04
+    needs: lint
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: infra/cdk/package-lock.json
+      - run: npm ci
+      # Use example context (no real account IDs) for synth validation
+      - run: cp cdk.context.json.example cdk.context.json
+      - run: npx cdk synth --all --context lexAgents:rootOuId=r-synth0 --context lexAgents:identityCenterInstanceArn=arn:aws:sso:::instance/ssoins-placeholder
+      - name: Upload synth output
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cdk-synth-output
+          path: infra/cdk/cdk.out/
+
+  nag:
+    name: cdk-nag compliance check
+    runs-on: ubuntu-24.04
+    needs: synth
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: infra/cdk/package-lock.json
+      - run: npm ci
+      - run: cp cdk.context.json.example cdk.context.json
+      - name: Run cdk-nag via synth (nag runs as Aspects during synth)
+        run: |
+          npx cdk synth --all \
+            --context lexAgents:rootOuId=r-synth0 \
+            --context lexAgents:identityCenterInstanceArn=arn:aws:sso:::instance/ssoins-placeholder \
+            2>&1 | tee nag-output.txt
+          # Fail if nag errors or warnings without suppressions
+          if grep -qE '\[Error\]|\[Warning\].*NagPack' nag-output.txt; then
+            echo "::error::cdk-nag found unsuppressed findings"
+            grep -E '\[Error\]|\[Warning\].*NagPack' nag-output.txt
+            exit 1
+          fi
+      - name: Upload nag output
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cdk-nag-output
+          path: infra/cdk/nag-output.txt
+
+  test:
+    name: Jest unit tests
+    runs-on: ubuntu-24.04
+    needs: lint
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: infra/cdk/package-lock.json
+      - run: npm ci
+      - run: npx jest --coverage
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cdk-test-results
+          path: infra/cdk/coverage/
+
+  diff:
+    name: CDK diff (PR only)
+    runs-on: ubuntu-24.04
+    needs: synth
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: infra/cdk/package-lock.json
+      - run: npm ci
+      - run: cp cdk.context.json.example cdk.context.json
+      - name: CDK diff (no AWS credentials — informational only)
+        run: |
+          npx cdk diff --all \
+            --context lexAgents:rootOuId=r-synth0 \
+            --context lexAgents:identityCenterInstanceArn=arn:aws:sso:::instance/ssoins-placeholder \
+            || true
+        continue-on-error: true
+
+  deploy:
+    name: CDK deploy (main → workloads-dev)
+    runs-on: ubuntu-24.04
+    needs: [synth, nag, test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: aws-dev
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: infra/cdk/package-lock.json
+      - run: npm ci
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: eu-central-1
+      - name: CDK deploy workloads-dev stacks
+        run: |
+          npx cdk deploy \
+            LexAgents-Dev-Kms \
+            LexAgents-Dev-Network \
+            LexAgents-Dev-GithubOidc \
+            --require-approval never \
+            --context lexAgents:rootOuId=${{ vars.AWS_ROOT_OU_ID }} \
+            --context lexAgents:identityCenterInstanceArn=${{ vars.AWS_IDC_INSTANCE_ARN }}

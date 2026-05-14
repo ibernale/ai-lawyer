@@ -1,12 +1,19 @@
-"""BGE-M3 embedder — dense (1024-dim) + sparse (SPLADE-style) in one pass."""
+"""Voyage AI embedder — dense 1024-dim vectors via API (no local model)."""
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 
 import structlog
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
+
+# voyage-multilingual-2: 1024-dim, supports ES/EU languages, $0.12/M tokens.
+# Same dimension as the previous BGE-M3 model — existing Qdrant collections
+# are compatible without recreation.
+_DEFAULT_MODEL = "voyage-multilingual-2"
+_EMBED_BATCH_SIZE = 128  # Voyage API limit per call
 
 
 @dataclass
@@ -15,77 +22,76 @@ class EmbeddingResult:
     sparse: dict[int, float] = field(default_factory=dict)
 
 
-class BgeM3Embedder:
-    """Lazy-loaded BGE-M3 embedder that produces dense + sparse vectors.
+class VoyageEmbedder:
+    """Voyage AI embedder that produces 1024-dim dense vectors via HTTP API.
 
-    Uses sentence_transformers with the BGE-M3 model which natively provides
-    both colbert/dense and sparse (lexical_weights) outputs in a single forward
-    pass — no separate BM25 library needed.
+    Replaces the local BGE-M3 / sentence-transformers implementation.
+    No GPU, no model download — just API calls.  Sparse vectors remain empty;
+    the HybridRetriever falls back to dense-only RRF automatically.
+
+    Requires env var: VOYAGE_API_KEY
     """
 
     def __init__(
         self,
-        model_name: str = "BAAI/bge-m3",
-        batch_size: int = 8,
+        model: str = _DEFAULT_MODEL,
+        batch_size: int = _EMBED_BATCH_SIZE,
     ) -> None:
-        self._model_name = model_name
+        self._model = model
         self._batch_size = batch_size
-        self._model: object | None = None  # lazy load
+        self._client: object | None = None  # lazy init
 
-    def _load_model(self) -> object:
-        if self._model is None:
-            from sentence_transformers import SentenceTransformer  # type: ignore[import-untyped]
+    def _get_client(self) -> object:
+        if self._client is None:
+            import voyageai  # type: ignore[import-untyped]
 
-            logger.info("bge_m3_loading", model=self._model_name)
-            model = SentenceTransformer(
-                self._model_name,
-                trust_remote_code=True,  # type: ignore[call-arg]
-            )
-            # BGE-M3 supports up to 8192 tokens but allocating attention
-            # matrices at full length with any meaningful batch size exhausts
-            # memory on commodity hardware.  512 tokens captures the relevant
-            # chunk context for retrieval while staying well within limits.
-            model.max_seq_length = 512
-            self._model = model
-            logger.info("bge_m3_loaded", model=self._model_name)
-        return self._model
+            api_key = os.environ.get("VOYAGE_API_KEY")
+            if not api_key:
+                raise RuntimeError(
+                    "VOYAGE_API_KEY env var is not set. "
+                    "Set it in Secrets Manager and restart the service."
+                )
+            self._client = voyageai.Client(api_key=api_key)
+            logger.info("voyage_client_init", model=self._model)
+        return self._client
 
-    def embed_batch(self, texts: list[str]) -> list[EmbeddingResult]:
-        """Embed a batch of texts, returning dense + sparse for each.
+    def embed_batch(
+        self,
+        texts: list[str],
+        input_type: str = "document",
+    ) -> list[EmbeddingResult]:
+        """Embed a batch of texts, returning EmbeddingResult with dense vector.
 
-        sentence-transformers ≥ 5.x dropped kwargs forwarding; BGE-M3 via
-        SentenceTransformer.encode() returns only dense vectors. Sparse
-        is left empty — retriever falls back to dense-only RRF.
+        Args:
+            texts: Texts to embed.
+            input_type: "document" for indexing, "query" for retrieval queries.
+                Voyage AI uses different representations for each.
         """
         if not texts:
             return []
 
-        model = self._load_model()
+        client = self._get_client()
         results: list[EmbeddingResult] = []
 
         for i in range(0, len(texts), self._batch_size):
             batch = texts[i : i + self._batch_size]
-            outputs = model.encode(  # type: ignore[union-attr]
+            response = client.embed(  # type: ignore[union-attr]
                 batch,
-                batch_size=self._batch_size,
-                normalize_embeddings=True,
+                model=self._model,
+                input_type=input_type,
             )
+            for dense in response.embeddings:
+                results.append(EmbeddingResult(dense=dense, sparse={}))
 
-            # ST 5.x returns ndarray (dense only); older versions returned dict
-            import numpy as np
+            logger.debug("voyage_embedded_batch", n=len(batch), model=self._model)
 
-            if isinstance(outputs, dict):
-                dense_vecs: list[list[float]] = outputs["dense_vecs"].tolist()
-                lexical_weights: list[dict[int, float]] = outputs.get(
-                    "lexical_weights", [{}] * len(batch)
-                )
-            else:
-                arr = outputs if isinstance(outputs, np.ndarray) else np.array(outputs)
-                dense_vecs = arr.tolist()
-                lexical_weights = [{} for _ in batch]
-
-            for dense, sparse in zip(dense_vecs, lexical_weights):
-                results.append(EmbeddingResult(dense=dense, sparse=sparse))
-
-        logger.debug("embedded_batch", n=len(texts))
         return results
+
+    def embed_query(self, query: str) -> EmbeddingResult:
+        """Convenience wrapper for single query embedding (uses input_type='query')."""
+        results = self.embed_batch([query], input_type="query")
+        return results[0]
+
+
+# Backwards-compatible alias — existing code that imports BgeM3Embedder still works.
+BgeM3Embedder = VoyageEmbedder

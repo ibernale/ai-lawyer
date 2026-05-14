@@ -32,9 +32,9 @@ class Settings(BaseSettings):
 
     # RAG
     rag_top_k: int = 10
-    embedder_model: str = "BAAI/bge-m3"
-    reranker_enabled: bool = True
-    reranker_model: str = "BAAI/bge-reranker-v2-m3"
+    embedder_model: str = "voyage-multilingual-2"
+    reranker_enabled: bool = False  # Voyage AI has no reranker; disabled until replaced
+    reranker_model: str = "BAAI/bge-reranker-v2-m3"  # unused while reranker_enabled=False
 
     # OpenTelemetry
     otel_exporter_otlp_endpoint: str = "http://localhost:4317"
@@ -59,6 +59,12 @@ class Settings(BaseSettings):
 
     # Governance & audit trail (ADR 0035)
     governance_db_path: str = "data/governance.db"
+
+    # Database — Aurora (Fase 9.2) vs local SQLite
+    # When set, all DB stores switch to asyncpg (PostgreSQL).
+    # Format: postgresql+asyncpg://user:pass@host:5432/dbname
+    # Leave unset for local dev (SQLite via aiosqlite).
+    database_url: str = ""
 
     # Notifications webhook secret (used by Grafana/Langfuse/Dagster to POST /ingest)
     # Must be a long random string; leave empty to disable the ingest endpoint.

@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lex-agents-migrations"
+version = "0.1.0"
+description = "Database migrations for lex-agents (Alembic + Aurora Serverless v2)"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.14.0",
+    "asyncpg>=0.30.0",
+    "sqlalchemy[asyncio]>=2.0.0",
+    "boto3>=1.35.0",
+    "structlog>=25.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["alembic"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

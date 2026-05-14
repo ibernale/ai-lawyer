@@ -63,7 +63,12 @@ class HybridRetriever:
         k_rrf: int = 30,
     ) -> list[RankedChunk]:
         """Run hybrid search and return the top *k_rrf* merged results."""
-        embeddings = self._embedder.embed_batch([query])
+        # Use input_type="query" so Voyage AI applies query-optimised encoding.
+        # Falls back gracefully if the embedder doesn't support the kwarg.
+        try:
+            embeddings = self._embedder.embed_batch([query], input_type="query")
+        except TypeError:
+            embeddings = self._embedder.embed_batch([query])
         emb = embeddings[0]
 
         qdrant_filter = self._build_filter(filters) if filters else None

@@ -8,6 +8,7 @@ dependencies = [
     "structlog>=25.5.0",
     "fastapi>=0.136.0",
     "bcrypt>=5.0.0",
+    "lex-agents-shared",
 ]
 
 [build-system]
