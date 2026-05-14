@@ -61,7 +61,7 @@ jobs:
         run: uv run --with "ruff>=0.3" ruff check packages/ apps/api/
 
       - name: Type check (mypy)
-        run: uv run mypy packages/shared/src packages/audit/src packages/admin/src apps/api/src
+        run: uv run --with "mypy>=1.0" mypy packages/shared/src packages/audit/src packages/admin/src apps/api/src
 
       - name: Test (pytest)
         run: uv run pytest packages/ apps/api/ -x -q --tb=short
