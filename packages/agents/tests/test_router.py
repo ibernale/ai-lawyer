@@ -8,7 +8,10 @@ from lex_agents_agents.router import QueryRouter
 
 
 def _mock_client(input_data: dict | None = None, no_tool_use: bool = False) -> MagicMock:
-    """Build a mock AnthropicClientWrapper that returns a tool_use block."""
+    """Build a mock AnthropicClientWrapper that returns a tool_use block.
+
+    v2 prompt format: ``branches`` (array), ``depth``, ``rationale``.
+    """
     client = MagicMock()
     resp = MagicMock()
     resp.usage.input_tokens = 50
@@ -23,11 +26,9 @@ def _mock_client(input_data: dict | None = None, no_tool_use: bool = False) -> M
         tool_block = MagicMock()
         tool_block.type = "tool_use"
         tool_block.input = input_data or {
-            "branch": "regulatorio_bancario_ue_es",
-            "jurisdictions": ["EU"],
-            "output_type": "dictamen",
+            "branches": ["regulatorio_bancario_ue_es"],
             "depth": "standard",
-            "sub_queries": [],
+            "rationale": "Banking regulation query.",
         }
         resp.content = [tool_block]
 
@@ -38,42 +39,82 @@ def _mock_client(input_data: dict | None = None, no_tool_use: bool = False) -> M
 class TestRouterBancarioEU:
     def test_routes_to_bancario(self) -> None:
         client = _mock_client({
-            "branch": "regulatorio_bancario_ue_es",
-            "jurisdictions": ["EU"],
-            "output_type": "dictamen",
+            "branches": ["regulatorio_bancario_ue_es"],
             "depth": "standard",
-            "sub_queries": [],
+            "rationale": "CRR capital requirements.",
         })
         router = QueryRouter(client)
         decision = router.route("¿Cuáles son los requisitos CET1 bajo el CRR?")
         assert decision.branch == "regulatorio_bancario_ue_es"
-        assert "EU" in decision.jurisdictions
 
     def test_routes_deep_for_complex_query(self) -> None:
         client = _mock_client({
-            "branch": "regulatorio_bancario_ue_es",
-            "jurisdictions": ["EU", "ES"],
-            "output_type": "analisis_riesgo",
+            "branches": ["regulatorio_bancario_ue_es"],
             "depth": "deep",
-            "sub_queries": ["sub1", "sub2"],
+            "rationale": "Multi-norm analysis.",
         })
         router = QueryRouter(client)
         decision = router.route("Análisis complejo multi-norma")
         assert decision.depth == "deep"
-        assert len(decision.sub_queries) == 2
+
+
+class TestRouterDatosPersonales:
+    """Regression tests for false-negative bug: datos_personales routed to fuera_de_alcance."""
+
+    def test_proteccion_datos_espana_routes_to_rgpd(self) -> None:
+        """¿qué regulación de protección de datos aplica en españa? must NOT be fuera_de_alcance."""
+        client = _mock_client({
+            "branches": ["datos_personales_rgpd"],
+            "depth": "shallow",
+            "rationale": "RGPD/LOPDGDD scope query.",
+        })
+        router = QueryRouter(client)
+        decision = router.route("¿qué regulación de protección de datos aplica en españa?")
+        assert decision.branch == "datos_personales_rgpd"
+        assert decision.branch != "fuera_de_alcance"
+
+    def test_rgpd_obligations_routes_to_rgpd(self) -> None:
+        client = _mock_client({
+            "branches": ["datos_personales_rgpd"],
+            "depth": "standard",
+            "rationale": "RGPD controller obligations.",
+        })
+        router = QueryRouter(client)
+        decision = router.route("¿Qué obligaciones impone el RGPD a los responsables del tratamiento?")
+        assert decision.branch == "datos_personales_rgpd"
+
+    def test_multi_branch_takes_primary(self) -> None:
+        """When branches returns [laboral, datos_personales_rgpd], primary branch is laboral."""
+        client = _mock_client({
+            "branches": ["laboral", "datos_personales_rgpd"],
+            "depth": "standard",
+            "rationale": "Employee data breach — dual scope.",
+        })
+        router = QueryRouter(client)
+        decision = router.route("Despido de empleado que accedió a datos de clientes sin autorización")
+        assert decision.branch == "laboral"
 
 
 class TestRouterFueraDeAlcance:
     def test_routes_out_of_scope(self) -> None:
         client = _mock_client({
-            "branch": "fuera_de_alcance",
-            "jurisdictions": [],
-            "output_type": "dictamen",
+            "branches": ["fuera_de_alcance"],
             "depth": "shallow",
-            "sub_queries": [],
+            "rationale": "Tax law — not in scope.",
         })
         router = QueryRouter(client)
-        decision = router.route("¿Cuál es la indemnización por despido improcedente?")
+        decision = router.route("¿Cuándo prescribe el IVA en España?")
+        assert decision.branch == "fuera_de_alcance"
+
+    def test_unknown_branch_value_defaults_to_fuera_de_alcance(self) -> None:
+        """Unknown branch string silently degrades to fuera_de_alcance."""
+        client = _mock_client({
+            "branches": ["unknown_branch_xyz"],
+            "depth": "shallow",
+            "rationale": "...",
+        })
+        router = QueryRouter(client)
+        decision = router.route("any query")
         assert decision.branch == "fuera_de_alcance"
 
 

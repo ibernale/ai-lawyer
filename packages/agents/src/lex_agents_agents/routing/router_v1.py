@@ -20,32 +20,33 @@ from lex_agents_agents.prompt_loader import load_prompt
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 tracer = trace.get_tracer(__name__)
 
+_VALID_BRANCHES = {
+    "regulatorio_bancario_ue_es",
+    "datos_personales_rgpd",
+    "laboral",
+    "mercantil_societario",
+    "penal_economico",
+    "administrativo",
+    "fuera_de_alcance",
+}
+
 _ROUTE_TOOL = {
     "name": "route_query",
     "description": "Return the routing decision for the incoming legal query.",
     "input_schema": {
         "type": "object",
         "properties": {
-            "branch": {
-                "type": "string",
-                "enum": [
-                    "regulatorio_bancario_ue_es",
-                    "datos_personales_rgpd",
-                    "laboral",
-                    "mercantil_societario",
-                    "penal_economico",
-                    "administrativo",
-                    "fuera_de_alcance",
-                ],
-            },
-            "jurisdictions": {
+            "branches": {
                 "type": "array",
-                "items": {"type": "string", "enum": ["ES", "EU", "UK", "US", "OTHER"]},
-            },
-            "output_type": {
-                "type": "string",
-                "enum": ["dictamen", "nota", "memo_comite", "analisis_riesgo"],
-                "default": "dictamen",
+                "items": {
+                    "type": "string",
+                    "enum": sorted(_VALID_BRANCHES),
+                },
+                "minItems": 1,
+                "maxItems": 3,
+                "description": (
+                    "Branch identifiers to activate. Use ['fuera_de_alcance'] when out of scope."
+                ),
             },
             "depth": {
                 "type": "string",
@@ -54,11 +55,22 @@ _ROUTE_TOOL = {
             },
             "sub_queries": {
                 "type": "array",
-                "items": {"type": "string"},
-                "maxItems": 3,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "branch": {"type": "string"},
+                        "query": {"type": "string"},
+                    },
+                    "required": ["branch", "query"],
+                },
+                "description": "Only populate when the query contains clearly separable sub-questions.",
+            },
+            "rationale": {
+                "type": "string",
+                "description": "One-sentence explanation of the routing decision (internal).",
             },
         },
-        "required": ["branch", "jurisdictions", "output_type", "depth", "sub_queries"],
+        "required": ["branches", "depth", "rationale"],
     },
 }
 
@@ -72,7 +84,7 @@ _DEFAULT_DECISION = RoutingDecision(
 
 
 class QueryRouter:
-    def __init__(self, client: AnthropicClientWrapper, prompt_version: int = 1) -> None:
+    def __init__(self, client: AnthropicClientWrapper, prompt_version: int = 2) -> None:
         self._client = client
         self._cfg = load_prompt("router", version=prompt_version)
         logger.info(
@@ -121,8 +133,18 @@ class QueryRouter:
                     if isinstance(tool_use_block.input, dict)
                     else json.loads(tool_use_block.input)
                 )
+                # v2 prompt returns `branches` (array); take first valid branch for
+                # RoutingDecision.branch (orchestrator uses the primary branch only;
+                # multi-branch parallelism is handled by LegalPlanner on deeper paths).
+                branches_raw: list[str] = raw.get("branches", ["fuera_de_alcance"])
+                primary_branch = next(
+                    (b for b in branches_raw if b in _VALID_BRANCHES),
+                    "fuera_de_alcance",
+                )
+                # Preserve raw branch list for span metadata / future multi-branch support
+                all_branches = [b for b in branches_raw if b in _VALID_BRANCHES] or ["fuera_de_alcance"]
                 decision = RoutingDecision(
-                    branch=raw["branch"],
+                    branch=primary_branch,
                     jurisdictions=raw.get("jurisdictions", []),
                     output_type=raw.get("output_type", "dictamen"),
                     depth=raw.get("depth", "standard"),
@@ -133,10 +155,12 @@ class QueryRouter:
                 return _DEFAULT_DECISION
 
             span.set_attribute("routing.branch", decision.branch)
+            span.set_attribute("routing.branches", ",".join(all_branches))
             span.set_attribute("routing.depth", decision.depth)
             logger.info(
                 "query_routed",
                 branch=decision.branch,
+                all_branches=all_branches,
                 depth=decision.depth,
                 latency_ms=round(latency),
             )
