@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lex-agents-migrations"
-version = "0.1.0"
+version = "0.5.0"
 description = "Database migrations for lex-agents (Alembic + Aurora Serverless v2)"
 requires-python = ">=3.12"
 dependencies = [

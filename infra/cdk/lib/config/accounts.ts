@@ -6,6 +6,7 @@ export interface AccountConfig {
   security: string;
   network: string;
   workloadsDev: string;
+  workloadsPre?: string;
 }
 
 export function getAccounts(app: App): AccountConfig {

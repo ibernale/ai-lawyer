@@ -5,6 +5,105 @@ Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.5.0] — 2026-05-14
+
+### Added
+
+**Fase 9 — AWS Banking-Grade Deployment (Fases 9.1–9.5)**
+
+**Multi-account AWS foundation (Fase 9.1, ADRs 0036–0046):**
+- AWS Organizations + Control Tower: 7-account structure (management, log-archive, security,
+  network, workloads-dev, workloads-pre placeholder, workloads-pro future)
+- IAM Identity Center with hardware MFA mandatory; 4 permission sets (Administrator, Developer,
+  DataAnalyst, SecurityAudit)
+- SCPs: DenyNonEuRegions, DenyRootUsage, DenyUnencryptedStorage, DenyIAMConsolePasswordWithoutMFA
+- KMS CMKs per account per purpose (rds, s3, secrets, logs, ebs) with annual auto-rotation
+- CloudTrail organization trail → S3 Object Lock WORM (7-year DORA retention, eu-central-1)
+- Log Archive S3 with cross-region replication (eu-west-1 DR)
+- GuardDuty + Security Hub (CIS v3 + AWS FSBP standards) delegated admin in security account
+- AWS Config conformance packs (CIS-AWS-3-Level1, Operational-Best-Practices-for-IAM)
+- VPC 3-tier networking (public/private-app/private-data) with NAT HA × 3 AZs
+- 14 VPC Interface Endpoints + S3/DynamoDB Gateway Endpoints (no internet for data plane)
+- GitHub Actions OIDC trust (no long-lived AWS credentials in CI)
+
+**Application stack on AWS (Fase 9.2, ADRs 0038–0043, 0047):**
+- ECS Fargate cluster (api, web, qdrant services) behind CloudFront + ALB
+- Aurora Serverless v2 PostgreSQL 16 (0–8 ACU, auto-pause 5 min dev) with IAM auth
+- Dual-mode DB layer: Aurora (AWS) + SQLite (local dev), zero code change
+- Bedrock as primary LLM provider with Anthropic API fallback (ADR 0039)
+- Bedrock Knowledge Bases + Aurora pgvector for RAG (ADR 0040)
+- Alembic migration stack (packages/migrations) with SQLite→Aurora migration scripts
+- Step Functions + Lambda pipeline replacing Dagster (ADR 0047)
+
+**Data pipelines (Fase 9.4, ADRs 0048–0051):**
+- `SourcePipeline` L3 CDK construct: factory generating 1 state machine + EventBridge rule
+  + CloudWatch alarm per ingest source (FetchRaw → ParseCanonical → EmbedChunks → IndexToQdrant)
+- 13 sources wired: BOE, EUR-Lex, BdE, EBA, ESMA, FCA, AEPD, EDPB, CENDOJ, INLABS, SIDOF,
+  TribunalConstitucional, LegislationUK
+- Self-hosted Langfuse v3 on ECS Fargate + dedicated Aurora Serverless v2 (ADR 0048)
+- Secrets Manager rotation: Aurora app-user 30-day auto-rotation (ADR 0050)
+- S3 Cross-Region Replication with KMS re-encryption to eu-west-1 (ADR 0051)
+- AWS Backup for Aurora (daily, local vault encrypted with CMK)
+
+**Compliance & FinOps (Fase 9.5, ADRs 0044–0045, 0052):**
+- **DORA evidence collection**: Lambda `evidence_collector` runs daily at 02:00 UTC, audits
+  KMS rotation, CloudTrail, GuardDuty, Config compliance; publishes `ComplianceScore` metric
+  to CloudWatch; stores evidence JSON + Markdown reports to Object Lock S3 bucket (7-year WORM)
+- **AWS Audit Manager**: custom DORA-Banking framework with 4 control sets (Arts. 8, 9, 10, 11);
+  quarterly assessment with Config/CloudTrail/Security Hub evidence sources
+- **Security Hub custom insights**: Encryption coverage, MFA coverage, Network segmentation
+- **ECS Fargate Spot**: API and Web services use 75% Spot weight (Qdrant remains standard —
+  stateful + EFS)
+- **S3 lifecycle optimized**: raw→IA@30d, Glacier@90d; canonical→IA@60d; logs→Glacier@7d
+- **CloudWatch log retention**: ECS logs 30 days dev; Aurora audit logs 30 days dev
+- **Cost Anomaly Detection**: dimensional monitor by SERVICE, daily alert if spend > 2×
+  7-day average
+- **FinOps Grafana dashboard**: cost by service, trend 30/90 days, daily vs 7-day average
+- **workloads-pre account**: infrastructure provisioned (KMS, VPC, Aurora 0–4 ACU, ECR, OIDC)
+  — app not deployed yet, ready for Fase 10
+- **Cosign keyless image signing**: Docker images signed with Sigstore OIDC after ECR push
+  (ADR 0052, DORA Art. 9.4 supply chain integrity)
+- **E2E AWS test workflow** (`e2e-aws.yml`): on-demand test exercising full 14-step scenario
+  (upload → parse → consult → audit trail → Langfuse → X-Ray → kill switch)
+
+**Observability (Fase 9.3+):**
+- CloudWatch X-Ray distributed tracing across ECS + Lambda + Step Functions
+- Triple observability: CloudWatch + X-Ray + Langfuse
+- Alert router Lambda: reads Slack webhook from Secrets Manager at runtime (not env var)
+- DORA security dashboard: MTTD, login events, KMS operations, Config drift
+
+**Documentation:**
+- `docs/aws/architecture.md`: complete Mermaid multi-account architecture diagram
+- `docs/aws/runbook.md`: consolidated banking-grade AWS operations runbook (16 sections)
+- `docs/aws/security-controls.md`: exhaustive security controls reference
+- `docs/aws/dora-mapping.md`: DORA Article mapping with evidence status
+- `docs/aws/cost-model.md`: actuals vs estimates, optimization lessons
+- `docs/compliance/dora-evidence-pack.md`: evidence pack structure, Athena queries,
+  quarterly audit checklist
+- `docs/roadmap-fase-10.md`: 10 Fase 10 initiatives with priority, dependencies, cost
+- ADRs 0036–0052 all accepted
+
+### Changed
+
+- `apps/api/src/lex_agents_api/db.py`: dual-mode Aurora + SQLite with asyncpg connection pooling
+- `packages/shared`: added `db.py` (connection management) and `secrets.py` (Secrets Manager helper)
+- `apps/web/next.config.mjs`: CloudFront-aware routing, security headers
+- `docs/runbook.md`: updated to v0.5.0; section 12 added pointing to `docs/aws/runbook.md`
+- All `pyproject.toml` package versions bumped to 0.5.0
+
+### Security
+
+- No long-lived AWS credentials in CI/CD (OIDC everywhere)
+- All data at rest encrypted with customer-managed KMS keys
+- All transit encrypted with TLS 1.2+ (Aurora `require_secure_transport`, ALB → HTTPS)
+- Secrets Manager rotation for all Aurora credentials (30-day cycle)
+- Cosign keyless image signing for supply chain integrity (ADR 0052)
+- CloudTrail WORM (7-year Object Lock COMPLIANCE) — DORA Art. 10.2
+- GuardDuty + Security Hub CRITICAL findings → SNS → Slack within 5 minutes
+- VPC Flow Logs → S3 Object Lock (log-archive account)
+
+---
+
 ## [0.4.0] — 2026-05-13
 
 ### Added

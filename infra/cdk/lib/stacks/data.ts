@@ -152,7 +152,7 @@ export class DataStack extends cdk.Stack {
 
       // Audit logs → CloudWatch Logs
       cloudwatchLogsExports: ['postgresql'],
-      cloudwatchLogsRetention: logs.RetentionDays.ONE_YEAR,
+      cloudwatchLogsRetention: logs.RetentionDays.ONE_MONTH,
 
       // Dev: no deletion protection (suppressed below with documented reason)
       deletionProtection: false,
@@ -283,11 +283,11 @@ export class DataStack extends cdk.Stack {
           transitions: [
             {
               storageClass: s3.StorageClass.INFREQUENT_ACCESS,
-              transitionAfter: cdk.Duration.days(90),
+              transitionAfter: cdk.Duration.days(30),
             },
             {
               storageClass: s3.StorageClass.GLACIER,
-              transitionAfter: cdk.Duration.days(365),
+              transitionAfter: cdk.Duration.days(90),
             },
           ],
         },
@@ -309,7 +309,7 @@ export class DataStack extends cdk.Stack {
           transitions: [
             {
               storageClass: s3.StorageClass.INFREQUENT_ACCESS,
-              transitionAfter: cdk.Duration.days(180),
+              transitionAfter: cdk.Duration.days(60),
             },
           ],
         },

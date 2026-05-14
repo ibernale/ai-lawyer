@@ -1,7 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
+import * as auditmanager from 'aws-cdk-lib/aws-auditmanager';
 import * as guardduty from 'aws-cdk-lib/aws-guardduty';
 import * as securityhub from 'aws-cdk-lib/aws-securityhub';
 import * as sns from 'aws-cdk-lib/aws-sns';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as kms from 'aws-cdk-lib/aws-kms';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as events from 'aws-cdk-lib/aws-events';
@@ -12,12 +14,13 @@ import { NagSuppressions } from 'cdk-nag';
 
 export interface SecurityBaselineStackProps extends cdk.StackProps {
   managementAccountId: string;
+  envName?: string;
 }
 
 export class SecurityBaselineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: SecurityBaselineStackProps) {
     super(scope, id, props);
-    const { managementAccountId: _managementAccountId } = props;
+    const { managementAccountId: _managementAccountId, envName = 'security' } = props;
 
     // ── KMS key for security account resources ────────────────────────────
     const securityKey = new kms.Key(this, 'SecurityKey', {
@@ -121,6 +124,84 @@ export class SecurityBaselineStack extends cdk.Stack {
       exportName: 'LexAgents-SecurityAlertsTopicArn',
     });
 
+    // ── AWS Audit Manager — DORA Banking assessment (Fase 9.5, ADR 0044) ─
+    // S3 bucket for assessment reports
+    const auditReportsBucket = new s3.Bucket(this, 'AuditReportsBucket', {
+      bucketName: `lex-agents-audit-reports-${this.account}`,
+      encryption: s3.BucketEncryption.KMS,
+      encryptionKey: securityKey,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      versioned: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
+    // IAM role for Audit Manager assessment
+    const assessorRole = new iam.Role(this, 'AuditManagerAssessorRole', {
+      roleName: `lex-agents-audit-manager-assessor-${envName}`,
+      assumedBy: new iam.ServicePrincipal('auditmanager.amazonaws.com'),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('SecurityAudit'),
+      ],
+    });
+    auditReportsBucket.grantReadWrite(assessorRole);
+
+    // DORA Banking Assessment — uses CfnAssessment (L1).
+    // CfnFramework is not available in this CDK version; the framework must be
+    // pre-created via the AWS Console or CLI and its ID set in cdk.context.json
+    // under "lexAgents:doraFrameworkId". If not set, the assessment is skipped.
+    const doraFrameworkId = this.node.tryGetContext('lexAgents:doraFrameworkId') as string | undefined;
+    if (doraFrameworkId && doraFrameworkId !== 'REPLACE_ME') {
+      new auditmanager.CfnAssessment(this, 'DoraAssessment', {
+        name: 'DORA-Banking-Quarterly',
+        description: 'Quarterly DORA compliance assessment for lex-agents (EU Regulation 2022/2554)',
+        frameworkId: doraFrameworkId,
+        assessmentReportsDestination: {
+          destination: `s3://${auditReportsBucket.bucketName}`,
+          destinationType: 'S3',
+        },
+        awsAccount: { id: this.account },
+        scope: {
+          awsAccounts: [{ id: this.account }],
+          awsServices: [
+            { serviceName: 'S3' },
+            { serviceName: 'RDS' },
+            { serviceName: 'KMS' },
+            { serviceName: 'IAM' },
+            { serviceName: 'GuardDuty' },
+            { serviceName: 'CloudTrail' },
+          ],
+        },
+        roles: [{ roleArn: assessorRole.roleArn, roleType: 'PROCESS_OWNER' }],
+        status: 'ACTIVE',
+      });
+    }
+
+    // ── Security Hub Custom Insights — DORA (Fase 9.5) ─────────────────
+    new securityhub.CfnInsight(this, 'EncryptionInsight', {
+      name: 'DORA-Encryption-Coverage',
+      filters: {
+        complianceStatus: [{ comparison: 'NOT_EQUALS', value: 'PASSED' }],
+        title: [{ comparison: 'CONTAINS', value: 'encryption' }],
+      },
+      groupByAttribute: 'ResourceType',
+    });
+    new securityhub.CfnInsight(this, 'MfaInsight', {
+      name: 'DORA-MFA-Coverage',
+      filters: {
+        complianceStatus: [{ comparison: 'NOT_EQUALS', value: 'PASSED' }],
+        title: [{ comparison: 'CONTAINS', value: 'MFA' }],
+      },
+      groupByAttribute: 'AwsAccountId',
+    });
+    new securityhub.CfnInsight(this, 'NetworkSegmentationInsight', {
+      name: 'DORA-Network-Segmentation',
+      filters: {
+        complianceStatus: [{ comparison: 'NOT_EQUALS', value: 'PASSED' }],
+        title: [{ comparison: 'CONTAINS', value: 'security group' }],
+      },
+      groupByAttribute: 'ResourceId',
+    });
+
     NagSuppressions.addStackSuppressions(this, [
       {
         id: 'AwsSolutions-SNS3',
@@ -155,6 +236,26 @@ export class SecurityBaselineStack extends cdk.Stack {
       {
         id: 'HIPAA.Security-IAMNoInlinePolicy',
         reason: 'Auto-generated CDK custom resource Lambda inline policy. Standard CDK pattern; minimally scoped to CloudWatch Logs actions.',
+      },
+      {
+        id: 'AwsSolutions-S1',
+        reason: 'Audit reports bucket is itself an audit sink; server access logging would be circular.',
+      },
+      {
+        id: 'HIPAA.Security-S3BucketLoggingEnabled',
+        reason: 'Audit reports bucket is an audit sink; server access logging would be circular.',
+      },
+      {
+        id: 'HIPAA.Security-S3BucketReplicationEnabled',
+        reason: 'Audit reports bucket replication to DR region is a post-Fase-9.5 enhancement.',
+      },
+      {
+        id: 'AwsSolutions-IAM4',
+        reason: 'SecurityAudit managed policy on Audit Manager assessor role is the minimum required for evidence collection.',
+      },
+      {
+        id: 'AwsSolutions-IAM5',
+        reason: 'SecurityAudit managed policy requires broad read access by design for compliance evidence collection.',
       },
     ]);
   }

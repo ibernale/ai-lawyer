@@ -4,6 +4,8 @@
     "logArchive": "222222222222",
     "security": "333333333333",
     "network": "444444444444",
-    "workloadsDev": "555555555555"
-  }
+    "workloadsDev": "555555555555",
+    "workloadsPre": "REPLACE_ME"
+  },
+  "lexAgents:doraFrameworkId": "REPLACE_ME"
 }

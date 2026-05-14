@@ -34,6 +34,18 @@ export class LogArchiveStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
       lifecycleRules: [
         {
+          // Operational logs — move to Glacier quickly for cost savings.
+          // Object Lock COMPLIANCE (7 years) remains in effect; Glacier
+          // is a storage-class transition only and does not break WORM.
+          id: 'GlacierFastArchive',
+          transitions: [
+            {
+              storageClass: s3.StorageClass.GLACIER,
+              transitionAfter: cdk.Duration.days(7),
+            },
+          ],
+        },
+        {
           transitions: [
             {
               storageClass: s3.StorageClass.GLACIER_INSTANT_RETRIEVAL,

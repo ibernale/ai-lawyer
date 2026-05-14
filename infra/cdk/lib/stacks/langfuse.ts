@@ -195,7 +195,7 @@ export class LangfuseStack extends cdk.Stack {
     // ── CloudWatch log group ──────────────────────────────────────────────────
     const logGroup = new logs.LogGroup(this, 'LangfuseLogGroup', {
       logGroupName: `/lex-agents/${envName}/langfuse`,
-      retention: logs.RetentionDays.ONE_WEEK,
+      retention: logs.RetentionDays.ONE_MONTH,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 

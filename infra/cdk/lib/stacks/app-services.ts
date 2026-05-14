@@ -55,7 +55,7 @@ export class AppServicesStack extends cdk.Stack {
     // ── CloudWatch log group ───────────────────────────────────────────────
     const logGroup = new logs.LogGroup(this, 'AppLogGroup', {
       logGroupName: `/lex-agents/${envName}/ecs`,
-      retention: logs.RetentionDays.ONE_WEEK,
+      retention: logs.RetentionDays.ONE_MONTH,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
@@ -123,6 +123,7 @@ export class AppServicesStack extends cdk.Stack {
       clusterName: `lex-agents-${envName}`,
       vpc,
       containerInsights: true,
+      enableFargateCapacityProviders: true,
     });
 
     // ── IAM task execution role ────────────────────────────────────────────
@@ -444,6 +445,10 @@ export class AppServicesStack extends cdk.Stack {
       circuitBreaker: { rollback: true },
       minHealthyPercent: 0,
       maxHealthyPercent: 200,
+      capacityProviderStrategies: [
+        { capacityProvider: 'FARGATE',      base: 1, weight: 1 },
+        { capacityProvider: 'FARGATE_SPOT', base: 0, weight: 3 },
+      ],
     });
 
     fileSystem.grantRootAccess(apiService.taskDefinition.taskRole);
@@ -541,6 +546,10 @@ export class AppServicesStack extends cdk.Stack {
       circuitBreaker: { rollback: true },
       minHealthyPercent: 0,
       maxHealthyPercent: 200,
+      capacityProviderStrategies: [
+        { capacityProvider: 'FARGATE',      base: 1, weight: 1 },
+        { capacityProvider: 'FARGATE_SPOT', base: 0, weight: 3 },
+      ],
     });
 
     const webTg = new elbv2.ApplicationTargetGroup(this, 'WebTg', {

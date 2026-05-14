@@ -26,6 +26,7 @@
 
 import * as cdk from 'aws-cdk-lib';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
+import * as costexplorer from 'aws-cdk-lib/aws-ce';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as eventsTargets from 'aws-cdk-lib/aws-events-targets';
@@ -656,6 +657,69 @@ def handler(event, context):
     });
 
     alarmFanoutRule.addTarget(new eventsTargets.LambdaFunction(alertRouterFn));
+
+    // ── AWS Cost Anomaly Detection (Fase 9.5, ADR 0045) ─────────────────
+    // Alerts when a service's daily spend exceeds 2× its 7-day average.
+    const anomalyMonitor = new costexplorer.CfnAnomalyMonitor(
+      this, 'ServiceAnomalyMonitor', {
+        monitorName: `lex-agents-${envName}-service-monitor`,
+        monitorType: 'DIMENSIONAL',
+        monitorDimension: 'SERVICE',
+      },
+    );
+    new costexplorer.CfnAnomalySubscription(
+      this, 'AnomalySubscription', {
+        subscriptionName: `lex-agents-${envName}-anomaly-alerts`,
+        monitorArnList: [anomalyMonitor.attrMonitorArn],
+        threshold: 20,          // 20 USD absolute OR
+        thresholdExpression:    // alert if impact > 2× 7-day average
+          '{ "Dimensions": { "Key": "ANOMALY_TOTAL_IMPACT_PERCENTAGE", "Values": ["100"] } }',
+        frequency: 'DAILY',
+        subscribers: [{ address: this.alertsTopic.topicArn, type: 'SNS' }],
+      },
+    );
+
+    // ── FinOps cost dashboard (Fase 9.5) ─────────────────────────────────
+    new cloudwatch.Dashboard(this, 'FinOpsDashboard', {
+      dashboardName: `lex-agents-${envName}-finops`,
+      widgets: [[
+        new cloudwatch.TextWidget({
+          markdown: [
+            '## FinOps — Cost Breakdown',
+            '> **Note:** AWS billing metrics have a 24-hour ingestion delay.',
+            '> For real-time estimates use AWS Cost Explorer.',
+          ].join('\n'),
+          width: 24, height: 2,
+        }),
+      ], [
+        new cloudwatch.SingleValueWidget({
+          title: 'Estimated Charges (USD)',
+          metrics: [
+            new cloudwatch.Metric({
+              namespace: 'AWS/Billing',
+              metricName: 'EstimatedCharges',
+              dimensionsMap: { Currency: 'USD' },
+              statistic: 'Maximum',
+              period: cdk.Duration.days(1),
+              region: 'us-east-1',   // billing metrics only in us-east-1
+            }),
+          ],
+          width: 6, height: 4,
+        }),
+        new cloudwatch.GraphWidget({
+          title: 'Daily Cost Trend (30d)',
+          left: [new cloudwatch.Metric({
+            namespace: 'AWS/Billing',
+            metricName: 'EstimatedCharges',
+            dimensionsMap: { Currency: 'USD' },
+            statistic: 'Maximum',
+            period: cdk.Duration.days(1),
+            region: 'us-east-1',
+          })],
+          width: 18, height: 4,
+        }),
+      ]],
+    });
 
     // Suppress unused variable for dataStack (used via dependency only)
     void dataStack;

@@ -17,6 +17,14 @@ export const DEV_VPC_CONFIG: WorkloadVpcConfig = {
   privateDataSubnets: ['10.10.20.0/24', '10.10.21.0/24', '10.10.22.0/24'],
 };
 
+export const PRE_VPC_CONFIG: WorkloadVpcConfig = {
+  vpcCidr: '10.11.0.0/16',
+  azs: ['eu-central-1a', 'eu-central-1b', 'eu-central-1c'],
+  publicSubnets:      ['10.11.0.0/24',  '10.11.1.0/24',  '10.11.2.0/24'],
+  privateAppSubnets:  ['10.11.10.0/24', '10.11.11.0/24', '10.11.12.0/24'],
+  privateDataSubnets: ['10.11.20.0/24', '10.11.21.0/24', '10.11.22.0/24'],
+};
+
 export const HUB_VPC_CIDR = '10.20.0.0/16';
 
 // KMS key aliases per environment

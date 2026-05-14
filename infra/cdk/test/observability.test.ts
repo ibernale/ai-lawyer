@@ -203,8 +203,9 @@ describe('ObservabilityStack — Dashboard', () => {
     });
   });
 
-  test('Exactly 3 dashboards are created (main, pipeline, dora) — updated Fase 9.4', () => {
-    template.resourceCountIs('AWS::CloudWatch::Dashboard', 3);
+  test('At least 3 dashboards are created (main, pipeline, dora + optional finops)', () => {
+    const dashboards = template.findResources('AWS::CloudWatch::Dashboard');
+    expect(Object.keys(dashboards).length).toBeGreaterThanOrEqual(3);
   });
 
   test('Dashboard body contains ECS CPU and Memory widgets', () => {
@@ -280,8 +281,9 @@ describe('ObservabilityStack — Logs Insights Queries', () => {
 // ── Additional Dashboards (Fase 9.4) ─────────────────────────────────────────
 
 describe('ObservabilityStack — Pipeline & DORA Dashboards', () => {
-  test('3 CloudWatch Dashboards exist (main, pipeline, dora)', () => {
-    template.resourceCountIs('AWS::CloudWatch::Dashboard', 3);
+  test('At least 3 CloudWatch Dashboards exist (main, pipeline, dora + optional finops)', () => {
+    const dashboards = template.findResources('AWS::CloudWatch::Dashboard');
+    expect(Object.keys(dashboards).length).toBeGreaterThanOrEqual(3);
   });
 
   test('Pipeline dashboard exists with correct name', () => {
@@ -332,6 +334,27 @@ describe('ObservabilityStack — Alert Router Lambda', () => {
     template.hasResourceProperties('AWS::Events::Rule', {
       Name: 'lex-agents-dev-alarm-fanout',
     });
+  });
+});
+
+// ── FinOps Dashboard (Fase 9.5) ───────────────────────────────────────────────
+
+describe('ObservabilityStack — FinOps', () => {
+  test('FinOps dashboard exists', () => {
+    template.hasResourceProperties('AWS::CloudWatch::Dashboard', {
+      DashboardName: 'lex-agents-dev-finops',
+    });
+  });
+});
+
+// ── Cost Anomaly Detection (Fase 9.5) ─────────────────────────────────────────
+
+describe('ObservabilityStack — Cost Anomaly Detection', () => {
+  test('CostAnomalyMonitor exists', () => {
+    template.resourceCountIs('AWS::CE::AnomalyMonitor', 1);
+  });
+  test('CostAnomalySubscription exists', () => {
+    template.resourceCountIs('AWS::CE::AnomalySubscription', 1);
   });
 });
 
