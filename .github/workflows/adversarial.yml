@@ -94,6 +94,9 @@ jobs:
             --output-dir evals/reports/adversarial_${{ github.run_id }}/
 
       - name: Assert thresholds
+        # Only assert on full runs (scheduled or manual full). Dry-run mock
+        # responses have no caveat phrases by design → high jailbreak rate.
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.subset == 'false')
         run: |
           uv run python -c "
           import json, sys
