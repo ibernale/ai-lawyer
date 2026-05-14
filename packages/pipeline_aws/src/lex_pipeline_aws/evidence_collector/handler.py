@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Any
 
 import boto3
@@ -51,7 +51,7 @@ def _check_kms_rotation(kms_client: Any) -> dict[str, Any]:
                     rotation = kms_client.get_key_rotation_status(KeyId=key["KeyId"])
                     if not rotation.get("KeyRotationEnabled", False):
                         non_rotating.append(key["KeyId"])
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning("kms_key_check_failed", key_id=key["KeyId"], error=str(exc))
     return {
         "check": "kms_rotation_enabled",
@@ -207,7 +207,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             f"{k}={v}" for k, v in c.items() if k not in ("check", "passed")
         )
         lines.append(f"| {c['check']} | {status} | {details} |")
-    lines.append(f"\n_Generated at {datetime.now(timezone.utc).isoformat()} by evidence_collector Lambda_")
+    lines.append(f"\n_Generated at {datetime.now(UTC).isoformat()} by evidence_collector Lambda_")
     summary_md = "\n".join(lines)
 
     if BUCKET:

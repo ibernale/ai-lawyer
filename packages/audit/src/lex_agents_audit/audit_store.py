@@ -13,9 +13,8 @@ from pathlib import Path
 from typing import Literal
 
 import structlog
-from pydantic import BaseModel
-
 from lex_agents_shared.db import is_postgres, pg_conn
+from pydantic import BaseModel
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
@@ -253,6 +252,7 @@ class AuditStore:
 
     async def _sqlite_list_negative(self, since_days: int) -> list[AuditSampleRecord]:
         from datetime import timedelta
+
         import aiosqlite
         cutoff = (datetime.now(UTC) - timedelta(days=since_days)).isoformat()
         async with aiosqlite.connect(self._db_path) as db:

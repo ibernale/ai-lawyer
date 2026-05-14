@@ -14,7 +14,7 @@ Pipeline flow:
     → Done
 
 Error handling:
-  - All Lambda states: Retry 2× with exponential backoff (interval 30s, backoff 2×)
+  - All Lambda states: Retry 2x with exponential backoff (interval 30s, backoff 2x)
   - All Lambda states: Catch → PipelineFailed state
   - ECS RunTask states: no retry (ECS task retries internally); Catch → PipelineFailed
 """

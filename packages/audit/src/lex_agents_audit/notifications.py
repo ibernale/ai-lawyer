@@ -14,7 +14,6 @@ from datetime import UTC, datetime
 from typing import Any
 
 import structlog
-
 from lex_agents_shared.db import is_postgres, pg_conn
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
@@ -197,7 +196,7 @@ class NotificationManager:
                 f"""SELECT {_SELECT_COLS}
                     FROM notifications {where}
                     ORDER BY created_at DESC, id DESC
-                    LIMIT $1""",
+                    LIMIT $1""",  # noqa: S608 — where built from safe enum values, not user input
                 limit,
             )
         return [_pg_row_to_notification(r) for r in rows]
@@ -237,7 +236,7 @@ class NotificationManager:
                 f"""SELECT {_SELECT_COLS}
                     FROM notifications {where}
                     ORDER BY created_at DESC, id DESC
-                    LIMIT ?""",
+                    LIMIT ?""",  # noqa: S608 — where built from safe enum values, not user input
                 (limit,),
             ) as cur:
                 rows = await cur.fetchall()

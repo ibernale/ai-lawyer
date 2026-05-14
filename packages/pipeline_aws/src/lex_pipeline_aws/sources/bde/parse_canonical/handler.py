@@ -44,8 +44,8 @@ def _read_s3_object(s3_uri: str) -> bytes:
 
 def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """Step Functions Lambda handler for the BdE ParseCanonical stage."""
-    from lex_agents_ingest.sources.bde import BdeSource
     from lex_agents_ingest.canonical import RawDocument
+    from lex_agents_ingest.sources.bde import BdeSource
 
     evt = PipelineEvent.from_dict(event)
     logger.info("bde.parse_canonical_start", doc_id=evt.doc_id)

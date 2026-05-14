@@ -13,7 +13,6 @@ Field contract:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date
 from typing import Any
 
 
@@ -59,7 +58,7 @@ class PipelineEvent:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "PipelineEvent":
+    def from_dict(cls, d: dict[str, Any]) -> PipelineEvent:
         known = {f.name for f in cls.__dataclass_fields__.values()}  # type: ignore[attr-defined]
         extra = {k: v for k, v in d.items() if k not in known}
         filtered = {k: v for k, v in d.items() if k in known}
