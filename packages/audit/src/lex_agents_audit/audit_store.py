@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import structlog
 from lex_agents_shared.db import is_postgres, pg_conn
@@ -105,9 +105,9 @@ class AuditStore:
     async def count_pending(self) -> int:
         if is_postgres():
             async with pg_conn() as conn:
-                return await conn.fetchval(
+                return int(await conn.fetchval(
                     "SELECT COUNT(*) FROM audit_samples WHERE reviewer IS NULL"
-                )
+                ))
         import aiosqlite
         async with aiosqlite.connect(self._db_path) as db:
             async with db.execute(
@@ -142,7 +142,7 @@ class AuditStore:
                    WHERE id=$5""",
                 reviewer, notes, verdict, datetime.now(UTC), sample_id,
             )
-        return result != "UPDATE 0"
+        return str(result) != "UPDATE 0"
 
     async def _pg_get(self, sample_id: int) -> AuditSampleRecord | None:
         async with pg_conn() as conn:
@@ -269,7 +269,7 @@ class AuditStore:
 # Row converters
 # ---------------------------------------------------------------------------
 
-def _pg_row_to_record(row: any) -> AuditSampleRecord:
+def _pg_row_to_record(row: Any) -> AuditSampleRecord:
     sampled = row["sampled_at"]
     return AuditSampleRecord(
         id=row["id"],
@@ -286,7 +286,7 @@ def _pg_row_to_record(row: any) -> AuditSampleRecord:
     )
 
 
-def _sqlite_row_to_record(row: any) -> AuditSampleRecord:
+def _sqlite_row_to_record(row: Any) -> AuditSampleRecord:
     return AuditSampleRecord(
         id=row["id"],
         trace_id=row["trace_id"],

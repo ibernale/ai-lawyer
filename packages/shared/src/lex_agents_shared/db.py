@@ -97,9 +97,8 @@ async def pg_conn() -> AsyncIterator[asyncpg.Connection]:
             row = await conn.fetchrow("SELECT * FROM feature_flags WHERE key = $1", key)
     """
     pool = await get_pool()
-    async with pool.acquire() as conn:  # type: ignore[attr-defined]
-        yield conn  # type: ignore[misc]
-
+    async with pool.acquire() as conn:
+        yield conn
 
 @contextlib.asynccontextmanager
 async def pg_transaction() -> AsyncIterator[asyncpg.Connection]:
@@ -114,6 +113,6 @@ async def pg_transaction() -> AsyncIterator[asyncpg.Connection]:
             await conn.execute("UPDATE ...", ...)
     """
     pool = await get_pool()
-    async with pool.acquire() as conn:  # type: ignore[attr-defined]
+    async with pool.acquire() as conn:
         async with conn.transaction():
-            yield conn  # type: ignore[misc]
+            yield conn

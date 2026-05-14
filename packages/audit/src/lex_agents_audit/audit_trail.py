@@ -637,7 +637,7 @@ class AuditTrailManager:
                        WHERE pr_number=$4""",
                     status, ts, decided_by, pr_number,
                 )
-            return result != "UPDATE 0"
+            return str(result) != "UPDATE 0"
         ts_str = ts.strftime("%Y-%m-%dT%H:%M:%S")
         import aiosqlite
         async with aiosqlite.connect(self._db_path) as db:
@@ -710,7 +710,7 @@ class AuditTrailManager:
                    WHERE source_id=$5""",
                 new_status, paused_reason, datetime.now(UTC), paused_by, source_id,
             )
-        return result != "UPDATE 0"
+        return str(result) != "UPDATE 0"
 
     async def _sqlite_list_sources(self) -> list[SourceStatusRow]:
         import aiosqlite

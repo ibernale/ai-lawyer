@@ -58,7 +58,7 @@ jobs:
             -e "apps/api[dev]"
 
       - name: Lint (ruff)
-        run: uv run ruff check packages/ apps/api/
+        run: uv run --with "ruff>=0.3" ruff check packages/ apps/api/
 
       - name: Type check (mypy)
         run: uv run mypy packages/shared/src packages/audit/src packages/admin/src apps/api/src
@@ -153,7 +153,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.29.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -198,13 +198,18 @@ jobs:
 
       - name: CDK synth (validate)
         working-directory: infra/cdk
-        run: npx cdk synth --all --quiet
+        run: |
+          npx cdk synth --all --quiet \
+            --context imageDigestApi=${{ needs.build-and-push.outputs.api-image }} \
+            --context imageDigestWeb=${{ needs.build-and-push.outputs.web-image }}
 
       - name: CDK deploy AppServicesStack
         working-directory: infra/cdk
         run: |
           npx cdk deploy LexAgents-Dev-App \
             --require-approval never \
+            --context imageDigestApi=${{ needs.build-and-push.outputs.api-image }} \
+            --context imageDigestWeb=${{ needs.build-and-push.outputs.web-image }} \
             --outputs-file /tmp/cdk-outputs.json
 
       - name: Upload CDK outputs

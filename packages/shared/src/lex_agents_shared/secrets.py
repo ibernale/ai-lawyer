@@ -26,7 +26,7 @@ from __future__ import annotations
 import json
 import os
 from functools import lru_cache
-from typing import Any
+from typing import Any, cast
 
 import structlog
 
@@ -83,7 +83,7 @@ def get_secret_dict(
     ``username``, ``password``, etc.
     """
     raw = get_secret_string(secret_id, region=region)
-    return json.loads(raw)
+    return cast(dict[str, Any], json.loads(raw))
 
 
 def get_secret_str(

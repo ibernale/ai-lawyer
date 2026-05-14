@@ -52,6 +52,18 @@ export class AppServicesStack extends cdk.Stack {
     const { envName, networkStack, ecrStack, dataStack } = props;
     const vpc = networkStack.vpc;
 
+    // Image digests are required so task definitions never reference :latest.
+    // In CI these come from --context flags set after docker/build-push-action.
+    const imageDigestApi = this.node.tryGetContext('imageDigestApi') as string | undefined;
+    const imageDigestWeb = this.node.tryGetContext('imageDigestWeb') as string | undefined;
+    if (!imageDigestApi || !imageDigestWeb) {
+      throw new Error(
+        'CDK context keys imageDigestApi and imageDigestWeb are required. ' +
+        'Pass them via --context imageDigestApi=sha256:... --context imageDigestWeb=sha256:...',
+      );
+    }
+
+
     // ── CloudWatch log group ───────────────────────────────────────────────
     const logGroup = new logs.LogGroup(this, "AppLogGroup", {
       logGroupName: `/lex-agents/${envName}/ecs`,
@@ -137,6 +149,10 @@ export class AppServicesStack extends cdk.Stack {
       ],
     });
     appSecret.grantRead(executionRole);
+    // Explicit grants required because we use fromRegistry (not fromEcrRepository)
+    // so CDK does not auto-grant ECR pull to the execution role.
+    ecrStack.apiRepo.grantPull(executionRole);
+    ecrStack.webRepo.grantPull(executionRole);
 
     // ── IAM task role (runtime permissions) ───────────────────────────────
     const taskRole = new iam.Role(this, "EcsTaskRole", {
@@ -398,7 +414,9 @@ export class AppServicesStack extends cdk.Stack {
     });
 
     const apiContainer = apiTaskDef.addContainer("api", {
-      image: ecs.ContainerImage.fromEcrRepository(ecrStack.apiRepo, "latest"),
+      image: ecs.ContainerImage.fromRegistry(
+        `${ecrStack.apiRepo.repositoryUri}@${imageDigestApi}`,
+      ),
       logging,
       portMappings: [{ containerPort: 8000 }],
       secrets: {
@@ -562,7 +580,9 @@ export class AppServicesStack extends cdk.Stack {
     });
 
     webTaskDef.addContainer("web", {
-      image: ecs.ContainerImage.fromEcrRepository(ecrStack.webRepo, "latest"),
+      image: ecs.ContainerImage.fromRegistry(
+        `${ecrStack.webRepo.repositoryUri}@${imageDigestWeb}`,
+      ),
       logging,
       portMappings: [{ containerPort: 3000 }],
       environment: {

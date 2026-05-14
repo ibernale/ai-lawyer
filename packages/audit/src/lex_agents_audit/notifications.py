@@ -117,9 +117,9 @@ class NotificationManager:
     async def unread_count(self) -> int:
         if is_postgres():
             async with pg_conn() as conn:
-                return await conn.fetchval(
+                return int(await conn.fetchval(
                     "SELECT COUNT(*) FROM notifications WHERE read_at IS NULL"
-                )
+                ))
         import aiosqlite
         async with aiosqlite.connect(self._db_path) as db:
             async with db.execute(
