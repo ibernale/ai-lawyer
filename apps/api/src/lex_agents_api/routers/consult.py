@@ -98,7 +98,7 @@ class ConsultRequestBody(BaseModel):
 
 @lru_cache(maxsize=1)
 def _get_embedder(model: str) -> BgeM3Embedder:
-    return BgeM3Embedder(model_name=model)
+    return BgeM3Embedder(model=model)
 
 
 @lru_cache(maxsize=1)

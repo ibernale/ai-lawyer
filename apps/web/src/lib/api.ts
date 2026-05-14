@@ -3,10 +3,14 @@
  * Server-side calls use API_BASE_URL; browser calls use NEXT_PUBLIC_API_URL.
  */
 
+// Server-side: use API_BASE_URL (runtime env var set in ECS task definition).
+// Browser-side: use "" (relative path) — Next.js rewrites in next.config.mjs
+// proxy /health, /version, /auth/*, /api/v1/* to the backend server-side,
+// so the browser never needs to know the API URL and no URL is baked at build time.
 const API_BASE =
   typeof window === "undefined"
     ? (process.env["API_BASE_URL"] ?? "http://localhost:8000")
-    : (process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:8000");
+    : "";
 
 // ---------------------------------------------------------------------------
 // Error types

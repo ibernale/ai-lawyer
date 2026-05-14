@@ -288,6 +288,9 @@ export class AppServicesStack extends cdk.Stack {
         VOYAGE_API_KEY: ecs.Secret.fromSecretsManager(appSecret, 'VOYAGE_API_KEY'),
         ENVIRONMENT: ecs.Secret.fromSecretsManager(appSecret, 'ENVIRONMENT'),
         LOG_LEVEL: ecs.Secret.fromSecretsManager(appSecret, 'LOG_LEVEL'),
+        // JSON array of users; set via Secrets Manager so the hash is never in git.
+        // Generate hash: python3 -c "import bcrypt; print(bcrypt.hashpw(b'pw', bcrypt.gensalt(12)).decode())"
+        AUTH_USERS_JSON: ecs.Secret.fromSecretsManager(appSecret, 'AUTH_USERS_JSON'),
       },
       environment: {
         QDRANT_URL: 'http://qdrant.lex-agents.local:6333',
@@ -431,10 +434,15 @@ export class AppServicesStack extends cdk.Stack {
     });
 
     // ── ALB listener rules ─────────────────────────────────────────────────
-    // FastAPI routes: /health, /version, /api/v1/* → API service
+    // FastAPI routes → API service (browser calls these directly; no Next.js rewrite needed)
     httpListener.addTargetGroups('ApiHealthRule', {
       priority: 15,
       conditions: [elbv2.ListenerCondition.pathPatterns(['/health', '/version'])],
+      targetGroups: [apiTg],
+    });
+    httpListener.addTargetGroups('ApiAuthRule', {
+      priority: 20,
+      conditions: [elbv2.ListenerCondition.pathPatterns(['/auth/*', '/auth'])],
       targetGroups: [apiTg],
     });
     httpListener.addTargetGroups('ApiV1Rule', {
