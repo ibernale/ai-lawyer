@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -10,6 +10,8 @@ import {
   type KillSwitchRow,
 } from "@/lib/api";
 import { NotificationsDrawer } from "@/components/admin/NotificationsDrawer";
+import { Logo } from "@/components/Logo";
+import { Button } from "@/components/ui/button";
 
 type NavItem = {
   href: string;
@@ -92,13 +94,73 @@ function ReasonDialog({
   onCancel: () => void;
 }) {
   const [reason, setReason] = useState("");
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    previousFocusRef.current = document.activeElement as HTMLElement;
+    return () => {
+      previousFocusRef.current?.focus();
+    };
+  }, []);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        onCancel();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = dialog.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onCancel]);
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-        <h2 className="text-lg font-semibold mb-4">{title}</h2>
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      aria-hidden="true"
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="kill-dialog-title"
+        className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md"
+        aria-hidden="false"
+      >
+        <h2 id="kill-dialog-title" className="text-lg font-semibold mb-4">
+          {title}
+        </h2>
+        <label
+          htmlFor="kill-reason"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          Motivo <span aria-hidden="true">*</span>
+          <span className="sr-only">(obligatorio)</span>
+        </label>
         <textarea
-          className="w-full border border-gray-300 rounded p-2 text-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Motivo obligatorio..."
+          id="kill-reason"
+          className="w-full border border-gray-300 rounded p-2 text-sm resize-none h-24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          placeholder="Describe el motivo..."
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           autoFocus
@@ -106,14 +168,14 @@ function ReasonDialog({
         <div className="flex gap-3 justify-end mt-4">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded"
+            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             Cancelar
           </button>
           <button
             onClick={() => onConfirm(reason)}
             disabled={!reason.trim()}
-            className="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             Confirmar
           </button>
@@ -196,38 +258,47 @@ export default function AdminLayout({
     );
   }
 
+  const bellLabel =
+    unreadCount > 0
+      ? `Notificaciones, ${unreadCount} sin leer`
+      : "Notificaciones";
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <aside className="w-56 bg-gray-900 text-white flex flex-col shrink-0">
-        <div className="px-4 py-4 border-b border-gray-700">
-          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
-            Sistema
-          </div>
+      <aside className="w-56 bg-[#1a1a1a] text-white flex flex-col shrink-0">
+        <div className="px-4 py-4 border-b border-white/10">
+          <Logo variant="full" className="mb-3" />
           <span
+            role="status"
             className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full ${
               globalKillEngaged
-                ? "bg-red-700 text-red-100"
-                : "bg-green-800 text-green-200"
+                ? "bg-red-700 text-white"
+                : "bg-green-700 text-white"
             }`}
           >
             <span
               className={`w-1.5 h-1.5 rounded-full ${globalKillEngaged ? "bg-red-300" : "bg-green-400"}`}
+              aria-hidden="true"
             />
             {globalKillEngaged ? "KILL ACTIVE" : "OK"}
           </span>
         </div>
-        <nav className="flex-1 px-2 py-3 overflow-y-auto">
+        <nav
+          aria-label="Secciones de administración"
+          className="flex-1 px-2 py-3 overflow-y-auto"
+        >
           {NAV_SECTIONS.map((section) => (
             <div key={section.label} className="mb-4">
-              <div className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+              <h2 className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
                 {section.label}
-              </div>
+              </h2>
               <div className="space-y-0.5">
                 {section.items.map(({ href, label, placeholder }) =>
                   placeholder ? (
                     <div
                       key={href}
+                      aria-disabled="true"
                       className="flex items-center justify-between px-3 py-1.5 rounded text-sm text-gray-600 cursor-not-allowed select-none"
                     >
                       <span>{label}</span>
@@ -239,10 +310,13 @@ export default function AdminLayout({
                     <Link
                       key={href}
                       href={href as never}
-                      className={`block px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                      aria-current={
+                        pathname?.startsWith(href) ? "page" : undefined
+                      }
+                      className={`block px-3 py-1.5 rounded text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
                         pathname?.startsWith(href)
-                          ? "bg-gray-700 text-white"
-                          : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                          ? "bg-primary text-white"
+                          : "text-gray-300 hover:bg-white/10 hover:text-white"
                       }`}
                     >
                       {label}
@@ -262,6 +336,7 @@ export default function AdminLayout({
           <span className="text-sm text-gray-600">
             {username}{" "}
             <span className="bg-blue-100 text-blue-700 text-xs font-medium px-1.5 py-0.5 rounded">
+              <span className="sr-only">Rol: </span>
               {role}
             </span>
           </span>
@@ -269,14 +344,15 @@ export default function AdminLayout({
             {/* Bell icon */}
             <button
               onClick={() => setShowNotifications(true)}
-              className="relative p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors"
-              aria-label="Notifications"
+              className="relative p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-label={bellLabel}
             >
               <svg
                 className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -286,7 +362,10 @@ export default function AdminLayout({
                 />
               </svg>
               {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-red-600 text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center leading-none">
+                <span
+                  aria-hidden="true"
+                  className="absolute -top-0.5 -right-0.5 bg-red-600 text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center leading-none"
+                >
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
@@ -294,19 +373,21 @@ export default function AdminLayout({
 
             {/* Kill switch */}
             {role === "admin" && (
-              <button
+              <Button
                 onClick={() => setShowKillDialog(true)}
-                disabled={killBusy}
-                className={`px-4 py-2 text-sm font-semibold rounded transition-colors disabled:opacity-50 ${
+                loading={killBusy}
+                variant={globalKillEngaged ? "secondary" : "destructive"}
+                size="md"
+                className={
                   globalKillEngaged
                     ? "bg-green-600 hover:bg-green-700 text-white"
-                    : "bg-red-600 hover:bg-red-700 text-white"
-                }`}
+                    : undefined
+                }
               >
                 {globalKillEngaged
                   ? "Release Kill Switch"
                   : "Global Kill Switch"}
-              </button>
+              </Button>
             )}
           </div>
         </header>

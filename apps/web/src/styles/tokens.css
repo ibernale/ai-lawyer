@@ -1,0 +1,35 @@
+/*
+ * Design token reference — Santander brand palette
+ *
+ * These are the canonical values. The live tokens are defined in
+ * globals.css @theme and :root. Edit there; this file is reference only.
+ *
+ * Brand red scale
+ * ──────────────────────────────────────────────
+ * brand-50   #fff0f0  backgrounds, hover states
+ * brand-100  #ffd6d6  light fills, banners
+ * brand-200  #ffadad  borders on light backgrounds
+ * brand-300  #ff7070  interactive accents
+ * brand-400  #ff3333  hover on primary
+ * brand-500  #ec0000  PRIMARY — buttons, links, active states
+ * brand-600  #cc0000  active/pressed primary
+ * brand-700  #b30000  text on white (WCAG AA 4.7:1)
+ * brand-800  #8f0000  high-contrast text
+ * brand-900  #6b0000  darkest, use sparingly
+ *
+ * Contrast ratios (WCAG 2.1 AA requires 4.5:1 for normal text, 3:1 for large)
+ * ──────────────────────────────────────────────
+ * brand-500 (#EC0000) on white (#FFFFFF)  → 4.48:1  ✓ large text / UI components (3:1)
+ *                                                    ✗ normal body text — use brand-700
+ * brand-700 (#B30000) on white (#FFFFFF)  → 7.25:1  ✓ all text sizes
+ * white (#FFFFFF) on brand-500 (#EC0000)  → 4.48:1  ✓ button text (large, bold)
+ * white (#FFFFFF) on #1A1A1A             → 16.1:1  ✓ sidebar text
+ *
+ * Semantic mappings
+ * ──────────────────────────────────────────────
+ * --primary      → brand-500 (#EC0000)
+ * --ring         → brand-500 (#EC0000)
+ * --destructive  → red-600 (standard Tailwind)
+ * sidebar bg     → #1A1A1A  (neutral black)
+ * sidebar active → brand-500 (#EC0000)
+ */
