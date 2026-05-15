@@ -13,7 +13,12 @@ export default function TracesLlmPage() {
           Trazas de invocaciones a modelos via Langfuse.
         </p>
       </div>
-      <IframeEmbed src={LANGFUSE_URL} title="Langfuse" className="flex-1" />
+      <IframeEmbed
+        src={LANGFUSE_URL}
+        title="Langfuse"
+        className="flex-1"
+        envVarName="NEXT_PUBLIC_LANGFUSE_URL"
+      />
     </div>
   );
 }

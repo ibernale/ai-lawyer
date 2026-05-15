@@ -61,7 +61,24 @@ class TokenResponse(BaseModel):
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _get_user_store() -> Any:
+    try:
+        from lex_agents_admin.user_store import get_user_store
+        return get_user_store()
+    except ImportError:
+        return None
+
+
 def _load_users(settings: Settings) -> list[UserConfig]:
+    store = _get_user_store()
+    if store is not None:
+        db_users = store.get_all_sync()
+        if db_users:
+            return [
+                UserConfig(username=u.username, password_hash=u.password_hash, role=u.role)
+                for u in db_users if not u.disabled
+            ]
+    # Fall back to env var
     try:
         raw = json.loads(settings.auth_users_json.get_secret_value())
         return [UserConfig(**u) for u in raw]

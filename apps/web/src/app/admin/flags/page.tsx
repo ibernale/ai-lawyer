@@ -126,10 +126,105 @@ function FlagTypeBadge({ raw }: { raw: string }) {
   );
 }
 
+function CreateFlagDialog({
+  onConfirm,
+  onCancel,
+}: {
+  onConfirm: (key: string, value: string, reason: string) => void;
+  onCancel: () => void;
+}) {
+  const [key, setKey] = useState("");
+  const [value, setValue] = useState("true");
+  const [reason, setReason] = useState("");
+  const [valueError, setValueError] = useState("");
+
+  function validateJson(raw: string): boolean {
+    try {
+      JSON.parse(raw);
+      setValueError("");
+      return true;
+    } catch {
+      setValueError("JSON inválido");
+      return false;
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+        <h2 className="text-base font-semibold mb-4">Nuevo feature flag</h2>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Clave del flag
+            </label>
+            <input
+              type="text"
+              required
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              className="border border-gray-300 rounded p-2 text-sm font-mono w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="feature.mi_funcionalidad"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Valor (JSON)
+            </label>
+            <textarea
+              className={`w-full border rounded p-2 text-sm font-mono resize-none h-20 focus:outline-none focus:ring-2 focus:ring-blue-500 ${valueError ? "border-red-400" : "border-gray-300"}`}
+              value={value}
+              onChange={(e) => {
+                setValue(e.target.value);
+                if (valueError) validateJson(e.target.value);
+              }}
+              onBlur={() => validateJson(value)}
+            />
+            {valueError && (
+              <p className="text-xs text-red-600 mt-1">{valueError}</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Motivo
+            </label>
+            <textarea
+              className="w-full border border-gray-300 rounded p-2 text-sm resize-none h-16 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Obligatorio..."
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="flex gap-3 justify-end mt-4">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => {
+              if (!validateJson(value) || !key.trim() || !reason.trim()) return;
+              onConfirm(key.trim(), value, reason);
+            }}
+            disabled={!key.trim() || !reason.trim()}
+            className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Crear flag
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function FlagsPage() {
   const [flags, setFlags] = useState<FlagRow[] | null>(null);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<FlagRow | null>(null);
+  const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
@@ -159,8 +254,30 @@ export default function FlagsPage() {
     }
   }
 
+  async function handleCreate(key: string, rawValue: string, reason: string) {
+    setSaving(true);
+    setSaveError("");
+    try {
+      const parsed = JSON.parse(rawValue);
+      await setFlag(key, parsed, reason);
+      setCreating(false);
+      load();
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "Error al crear flag");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div>
+      {creating && (
+        <CreateFlagDialog
+          onConfirm={handleCreate}
+          onCancel={() => setCreating(false)}
+        />
+      )}
+
       <div className="mb-6 flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Feature Flags</h1>
@@ -169,12 +286,20 @@ export default function FlagsPage() {
             inmediato y quedan registrados en el audit trail.
           </p>
         </div>
-        <button
-          onClick={load}
-          className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50"
-        >
-          Actualizar
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setCreating(true)}
+            className="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            + Nuevo flag
+          </button>
+          <button
+            onClick={load}
+            className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50"
+          >
+            Actualizar
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -197,10 +322,18 @@ export default function FlagsPage() {
         </div>
       ) : flags.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
-          <p className="text-sm">No hay feature flags configurados.</p>
-          <p className="text-xs mt-1">
-            Los flags se crean automáticamente al activar funcionalidades.
+          <p className="text-sm font-medium">
+            No hay feature flags configurados.
           </p>
+          <p className="text-xs mt-1 mb-4">
+            Usa el botón &ldquo;+ Nuevo flag&rdquo; para crear el primero.
+          </p>
+          <button
+            onClick={() => setCreating(true)}
+            className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            + Nuevo flag
+          </button>
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">

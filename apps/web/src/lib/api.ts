@@ -910,6 +910,78 @@ export type UserRow = {
 
 export const listUsers = () => apiFetch<UserRow[]>("/api/v1/admin/users");
 
+export type CreateUserRequest = {
+  username: string;
+  password: string;
+  role: string;
+};
+export type UpdateUserRequest = {
+  role?: string;
+  password?: string;
+  disabled?: boolean;
+};
+
+export const createUser = (body: CreateUserRequest) =>
+  apiFetch<UserRow>("/api/v1/admin/users", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+export const updateUser = (username: string, body: UpdateUserRequest) =>
+  apiFetch<UserRow>(`/api/v1/admin/users/${username}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+export const deleteUser = (username: string) =>
+  apiFetch<void>(`/api/v1/admin/users/${username}`, { method: "DELETE" });
+
+// ---------------------------------------------------------------------------
+// Pipelines
+// ---------------------------------------------------------------------------
+
+export type PipelineExecution = {
+  name: string;
+  execution_arn: string;
+  status: string;
+  start_date: string | null;
+  stop_date: string | null;
+};
+
+export type PipelinesResponse = {
+  executions: PipelineExecution[];
+  status: "ok" | "unavailable" | "not_configured";
+  message?: string;
+};
+
+export const listPipelines = () =>
+  apiFetch<PipelinesResponse>("/api/v1/admin/pipelines");
+
+// ---------------------------------------------------------------------------
+// Platform config
+// ---------------------------------------------------------------------------
+
+export type ServiceConfig = {
+  name: string;
+  configured: boolean;
+  value_hint?: string;
+};
+
+export type PlatformConfig = {
+  env: string;
+  db_mode: string;
+  auth_enabled: boolean;
+  log_level: string;
+  services: ServiceConfig[];
+  jwt_algorithm: string;
+  otel_service_name: string;
+};
+
+export const getPlatformConfig = () =>
+  apiFetch<PlatformConfig>("/api/v1/admin/platform-config");
+
 // ---------------------------------------------------------------------------
 // Sessions (ADR 0057)
 // ---------------------------------------------------------------------------

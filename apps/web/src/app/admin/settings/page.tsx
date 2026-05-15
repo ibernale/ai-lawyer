@@ -5,8 +5,10 @@ import Link from "next/link";
 import {
   getSystemState,
   getVersion,
+  getPlatformConfig,
   type KillSwitchRow,
   type VersionResponse,
+  type PlatformConfig,
 } from "@/lib/api";
 
 function InfoRow({
@@ -50,13 +52,17 @@ export default function SettingsPage() {
   const [killSwitches, setKillSwitches] = useState<KillSwitchRow[] | null>(
     null,
   );
+  const [platformConfig, setPlatformConfig] = useState<PlatformConfig | null>(
+    null,
+  );
   const [error, setError] = useState("");
 
   useEffect(() => {
-    Promise.all([getVersion(), getSystemState()])
-      .then(([v, state]) => {
+    Promise.all([getVersion(), getSystemState(), getPlatformConfig()])
+      .then(([v, state, cfg]) => {
         setVersion(v);
         setKillSwitches(state.kill_switches);
+        setPlatformConfig(cfg);
       })
       .catch(() => setError("No se pudo cargar la configuración."));
   }, []);
@@ -123,6 +129,89 @@ export default function SettingsPage() {
                 value={version.python_version.split(" ")[0] ?? "—"}
                 mono
               />
+            </div>
+          )}
+        </div>
+
+        {/* Platform config */}
+        <div className="bg-white border border-gray-200 rounded-lg p-5">
+          <h2 className="text-sm font-semibold text-gray-900 mb-3">
+            Configuración de la plataforma
+          </h2>
+          {!platformConfig ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-8 bg-gray-100 rounded animate-pulse"
+                />
+              ))}
+            </div>
+          ) : (
+            <div>
+              <InfoRow label="Entorno" value={platformConfig.env} mono />
+              <InfoRow
+                label="Base de datos"
+                value={
+                  <span
+                    className={`text-xs font-medium px-2 py-0.5 rounded ${platformConfig.db_mode === "aurora" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}`}
+                  >
+                    {platformConfig.db_mode}
+                  </span>
+                }
+              />
+              <InfoRow
+                label="Auth habilitado"
+                value={
+                  <span
+                    className={`text-xs font-medium px-2 py-0.5 rounded ${platformConfig.auth_enabled ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                  >
+                    {platformConfig.auth_enabled ? "Sí" : "No"}
+                  </span>
+                }
+              />
+              <InfoRow
+                label="Log level"
+                value={platformConfig.log_level}
+                mono
+              />
+              <InfoRow
+                label="JWT algorithm"
+                value={platformConfig.jwt_algorithm}
+                mono
+              />
+              <InfoRow
+                label="OTEL service"
+                value={platformConfig.otel_service_name}
+                mono
+              />
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <p className="text-xs font-medium text-gray-500 mb-2">
+                  Servicios externos
+                </p>
+                <div className="space-y-1.5">
+                  {platformConfig.services.map((svc) => (
+                    <div
+                      key={svc.name}
+                      className="flex items-center justify-between"
+                    >
+                      <span className="text-xs text-gray-600">{svc.name}</span>
+                      <div className="flex items-center gap-2">
+                        {svc.value_hint && (
+                          <span className="text-xs font-mono text-gray-400">
+                            {svc.value_hint}
+                          </span>
+                        )}
+                        <span
+                          className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${svc.configured ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
+                        >
+                          {svc.configured ? "✓" : "no configurado"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>

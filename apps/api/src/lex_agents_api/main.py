@@ -126,6 +126,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     except ImportError:
         logger.warning("lex_agents_admin_sessions_not_available")
 
+    # User store (admin CRUD)
+    try:
+        from lex_agents_admin.user_store import UserStore, set_user_store
+        user_store_mgr = UserStore(settings.governance_db_path)
+        await user_store_mgr.init()
+        set_user_store(user_store_mgr)
+        logger.info("user_store_initialized", db_path=settings.governance_db_path)
+    except ImportError:
+        logger.warning("lex_agents_admin_user_store_not_available")
+
     # Kill switches & feature flags (ADR-0032)
     ssm = None
     try:

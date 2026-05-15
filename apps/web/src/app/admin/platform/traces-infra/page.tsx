@@ -13,7 +13,12 @@ export default function TracesInfraPage() {
           Trazas distribuidas de la infraestructura via Jaeger.
         </p>
       </div>
-      <IframeEmbed src={JAEGER_URL} title="Jaeger" className="flex-1" />
+      <IframeEmbed
+        src={JAEGER_URL}
+        title="Jaeger"
+        className="flex-1"
+        envVarName="NEXT_PUBLIC_JAEGER_URL"
+      />
     </div>
   );
 }
