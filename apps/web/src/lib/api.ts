@@ -909,3 +909,37 @@ export type UserRow = {
 };
 
 export const listUsers = () => apiFetch<UserRow[]>("/api/v1/admin/users");
+
+// ---------------------------------------------------------------------------
+// Sessions (ADR 0057)
+// ---------------------------------------------------------------------------
+
+export type SessionRow = {
+  id: string;
+  username: string;
+  role: string;
+  ip_address: string;
+  user_agent: string;
+  created_at: string;
+  last_used_at: string;
+  expires_at: string;
+  revoked_at: string | null;
+  suspicious: boolean;
+};
+
+export const getSessions = (username: string) =>
+  apiFetch<SessionRow[]>(`/api/v1/admin/users/${username}/sessions`);
+
+export const revokeSession = (sessionId: string) =>
+  apiFetch<void>(`/api/v1/admin/sessions/${sessionId}`, { method: "DELETE" });
+
+export const revokeAllSessions = (username: string) =>
+  apiFetch<void>(`/api/v1/admin/users/${username}/sessions`, {
+    method: "DELETE",
+  });
+
+export const getMySessions = () =>
+  apiFetch<SessionRow[]>("/api/v1/me/sessions");
+
+export const revokeOtherSessions = () =>
+  apiFetch<void>("/api/v1/me/sessions/others", { method: "DELETE" });

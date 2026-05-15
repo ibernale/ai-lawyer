@@ -25,24 +25,51 @@ logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
 # Closed enumeration of auditable action types.
 ACTION_TYPES: frozenset[str] = frozenset({
+    # System
     "system.kill_switch.engage",
     "system.kill_switch.release",
     "system.flag.change",
+    # Agent prompts
     "agent.prompt.promote",
     "agent.prompt.reject",
     "agent.prompt.preview",
+    # Data sources
     "source.pause",
     "source.resume",
     "source.force_resync",
+    # Memory
     "memory.procedural.edit",
     "memory.semantic.edit",
+    # Audit & governance
     "audit_sample.review",
     "prompt_evolution_pr.approve",
     "prompt_evolution_pr.reject",
     "prompt_evolution_pr.request_changes",
-    "user.role.change",
+    # Export & federation
     "export.audit_trail",
     "aws.federation.url_generated",
+    # User lifecycle (Fase 10.4 — ADR 0056)
+    "user.role.change",
+    "user.invite.send",
+    "user.invite.expire",
+    "user.activate",
+    "user.login.success",
+    "user.login.fail",
+    "user.logout",
+    "user.password.change",
+    "user.mfa.enable",
+    "user.mfa.disable",
+    "user.disable",
+    "user.enable",
+    "user.delete",
+    "user.force_password_reset",
+    # Session (Fase 10.4 — ADR 0057)
+    "session.terminate",
+    "session.terminate_all",
+    # Embedded observability access (Fase 10.4 — ADR 0056)
+    "grafana.embedded_access",
+    "langfuse.embedded_access",
+    "jaeger.embedded_access",
 })
 
 # SQLite DDL (local dev only — PostgreSQL DDL lives in Alembic migration 0001)

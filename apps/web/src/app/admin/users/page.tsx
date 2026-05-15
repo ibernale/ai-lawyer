@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { listUsers, type UserRow } from "@/lib/api";
 
@@ -98,6 +99,7 @@ export default function UsersPage() {
                 <th className="px-4 py-3 text-left font-medium">Usuario</th>
                 <th className="px-4 py-3 text-left font-medium">Rol</th>
                 <th className="px-4 py-3 text-left font-medium">Permisos</th>
+                <th className="px-4 py-3 text-right font-medium">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -120,6 +122,14 @@ export default function UsersPage() {
                       "Ops Center · Governance · Audit Trail · Notificaciones"}
                     {u.role === "auditor" && "Audit Trail (solo lectura)"}
                     {u.role === "analyst" && "Consultas (solo lectura)"}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      href={`/admin/users/${u.username}/sessions` as never}
+                      className="text-xs text-[#b30000] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                    >
+                      Sesiones
+                    </Link>
                   </td>
                 </tr>
               ))}
