@@ -42,6 +42,7 @@ ACTION_TYPES: frozenset[str] = frozenset({
     "prompt_evolution_pr.request_changes",
     "user.role.change",
     "export.audit_trail",
+    "aws.federation.url_generated",
 })
 
 # SQLite DDL (local dev only — PostgreSQL DDL lives in Alembic migration 0001)

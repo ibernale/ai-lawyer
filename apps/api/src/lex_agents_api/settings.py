@@ -70,6 +70,13 @@ class Settings(BaseSettings):
     # Must be a long random string; leave empty to disable the ingest endpoint.
     notification_webhook_secret: str = ""
 
+    # AWS federation (IAM role ARNs for console signin URL generation)
+    # Populated by CDK via ECS task env vars; empty = federation disabled (dev).
+    aws_region: str = "eu-central-1"
+    federation_role_arn_viewer: str = ""
+    federation_role_arn_operator: str = ""
+    federation_role_arn_admin: str = ""
+
     # Build metadata (injected by Dockerfile ARG → ENV)
     commit_sha: str = "unknown"
     build_time: str = "unknown"
