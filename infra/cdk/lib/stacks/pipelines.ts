@@ -146,9 +146,36 @@ export class PipelinesStack extends cdk.Stack {
       },
     );
 
-    // Grant shared Lambdas access to the idempotency table and DB secret
-    [chunkDocumentFn, contextualizeChunksFn].forEach((fn) => {
-      dataStack.dbAppUserSecret.grantRead(fn);
+    // Grant shared Lambdas access to the idempotency table and DB secret.
+    // Explicit identity policies used instead of grantRead() to avoid adding a
+    // resource policy on the KMS CMK that would create a cross-stack cycle:
+    //   KmsStack → PipelinesStack/LambdaRole AND PipelinesStack → DataStack → KmsStack
+    [
+      { fn: chunkDocumentFn, sid: "ChunkDocument" },
+      { fn: contextualizeChunksFn, sid: "ContextualizeChunks" },
+    ].forEach(({ fn, sid }) => {
+      fn.addToRolePolicy(
+        new iam.PolicyStatement({
+          sid: `DbSecretRead${sid}`,
+          actions: [
+            "secretsmanager:GetSecretValue",
+            "secretsmanager:DescribeSecret",
+          ],
+          resources: [dataStack.dbAppUserSecret.secretArn],
+        }),
+      );
+      fn.addToRolePolicy(
+        new iam.PolicyStatement({
+          sid: `DbSecretKmsDecrypt${sid}`,
+          actions: ["kms:Decrypt", "kms:DescribeKey"],
+          resources: ["*"],
+          conditions: {
+            StringEquals: {
+              "kms:ViaService": `secretsmanager.${this.region}.amazonaws.com`,
+            },
+          },
+        }),
+      );
       this.idempotencyTable.grantReadWriteData(fn);
       dataStack.buckets.canonical.grantRead(fn);
     });
@@ -361,12 +388,56 @@ export class PipelinesStack extends cdk.Stack {
         },
       );
 
-      // Grant per-source Lambdas DB secret + idempotency table access
-      dataStack.dbAppUserSecret.grantRead(fetchRawFn);
+      // Grant per-source Lambdas DB secret + idempotency table access.
+      // Explicit identity policies used instead of grantRead() — see comment
+      // on shared Lambdas above for the reason (KMS cross-stack cycle).
+      fetchRawFn.addToRolePolicy(
+        new iam.PolicyStatement({
+          sid: `DbSecretRead${suffix}FetchRaw`,
+          actions: [
+            "secretsmanager:GetSecretValue",
+            "secretsmanager:DescribeSecret",
+          ],
+          resources: [dataStack.dbAppUserSecret.secretArn],
+        }),
+      );
+      fetchRawFn.addToRolePolicy(
+        new iam.PolicyStatement({
+          sid: `DbSecretKmsDecrypt${suffix}FetchRaw`,
+          actions: ["kms:Decrypt", "kms:DescribeKey"],
+          resources: ["*"],
+          conditions: {
+            StringEquals: {
+              "kms:ViaService": `secretsmanager.${this.region}.amazonaws.com`,
+            },
+          },
+        }),
+      );
       this.idempotencyTable.grantReadWriteData(fetchRawFn);
       dataStack.buckets.raw.grantReadWrite(fetchRawFn);
 
-      dataStack.dbAppUserSecret.grantRead(parseCanonicalFn);
+      parseCanonicalFn.addToRolePolicy(
+        new iam.PolicyStatement({
+          sid: `DbSecretRead${suffix}ParseCanonical`,
+          actions: [
+            "secretsmanager:GetSecretValue",
+            "secretsmanager:DescribeSecret",
+          ],
+          resources: [dataStack.dbAppUserSecret.secretArn],
+        }),
+      );
+      parseCanonicalFn.addToRolePolicy(
+        new iam.PolicyStatement({
+          sid: `DbSecretKmsDecrypt${suffix}ParseCanonical`,
+          actions: ["kms:Decrypt", "kms:DescribeKey"],
+          resources: ["*"],
+          conditions: {
+            StringEquals: {
+              "kms:ViaService": `secretsmanager.${this.region}.amazonaws.com`,
+            },
+          },
+        }),
+      );
       this.idempotencyTable.grantReadWriteData(parseCanonicalFn);
       dataStack.buckets.canonical.grantReadWrite(parseCanonicalFn);
 

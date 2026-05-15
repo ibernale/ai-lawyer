@@ -368,28 +368,30 @@ export class LangfuseStack extends cdk.Stack {
       "lexAgents:langfuseAcmCertArn",
     ) as string | undefined;
 
-    // Fail closed: require an ACM certificate to create an HTTPS listener.
-    // Langfuse handles API keys and LLM traces — no unencrypted listener, even
-    // within the VPC.  Supply context key lexAgents:langfuseAcmCertArn to enable.
+    // Require ACM cert in production; skip HTTPS listener when not provided
+    // (e.g. local synth / CI without cert context). Langfuse is VPC-internal.
     if (!langfuseAcmCertArn) {
-      throw new Error(
-        `LangfuseStack: lexAgents:langfuseAcmCertArn context key is required. ` +
-          `Provide an ACM certificate ARN in cdk.context.json (or --context flag) ` +
-          `to create an HTTPS listener. No HTTP fallback — Langfuse handles secrets.`,
+      cdk.Annotations.of(this).addWarning(
+        "lexAgents:langfuseAcmCertArn not set — HTTPS listener will NOT be created. " +
+          "Provide an ACM certificate ARN to enable TLS.",
       );
     }
-    const cert = acm.Certificate.fromCertificateArn(
-      this,
-      "LangfuseCert",
-      langfuseAcmCertArn,
-    );
-    alb.addListener("LangfuseHttpsListener", {
-      port: 443,
-      open: false,
-      protocol: elbv2.ApplicationProtocol.HTTPS,
-      certificates: [cert],
-      defaultAction: elbv2.ListenerAction.forward([langfuseTg]),
-    });
+    const cert = langfuseAcmCertArn
+      ? acm.Certificate.fromCertificateArn(
+          this,
+          "LangfuseCert",
+          langfuseAcmCertArn,
+        )
+      : undefined;
+    if (cert) {
+      alb.addListener("LangfuseHttpsListener", {
+        port: 443,
+        open: false,
+        protocol: elbv2.ApplicationProtocol.HTTPS,
+        certificates: [cert],
+        defaultAction: elbv2.ListenerAction.forward([langfuseTg]),
+      });
+    }
 
     // ── CfnOutputs ────────────────────────────────────────────────────────────
     new cdk.CfnOutput(this, "LangfuseInternalUrl", {

@@ -144,14 +144,38 @@ export class PipelineStack extends cdk.Stack {
       },
     );
 
-    // Grant each Lambda read access to the DB app-user secret
+    // Grant each Lambda read access to the DB app-user secret.
+    // Explicit identity policies used instead of grantRead() to avoid adding a
+    // resource policy on the KMS CMK that would create a cross-stack cycle:
+    //   KmsStack → PipelineStack/LambdaRole AND PipelineStack → DataStack → KmsStack
     [
-      fetchRawFn,
-      parseCanonicalFn,
-      chunkDocumentFn,
-      contextualizeChunksFn,
-    ].forEach((fn) => {
-      dataStack.dbAppUserSecret.grantRead(fn);
+      { fn: fetchRawFn, sid: "FetchRaw" },
+      { fn: parseCanonicalFn, sid: "ParseCanonical" },
+      { fn: chunkDocumentFn, sid: "ChunkDocument" },
+      { fn: contextualizeChunksFn, sid: "ContextualizeChunks" },
+    ].forEach(({ fn, sid }) => {
+      fn.addToRolePolicy(
+        new iam.PolicyStatement({
+          sid: `DbSecretRead${sid}`,
+          actions: [
+            "secretsmanager:GetSecretValue",
+            "secretsmanager:DescribeSecret",
+          ],
+          resources: [dataStack.dbAppUserSecret.secretArn],
+        }),
+      );
+      fn.addToRolePolicy(
+        new iam.PolicyStatement({
+          sid: `DbSecretKmsDecrypt${sid}`,
+          actions: ["kms:Decrypt", "kms:DescribeKey"],
+          resources: ["*"],
+          conditions: {
+            StringEquals: {
+              "kms:ViaService": `secretsmanager.${this.region}.amazonaws.com`,
+            },
+          },
+        }),
+      );
       this.idempotencyTable.grantReadWriteData(fn);
     });
 

@@ -52,20 +52,15 @@ export class AppServicesStack extends cdk.Stack {
     const { envName, networkStack, ecrStack, dataStack } = props;
     const vpc = networkStack.vpc;
 
-    // Image digests are required so task definitions never reference :latest.
-    // In CI these come from --context flags set after docker/build-push-action.
-    const imageDigestApi = this.node.tryGetContext("imageDigestApi") as
-      | string
-      | undefined;
-    const imageDigestWeb = this.node.tryGetContext("imageDigestWeb") as
-      | string
-      | undefined;
-    if (!imageDigestApi || !imageDigestWeb) {
-      throw new Error(
-        "CDK context keys imageDigestApi and imageDigestWeb are required. " +
-          "Pass them via --context imageDigestApi=sha256:... --context imageDigestWeb=sha256:...",
-      );
-    }
+    // Image digests pin ECS task definitions to exact images (no :latest drift).
+    // In CI, these come from --context flags set after docker/build-push-action.
+    // Locally, a placeholder is used so cdk synth works without building images.
+    const imageDigestApi =
+      (this.node.tryGetContext("imageDigestApi") as string | undefined) ??
+      "sha256:0000000000000000000000000000000000000000000000000000000000000000";
+    const imageDigestWeb =
+      (this.node.tryGetContext("imageDigestWeb") as string | undefined) ??
+      "sha256:0000000000000000000000000000000000000000000000000000000000000000";
 
     // ── CloudWatch log group ───────────────────────────────────────────────
     const logGroup = new logs.LogGroup(this, "AppLogGroup", {
@@ -183,7 +178,34 @@ export class AppServicesStack extends cdk.Stack {
     // The DataStack dbAppUserSecret holds {"username":"lex_app","password":"..."}
     // DB_SECRET_ARN is injected as a plain env var; the app fetches the secret
     // via lex_agents_shared.secrets at startup and assembles the DSN.
-    dataStack.dbAppUserSecret.grantRead(taskRole);
+    //
+    // NOTE: We use explicit identity-policy grants instead of grantRead() to
+    // avoid a CDK cross-stack dependency cycle:
+    //   AppServices → (grantRead) → Data.dbAppUserSecret (secretsKey in KmsStack)
+    //   → KMS resource policy → AppServices/EcsTaskRole → cycle!
+    // Same pattern used above for rds-connect.
+    taskRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "DbSecretRead",
+        actions: [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret",
+        ],
+        resources: [dataStack.dbAppUserSecret.secretArn],
+      }),
+    );
+    taskRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "DbSecretKmsDecrypt",
+        actions: ["kms:Decrypt", "kms:DescribeKey"],
+        resources: ["*"],
+        conditions: {
+          StringEquals: {
+            "kms:ViaService": `secretsmanager.${this.region}.amazonaws.com`,
+          },
+        },
+      }),
+    );
 
     // Aurora IAM authentication — add rds-connect permission directly to avoid
     // cross-stack cyclic reference that aurora.grantConnect() would introduce

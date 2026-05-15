@@ -17,11 +17,14 @@ export class GithubOidcStack extends cdk.Stack {
     const { envName, githubRepo, githubBranch } = props;
 
     // ── OIDC Provider ─────────────────────────────────────────────────────
-    const provider = new iam.OpenIdConnectProvider(this, "GitHubProvider", {
-      url: "https://token.actions.githubusercontent.com",
-      clientIds: ["sts.amazonaws.com"],
-      thumbprints: ["6938fd4d98bab03faadb97b34396831e3780aea1"],
-    });
+    // Import the pre-existing GitHub Actions OIDC provider (created outside CDK).
+    // AWS only allows one OIDC provider per URL per account, so we reference it
+    // rather than trying to create it again.
+    const provider = iam.OpenIdConnectProvider.fromOpenIdConnectProviderArn(
+      this,
+      "GitHubProvider",
+      `arn:aws:iam::${this.account}:oidc-provider/token.actions.githubusercontent.com`,
+    );
 
     // ── Deploy Role ───────────────────────────────────────────────────────
     this.deployRole = new iam.Role(this, "GitHubDeployRole", {
