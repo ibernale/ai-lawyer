@@ -68,8 +68,8 @@ async def login(
                 reason="Login",
                 after={"ip": ip, "user_agent": ua},
             )
-        except Exception:
-            pass
+        except Exception as _audit_exc:
+            logger.warning("audit_write_failed", error=str(_audit_exc))
 
     response.set_cookie(
         key="lex_jwt",

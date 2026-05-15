@@ -14,7 +14,6 @@ from fastapi.testclient import TestClient
 from lex_agents_api.main import create_app
 from lex_agents_api.settings import Settings, get_settings
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

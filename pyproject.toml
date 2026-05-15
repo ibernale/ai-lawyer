@@ -1,3 +1,9 @@
+[project]
+name = "lex-agents"
+version = "0.6.0"
+requires-python = ">=3.12"
+dependencies = []
+
 [tool.uv.workspace]
 members = [
     "apps/api",
