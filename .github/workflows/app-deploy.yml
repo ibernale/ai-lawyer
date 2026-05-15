@@ -198,6 +198,27 @@ jobs:
         working-directory: infra/cdk
         run: npm install
 
+      - name: Write CDK context (account IDs)
+        working-directory: infra/cdk
+        run: |
+          ACCT="${{ secrets.AWS_WORKLOADS_DEV_ACCOUNT_ID }}"
+          cat > cdk.context.json <<EOF
+          {
+            "lexAgents:accounts": {
+              "management":    "$ACCT",
+              "logArchive":    "$ACCT",
+              "security":      "$ACCT",
+              "network":       "$ACCT",
+              "workloadsDev":  "$ACCT"
+            },
+            "availability-zones:account=${ACCT}:region=${{ env.AWS_REGION }}": [
+              "${{ env.AWS_REGION }}a",
+              "${{ env.AWS_REGION }}b",
+              "${{ env.AWS_REGION }}c"
+            ]
+          }
+          EOF
+
       - name: CDK synth (validate)
         working-directory: infra/cdk
         run: |
