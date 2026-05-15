@@ -898,3 +898,14 @@ export async function getPlatformStatus(): Promise<ToolStatus[]> {
 
   return results;
 }
+
+// ---------------------------------------------------------------------------
+// Users
+// ---------------------------------------------------------------------------
+
+export type UserRow = {
+  username: string;
+  role: string;
+};
+
+export const listUsers = () => apiFetch<UserRow[]>("/api/v1/admin/users");

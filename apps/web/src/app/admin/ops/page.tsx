@@ -18,6 +18,9 @@ import {
   type SourceStatus,
 } from "@/lib/api";
 
+const GRAFANA_URL = process.env.NEXT_PUBLIC_GRAFANA_URL ?? "";
+const DAGSTER_URL = process.env.NEXT_PUBLIC_DAGSTER_URL ?? "";
+
 // ---------------------------------------------------------------------------
 // Shared
 // ---------------------------------------------------------------------------
@@ -298,24 +301,27 @@ function SourcesTab() {
         </tbody>
       </table>
 
-      <div className="mt-8 border rounded overflow-hidden">
-        <div className="bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 flex items-center justify-between">
-          <span>Dagster UI</span>
-          <a
-            href="http://localhost:3002"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-blue-600 hover:underline"
-          >
-            Abrir en nueva pestaña
-          </a>
+      {DAGSTER_URL && (
+        <div className="mt-8 border rounded overflow-hidden">
+          <div className="bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 flex items-center justify-between">
+            <span>Dagster UI</span>
+            <a
+              href={DAGSTER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-blue-600 hover:underline"
+            >
+              Abrir en nueva pestaña
+            </a>
+          </div>
+          <iframe
+            src={DAGSTER_URL}
+            className="w-full h-96 border-0"
+            title="Dagster UI"
+            sandbox="allow-scripts allow-same-origin allow-forms"
+          />
         </div>
-        <iframe
-          src="http://localhost:3002"
-          className="w-full h-96 border-0"
-          title="Dagster UI"
-        />
-      </div>
+      )}
 
       {dialog && (
         <ReasonDialog
@@ -488,16 +494,23 @@ function HealthTab() {
   const services: { name: string; status: ServiceState; url?: string }[] = [
     { name: "API", status: apiStatus },
     { name: "Qdrant", status: qdrantStatus },
-    { name: "Dagster", status: "unavailable", url: "http://localhost:3002" },
-    { name: "Grafana", status: "unavailable", url: "http://localhost:3001" },
-    { name: "Prometheus", status: "unavailable", url: "http://localhost:9090" },
+    {
+      name: "Dagster",
+      status: "unavailable",
+      url: DAGSTER_URL || undefined,
+    },
+    {
+      name: "Grafana",
+      status: "unavailable",
+      url: GRAFANA_URL || undefined,
+    },
   ];
 
   return (
     <div className="space-y-8">
       <section>
         <h3 className="text-base font-semibold mb-3">Estado de servicios</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {services.map((svc) => (
             <div
               key={svc.name}
@@ -524,16 +537,19 @@ function HealthTab() {
         </div>
       </section>
 
-      <section>
-        <h3 className="text-base font-semibold mb-3">Grafana</h3>
-        <div className="border rounded overflow-hidden">
-          <iframe
-            src="http://localhost:3001"
-            className="w-full h-96 border-0"
-            title="Grafana"
-          />
-        </div>
-      </section>
+      {GRAFANA_URL && (
+        <section>
+          <h3 className="text-base font-semibold mb-3">Grafana</h3>
+          <div className="border rounded overflow-hidden">
+            <iframe
+              src={GRAFANA_URL}
+              className="w-full h-96 border-0"
+              title="Grafana"
+              sandbox="allow-scripts allow-same-origin allow-forms"
+            />
+          </div>
+        </section>
+      )}
     </div>
   );
 }

@@ -28,14 +28,14 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/admin/overview", label: "Overview" },
       { href: "/admin/ops", label: "Ops Center" },
-      { href: "/admin/users", label: "Users", placeholder: true },
+      { href: "/admin/users", label: "Users" },
       { href: "/admin/governance", label: "Governance" },
     ],
   },
   {
     label: "Datos",
     items: [
-      { href: "/admin/costs", label: "Costs & FinOps", placeholder: true },
+      { href: "/admin/costs", label: "Costs & FinOps" },
       { href: "/admin/audit-trail", label: "Audit Trail" },
     ],
   },
@@ -52,12 +52,8 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "Settings",
     items: [
-      {
-        href: "/admin/settings",
-        label: "Platform Settings",
-        placeholder: true,
-      },
-      { href: "/admin/flags", label: "Feature Flags", placeholder: true },
+      { href: "/admin/settings", label: "Platform Settings" },
+      { href: "/admin/flags", label: "Feature Flags" },
     ],
   },
 ];
