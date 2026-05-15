@@ -148,6 +148,8 @@ module = [
     "prometheus_client.*",
     "structlog.*",
     "lex_agents_rag.*",
+    "lex_agents_agents.*",
+    "lex_agents_verifier.*",
     "lex_agents_ingest.*",
     "lex_agents_memory.*",
     "lex_agents_pipeline.*",
