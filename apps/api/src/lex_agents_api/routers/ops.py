@@ -254,3 +254,26 @@ async def force_resync(
             target_id=name,
         )
     logger.info("force_resync_requested", source=name, actor=user.username)
+
+
+# ---------------------------------------------------------------------------
+# Users (read-only list — passwords never exposed)
+# ---------------------------------------------------------------------------
+
+class UserRow(BaseModel):
+    username: str
+    role: str
+
+
+@router.get("/users", response_model=list[UserRow])
+async def list_users(
+    user: Annotated[CurrentUser, Depends(_admin_only)],
+    settings: Annotated[Any, Depends(get_settings)],
+) -> list[UserRow]:
+    """Return all configured users (without password hashes)."""
+    from lex_agents_api.auth import _load_users
+
+    return [
+        UserRow(username=u.username, role=u.role)
+        for u in _load_users(settings)
+    ]
