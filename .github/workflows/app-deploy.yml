@@ -20,7 +20,7 @@ on:
 permissions: {}
 
 env:
-  AWS_REGION: eu-central-1
+  AWS_REGION: eu-west-1
   ECR_API_REPO: lex-agents-dev-api
   ECR_WEB_REPO: lex-agents-dev-web
 
