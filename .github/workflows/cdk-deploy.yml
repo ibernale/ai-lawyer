@@ -198,6 +198,25 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_WORKLOADS_DEV_ACCOUNT_ID }}:role/github-deploy-dev
           aws-region: eu-central-1
+      - name: Write CDK context (real account IDs)
+        run: |
+          ACCT="${{ secrets.AWS_WORKLOADS_DEV_ACCOUNT_ID }}"
+          cat > cdk.context.json <<EOF
+          {
+            "lexAgents:accounts": {
+              "management":   "$ACCT",
+              "logArchive":   "$ACCT",
+              "security":     "$ACCT",
+              "network":      "$ACCT",
+              "workloadsDev": "$ACCT"
+            },
+            "availability-zones:account=${ACCT}:region=eu-central-1": [
+              "eu-central-1a",
+              "eu-central-1b",
+              "eu-central-1c"
+            ]
+          }
+          EOF
       - name: CDK deploy workloads-dev stacks
         run: |
           pnpm exec cdk deploy \
@@ -206,6 +225,4 @@ jobs:
             LexAgents-Dev-GithubOidc \
             LexAgents-Dev-Data \
             LexAgents-Dev-App \
-            --require-approval never \
-            --context lexAgents:rootOuId=${{ secrets.AWS_ROOT_OU_ID }} \
-            --context lexAgents:identityCenterInstanceArn=${{ secrets.AWS_IDC_INSTANCE_ARN }}
+            --require-approval never
