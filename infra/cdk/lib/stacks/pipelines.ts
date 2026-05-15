@@ -92,7 +92,7 @@ export class PipelinesStack extends cdk.Stack {
       vpc,
       securityGroupName: `lex-agents-${envName}-pipeline-lambda`,
       description:
-        "Pipeline Lambda functions — egress to VPC endpoints and internet",
+        "Pipeline Lambda functions - egress to VPC endpoints and internet",
       allowAllOutbound: true,
     });
 

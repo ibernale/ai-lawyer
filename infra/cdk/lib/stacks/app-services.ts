@@ -732,7 +732,7 @@ export class AppServicesStack extends cdk.Stack {
       value: appSecret.secretArn,
       exportName: `${id}-SecretArn`,
       description:
-        "Secrets Manager ARN — populate ANTHROPIC_API_KEY before starting tasks",
+        "Secrets Manager ARN - populate ANTHROPIC_API_KEY before starting tasks",
     });
 
     new cdk.CfnOutput(this, "EfsId", {
