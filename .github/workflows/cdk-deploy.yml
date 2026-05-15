@@ -57,10 +57,12 @@ jobs:
       - run: cp cdk.context.json.example cdk.context.json
       # Synth workloads-dev stacks + shared infra. Exclude LexAgents-NetworkHub
       # (network account) and multi-account stacks that require real AWS SDK calls.
+      # Synth workloads-dev stacks (exclude network stacks that require real
+      # AWS SDK calls for account 555555555555 — no credentials in CI synth).
+      # Downstream stacks reference network via Fn::ImportValue (deploy-time).
       - run: |
           pnpm exec cdk synth \
             "LexAgents-Dev-Kms" \
-            "LexAgents-Dev-Network" \
             "LexAgents-Dev-Ecr" \
             "LexAgents-Dev-GithubOidc" \
             "LexAgents-Dev-Data" \
@@ -98,7 +100,7 @@ jobs:
       - name: Run cdk-nag via synth (nag runs as Aspects during synth)
         run: |
           pnpm exec cdk synth \
-            "LexAgents-Dev-Kms" "LexAgents-Dev-Network" "LexAgents-Dev-Ecr" \
+            "LexAgents-Dev-Kms" "LexAgents-Dev-Ecr" \
             "LexAgents-Dev-GithubOidc" "LexAgents-Dev-Data" "LexAgents-Dev-App" \
             "LexAgents-Dev-Observability" "LexAgents-Dev-Pipelines" \
             "LexAgents-Dev-Langfuse" "LexAgents-Dev-Compliance" \
@@ -163,7 +165,7 @@ jobs:
       - name: CDK diff (no AWS credentials — informational only)
         run: |
           pnpm exec cdk diff \
-            "LexAgents-Dev-Kms" "LexAgents-Dev-Network" "LexAgents-Dev-Ecr" \
+            "LexAgents-Dev-Kms" "LexAgents-Dev-Ecr" \
             "LexAgents-Dev-GithubOidc" "LexAgents-Dev-Data" "LexAgents-Dev-App" \
             "LexAgents-Dev-Observability" "LexAgents-Dev-Pipelines" \
             "LexAgents-Dev-Langfuse" "LexAgents-Dev-Compliance" \
