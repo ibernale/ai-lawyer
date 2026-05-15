@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
-from lex_agents_api.auth import CurrentUser
+from lex_agents_api.auth import CurrentUser, require_auth
 from lex_agents_api.main import create_app
 from lex_agents_api.settings import Settings, get_settings
 
@@ -24,6 +24,10 @@ def _make_settings(**kwargs: object) -> Settings:
     }
     base.update(kwargs)
     return Settings(**base)  # type: ignore[arg-type]
+
+
+def _inject_user(role: str) -> CurrentUser:
+    return CurrentUser(username=f"test_{role}", role=role)
 
 
 @pytest.fixture()
@@ -48,10 +52,6 @@ def client_federation_configured() -> TestClient:
     return TestClient(app, raise_server_exceptions=False)
 
 
-def _auth_user(role: str) -> CurrentUser:
-    return CurrentUser(username=f"test_{role}", role=role)
-
-
 # ---------------------------------------------------------------------------
 # Tests: auth enforcement
 # ---------------------------------------------------------------------------
@@ -65,15 +65,13 @@ def test_federation_requires_auth(client_no_federation: TestClient) -> None:
     assert res.status_code in (401, 403)
 
 
-def test_federation_forbidden_for_analyst_role(client_no_federation: TestClient) -> None:
+def test_federation_forbidden_for_analyst_role() -> None:
     """analyst role (legacy) must not access federation endpoint."""
-    from lex_agents_api.auth import require_auth
-
     app = create_app()
     settings = _make_settings()
     app.dependency_overrides[get_settings] = lambda: settings
     # Inject analyst user via require_auth; require_role will reject it with 403
-    app.dependency_overrides[require_auth] = lambda: CurrentUser(username="test_analyst", role="analyst")
+    app.dependency_overrides[require_auth] = lambda: _inject_user("analyst")
     client = TestClient(app, raise_server_exceptions=False)
     res = client.post(
         "/api/v1/admin/federation/aws-console-url",
@@ -87,17 +85,13 @@ def test_federation_forbidden_for_analyst_role(client_no_federation: TestClient)
 # ---------------------------------------------------------------------------
 
 
-def test_federation_503_when_not_configured(client_no_federation: TestClient) -> None:
+def test_federation_503_when_not_configured() -> None:
     """Returns 503 when federation role ARNs are not set."""
-    from lex_agents_api.auth import require_role
-
     app = create_app()
     settings = _make_settings()
     app.dependency_overrides[get_settings] = lambda: settings
-    # Bypass actual RBAC to test the ARN check
-    app.dependency_overrides[
-        require_role("viewer", "operator", "admin")
-    ] = lambda: CurrentUser(username="test_admin", role="admin")
+    # Bypass RBAC entirely to isolate the ARN check
+    app.dependency_overrides[require_auth] = lambda: _inject_user("admin")
     client = TestClient(app, raise_server_exceptions=False)
 
     res = client.post(
@@ -113,18 +107,14 @@ def test_federation_503_when_not_configured(client_no_federation: TestClient) ->
 # ---------------------------------------------------------------------------
 
 
-def test_federation_returns_url_for_admin(client_federation_configured: TestClient) -> None:
+def test_federation_returns_url_for_admin() -> None:
     """Admin role generates a federation URL successfully."""
-    from lex_agents_api.auth import require_role
-
     app = create_app()
     settings = _make_settings(
         federation_role_arn_admin="arn:aws:iam::123456789012:role/lex-agents-dev-federation-admin",
     )
     app.dependency_overrides[get_settings] = lambda: settings
-    app.dependency_overrides[
-        require_role("viewer", "operator", "admin")
-    ] = lambda: CurrentUser(username="test_admin", role="admin")
+    app.dependency_overrides[require_auth] = lambda: _inject_user("admin")
 
     mock_creds = {
         "AccessKeyId": "ASIATEST",
@@ -155,17 +145,13 @@ def test_federation_returns_url_for_admin(client_federation_configured: TestClie
     assert "signin.aws.amazon.com" in data["url"]
 
 
-def test_federation_rejects_unknown_service(client_federation_configured: TestClient) -> None:
-    from lex_agents_api.auth import require_role
-
+def test_federation_rejects_unknown_service() -> None:
     app = create_app()
     settings = _make_settings(
         federation_role_arn_operator="arn:aws:iam::123456789012:role/op",
     )
     app.dependency_overrides[get_settings] = lambda: settings
-    app.dependency_overrides[
-        require_role("viewer", "operator", "admin")
-    ] = lambda: CurrentUser(username="test_op", role="operator")
+    app.dependency_overrides[require_auth] = lambda: _inject_user("operator")
 
     client = TestClient(app, raise_server_exceptions=False)
     res = client.post(
