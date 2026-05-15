@@ -6,15 +6,21 @@ interface IframeEmbedProps {
   src: string;
   title: string;
   className?: string;
+  envVarName?: string;
 }
 
-export function IframeEmbed({ src, title, className = "" }: IframeEmbedProps) {
+export function IframeEmbed({
+  src,
+  title,
+  className = "",
+  envVarName,
+}: IframeEmbedProps) {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
 
   if (!src) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-64 text-gray-500 gap-2">
+      <div className="flex flex-col items-center justify-center h-full min-h-64 text-gray-500 gap-3">
         <svg
           className="w-10 h-10 text-gray-300"
           fill="none"
@@ -28,10 +34,19 @@ export function IframeEmbed({ src, title, className = "" }: IframeEmbedProps) {
             d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
           />
         </svg>
-        <p className="text-sm">No configurado en este entorno</p>
-        <p className="text-xs text-gray-400">
-          Configura la URL del servicio en las variables de entorno
-        </p>
+        <p className="text-sm font-medium">{title} no configurado</p>
+        {envVarName ? (
+          <p className="text-xs text-gray-400 text-center max-w-sm">
+            Define{" "}
+            <code className="bg-gray-100 px-1 rounded">{envVarName}</code> en{" "}
+            <code className="bg-gray-100 px-1 rounded">.env.local</code> y
+            reinicia el servidor de desarrollo.
+          </p>
+        ) : (
+          <p className="text-xs text-gray-400">
+            Configura la URL del servicio en las variables de entorno.
+          </p>
+        )}
       </div>
     );
   }

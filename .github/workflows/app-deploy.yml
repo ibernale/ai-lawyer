@@ -53,16 +53,18 @@ jobs:
       - name: Install deps
         run: |
           uv pip install --system \
+            "ruff>=0.3" \
+            "mypy>=1.0" \
             -e "packages/shared[dev]" \
             -e "packages/audit[dev]" \
             -e "packages/admin[dev]" \
             -e "apps/api[dev]"
 
       - name: Lint (ruff)
-        run: uv run --with "ruff>=0.3" ruff check packages/ apps/api/
+        run: ruff check packages/ apps/api/
 
       - name: Type check (mypy)
-        run: uv run --with "mypy>=1.0" mypy packages/shared/src packages/audit/src packages/admin/src apps/api/src
+        run: mypy packages/shared/src packages/audit/src packages/admin/src apps/api/src
 
       - name: Test (pytest)
         # Only test the packages installed above; other packages (agents, verifier,

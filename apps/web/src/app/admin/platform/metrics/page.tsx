@@ -19,6 +19,7 @@ export default function MetricsPage() {
         src={GRAFANA_URL ? `${GRAFANA_URL}?kiosk` : ""}
         title="Grafana"
         className="flex-1"
+        envVarName="NEXT_PUBLIC_GRAFANA_URL"
       />
     </div>
   );

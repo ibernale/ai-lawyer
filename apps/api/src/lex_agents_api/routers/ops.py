@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from typing import Annotated, Any
 
+import bcrypt as _bcrypt
 import structlog
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -277,3 +278,249 @@ async def list_users(
         UserRow(username=u.username, role=u.role)
         for u in _load_users(settings)
     ]
+
+
+# ---------------------------------------------------------------------------
+# User CRUD endpoints
+# ---------------------------------------------------------------------------
+
+_VALID_ROLES = frozenset({"admin", "operator", "auditor", "analyst"})
+
+
+class CreateUserRequest(BaseModel):
+    username: str
+    password: str
+    role: str = "analyst"
+
+
+class UpdateUserRequest(BaseModel):
+    role: str | None = None
+    password: str | None = None
+    disabled: bool | None = None
+
+
+@router.post("/users", response_model=UserRow, status_code=201)
+async def create_user(
+    body: CreateUserRequest,
+    user: Annotated[CurrentUser, Depends(_admin_only)],
+) -> UserRow:
+    """Create a new platform user."""
+    if body.role not in _VALID_ROLES:
+        raise HTTPException(422, f"Invalid role: {body.role}")
+    if len(body.username) < 2 or len(body.username) > 64:
+        raise HTTPException(422, "Username must be 2-64 characters")
+    if len(body.password) < 8:
+        raise HTTPException(422, "Password must be at least 8 characters")
+
+    try:
+        from lex_agents_admin.user_store import get_user_store
+        store = get_user_store()
+    except ImportError:
+        store = None
+
+    if store is None:
+        raise HTTPException(503, "User store not available")
+
+    password_hash = _bcrypt.hashpw(body.password.encode(), _bcrypt.gensalt(rounds=12)).decode()
+    ok = await store.create(body.username, password_hash, body.role)
+    if not ok:
+        raise HTTPException(409, f"User '{body.username}' already exists")
+
+    audit = _get_audit_mgr()
+    if audit:
+        try:
+            await audit.log("user.invite.send", "user", user.username, user.role,
+                            reason="Admin created user", target_id=body.username,
+                            after={"role": body.role})
+        except Exception as _e:
+            logger.warning("audit_write_failed", error=str(_e))
+
+    return UserRow(username=body.username, role=body.role)
+
+
+@router.patch("/users/{username}", response_model=UserRow)
+async def update_user(
+    username: str,
+    body: UpdateUserRequest,
+    user: Annotated[CurrentUser, Depends(_admin_only)],
+) -> UserRow:
+    """Update a user's role, password, or disabled state."""
+    if body.role is not None and body.role not in _VALID_ROLES:
+        raise HTTPException(422, f"Invalid role: {body.role}")
+    if body.password is not None and len(body.password) < 8:
+        raise HTTPException(422, "Password must be at least 8 characters")
+
+    try:
+        from lex_agents_admin.user_store import get_user_store
+        store = get_user_store()
+    except ImportError:
+        store = None
+
+    if store is None:
+        raise HTTPException(503, "User store not available")
+
+    password_hash = None
+    if body.password:
+        password_hash = _bcrypt.hashpw(body.password.encode(), _bcrypt.gensalt(rounds=12)).decode()
+
+    ok = await store.update(username, role=body.role, password_hash=password_hash, disabled=body.disabled)
+    if not ok:
+        raise HTTPException(404, f"User '{username}' not found")
+
+    record = await store.get_by_username(username)
+
+    audit = _get_audit_mgr()
+    if audit:
+        try:
+            if body.disabled is True:
+                action = "user.disable"
+            elif body.disabled is False:
+                action = "user.enable"
+            else:
+                action = "user.role.change"
+            await audit.log(action, "user", user.username, user.role,
+                            reason="Admin updated user", target_id=username,
+                            after={"role": body.role, "disabled": body.disabled})
+        except Exception as _e:
+            logger.warning("audit_write_failed", error=str(_e))
+
+    return UserRow(username=username, role=record.role if record else (body.role or "analyst"))
+
+
+@router.delete("/users/{username}", status_code=204)
+async def delete_user(
+    username: str,
+    user: Annotated[CurrentUser, Depends(_admin_only)],
+) -> None:
+    """Delete a user permanently."""
+    if username == user.username:
+        raise HTTPException(409, "Cannot delete your own account")
+
+    try:
+        from lex_agents_admin.user_store import get_user_store
+        store = get_user_store()
+    except ImportError:
+        store = None
+
+    if store is None:
+        raise HTTPException(503, "User store not available")
+
+    ok = await store.delete(username)
+    if not ok:
+        raise HTTPException(404, f"User '{username}' not found")
+
+    audit = _get_audit_mgr()
+    if audit:
+        try:
+            await audit.log("user.delete", "user", user.username, user.role,
+                            reason="Admin deleted user", target_id=username)
+        except Exception as _e:
+            logger.warning("audit_write_failed", error=str(_e))
+
+
+# ---------------------------------------------------------------------------
+# Pipelines endpoint
+# ---------------------------------------------------------------------------
+
+class PipelineExecution(BaseModel):
+    name: str
+    execution_arn: str
+    status: str  # RUNNING | SUCCEEDED | FAILED | TIMED_OUT | ABORTED
+    start_date: str | None
+    stop_date: str | None
+
+
+class PipelinesResponse(BaseModel):
+    executions: list[PipelineExecution]
+    status: str  # ok | unavailable | not_configured
+    message: str | None = None
+
+
+@router.get("/pipelines", response_model=PipelinesResponse)
+async def list_pipelines(
+    user: Annotated[CurrentUser, Depends(_admin_only)],
+) -> PipelinesResponse:
+    """List recent Step Functions pipeline executions."""
+    try:
+        import boto3
+        sfn = boto3.client("stepfunctions")
+        machines = sfn.list_state_machines(maxResults=20)
+        executions: list[PipelineExecution] = []
+        for sm in machines.get("stateMachines", []):
+            arn = sm["stateMachineArn"]
+            try:
+                execs = sfn.list_executions(stateMachineArn=arn, maxResults=5)
+                for ex in execs.get("executions", []):
+                    executions.append(PipelineExecution(
+                        name=ex.get("name", ""),
+                        execution_arn=ex.get("executionArn", ""),
+                        status=ex.get("status", ""),
+                        start_date=ex["startDate"].isoformat() if ex.get("startDate") else None,
+                        stop_date=ex["stopDate"].isoformat() if ex.get("stopDate") else None,
+                    ))
+            except Exception:
+                pass
+        return PipelinesResponse(executions=executions, status="ok")
+    except ImportError:
+        return PipelinesResponse(executions=[], status="not_configured", message="boto3 not installed")
+    except Exception as exc:
+        logger.warning("pipelines_unavailable", error=str(exc))
+        return PipelinesResponse(executions=[], status="unavailable", message=str(exc))
+
+
+# ---------------------------------------------------------------------------
+# Platform config endpoint
+# ---------------------------------------------------------------------------
+
+class ServiceConfig(BaseModel):
+    name: str
+    configured: bool
+    value_hint: str | None = None  # masked/partial value
+
+
+class PlatformConfig(BaseModel):
+    env: str
+    db_mode: str
+    auth_enabled: bool
+    log_level: str
+    services: list[ServiceConfig]
+    jwt_algorithm: str
+    otel_service_name: str
+
+
+@router.get("/platform-config", response_model=PlatformConfig)
+async def get_platform_config(
+    user: Annotated[CurrentUser, Depends(_admin_only)],
+    settings: Annotated[Any, Depends(get_settings)],
+) -> PlatformConfig:
+    """Return masked platform configuration for the settings page."""
+    from lex_agents_shared.db import is_postgres
+
+    def _masked(val: str, show: int = 4) -> str | None:
+        if not val:
+            return None
+        return val[:show] + "****" if len(val) > show else "****"
+
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    qdrant_key_raw = ""
+    try:
+        qdrant_key_raw = settings.qdrant_api_key.get_secret_value()
+    except Exception:
+        pass
+
+    services = [
+        ServiceConfig(name="Anthropic API", configured=bool(anthropic_key), value_hint=_masked(anthropic_key)),
+        ServiceConfig(name="Qdrant", configured=bool(settings.qdrant_url), value_hint=settings.qdrant_url or None),
+        ServiceConfig(name="Qdrant API Key", configured=bool(qdrant_key_raw), value_hint=_masked(qdrant_key_raw) if qdrant_key_raw else None),
+        ServiceConfig(name="OTEL Exporter", configured=bool(settings.otel_exporter_otlp_endpoint), value_hint=settings.otel_exporter_otlp_endpoint or None),
+    ]
+
+    return PlatformConfig(
+        env=settings.env,
+        db_mode="aurora" if is_postgres() else "sqlite",
+        auth_enabled=settings.auth_enabled,
+        log_level=settings.log_level,
+        services=services,
+        jwt_algorithm=settings.jwt_algorithm,
+        otel_service_name=settings.otel_service_name,
+    )

@@ -33,12 +33,16 @@ function Badge({ status }: { status: string }) {
     paused: "bg-yellow-100 text-yellow-800",
     healthy: "bg-green-100 text-green-800",
     unavailable: "bg-red-100 text-red-800",
+    not_configured: "bg-gray-100 text-gray-500",
+  };
+  const labels: Record<string, string> = {
+    not_configured: "No configurado",
   };
   return (
     <span
       className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${colors[status] ?? "bg-gray-100 text-gray-700"}`}
     >
-      {status}
+      {labels[status] ?? status}
     </span>
   );
 }
@@ -464,7 +468,12 @@ function RagMemoryTab() {
 // Tab: Health & Performance
 // ---------------------------------------------------------------------------
 
-type ServiceState = "healthy" | "degraded" | "unavailable" | "checking";
+type ServiceState =
+  | "healthy"
+  | "degraded"
+  | "unavailable"
+  | "checking"
+  | "not_configured";
 
 function HealthTab() {
   const [apiStatus, setApiStatus] = useState<ServiceState>("checking");
@@ -496,12 +505,12 @@ function HealthTab() {
     { name: "Qdrant", status: qdrantStatus },
     {
       name: "Dagster",
-      status: "unavailable",
+      status: DAGSTER_URL ? ("unavailable" as ServiceState) : "not_configured",
       url: DAGSTER_URL || undefined,
     },
     {
       name: "Grafana",
-      status: "unavailable",
+      status: GRAFANA_URL ? ("unavailable" as ServiceState) : "not_configured",
       url: GRAFANA_URL || undefined,
     },
   ];

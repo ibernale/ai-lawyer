@@ -124,6 +124,68 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  security-deps:
+    name: Dependency vulnerability scan (pip-audit)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.4.x"
+      - uses: actions/cache@v5
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml', 'uv.lock') }}
+      # Export a flat requirements file from the uv lockfile so pip-audit can
+      # consume it without needing to resolve the workspace graph at audit time.
+      - name: Export requirements from uv lockfile
+        run: |
+          uv export --frozen --no-dev --package lex-agents-api \
+            --output-file /tmp/api-requirements.txt || \
+          uv export --frozen --no-dev \
+            --output-file /tmp/api-requirements.txt
+      - name: Install pip-audit
+        run: pip install pip-audit
+      - name: Run pip-audit
+        run: |
+          pip-audit \
+            --requirement /tmp/api-requirements.txt \
+            --format json \
+            --output /tmp/pip-audit-results.json \
+            --vulnerability-service pypi \
+            --skip-editable || true
+          # Ensure the output file always exists so the next step can parse it
+          [ -f /tmp/pip-audit-results.json ] || echo '{"dependencies":[]}' > /tmp/pip-audit-results.json
+      - name: Fail on any vulnerability finding
+        # pip-audit exits non-zero on findings, but we captured its exit code
+        # above (|| true) so we could always emit the artifact.  This step
+        # re-reads the JSON and fails the build if any vulnerability was found.
+        run: |
+          python - <<'EOF'
+          import json, sys
+          with open("/tmp/pip-audit-results.json") as fh:
+              data = json.load(fh)
+          all_vulns = [
+              (dep["name"], dep["version"], v["id"])
+              for dep in data.get("dependencies", [])
+              for v in dep.get("vulns", [])
+          ]
+          if all_vulns:
+              print("::error::Vulnerable dependencies found:")
+              for name, version, vid in all_vulns:
+                  print(f"  {name}=={version}  {vid}")
+              sys.exit(1)
+          else:
+              print("No known vulnerabilities found.")
+          EOF
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pip-audit-results
+          path: /tmp/pip-audit-results.json
+
   build-images:
     name: Build Docker images
     runs-on: ubuntu-24.04
@@ -136,6 +198,7 @@ jobs:
         typecheck-web,
         test-web,
         secrets-scan,
+        security-deps,
       ]
     permissions:
       contents: read

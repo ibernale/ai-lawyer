@@ -5,6 +5,106 @@ Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.6.0] — 2026-05-15
+
+### Added
+
+**Fase 10 — Identity, Admin Platform & Security Hardening (Fases 10.1–10.4)**
+
+**Design system & Santander branding (Fase 10.3):**
+
+- Santander brand palette (`brand-*` Tailwind tokens via `@theme` in `globals.css`)
+- `PageLayout`, `Badge`, `Button`, `Alert`, `DataTable` CVA-based components
+- WCAG 2.1 AA compliance: focus rings, ARIA labels, colour-contrast tokens
+- Admin panel unified shell with sidebar navigation and `PageLayout` wrapper
+- Governance, audit-trail, system, federation, notifications, sessions pages wired
+
+**CSP hardening & HTTP security headers (Fase 10.4A, ADR 0055):**
+
+- `apps/web/src/middleware.ts` — per-request nonce-based CSP (Next.js Edge Runtime)
+  - `script-src 'self' 'nonce-{n}' 'strict-dynamic'` eliminates `'unsafe-eval'` and `'unsafe-inline'` for scripts
+  - `frame-src` origin allow-list validated with `new URL()` before CSP injection
+- `next.config.mjs` — removed static CSP (middleware owns it); added HSTS
+  (`max-age=31536000; includeSubDomains; preload`), updated `Referrer-Policy` to
+  `strict-origin-when-cross-origin`, expanded `Permissions-Policy`, removed deprecated
+  `X-XSS-Protection`
+- `apps/api` `SecurityHeadersMiddleware` — added HSTS header to FastAPI responses
+- Rate limiting on `POST /auth/token`: `@limiter.limit("10/minute")` per IP
+- Extracted `lex_agents_api.limiter` module to avoid circular imports; rate key uses
+  IP only (removed client-spoofable `X-User-ID` header trust)
+
+**Audit trail extension (Fase 10.4B, ADR 0056):**
+
+- 19 new `ACTION_TYPES` in `packages/audit`: user lifecycle (`user.login.success`,
+  `user.login.fail`, `user.logout`, `user.invite.*`, `user.activate`, `user.disable`,
+  `user.enable`, `user.delete`, `user.password.change`, `user.mfa.*`,
+  `user.force_password_reset`), session (`session.terminate`, `session.terminate_all`),
+  and embedded observability access (`grafana/langfuse/jaeger.embedded_access`)
+- Login events logged on every `POST /auth/token` with `after={"ip":…, "user_agent":…}`
+  for forensic brute-force and credential-stuffing detection
+
+**Session management (Fase 10.4C, ADR 0057):**
+
+- `packages/admin/src/lex_agents_admin/sessions.py` — `SessionManager` adapter:
+  dual-mode SQLite (dev) / Aurora PostgreSQL (prod); Cognito-replaceable in Fase 10.1
+  - Schema: `id`, `username`, `role`, `ip_address`, `user_agent`, `created_at`,
+    `last_used_at`, `expires_at`, `revoked_at`, `revoked_by`
+  - In-process TTL cache (5 s) on `is_revoked()` to avoid per-request DB round-trips;
+    `revoke()` writes `True` to cache immediately for fail-closed propagation
+  - Suspicious session flag: IP /24 prefix differs from all other recent sessions
+- `session_id` (claim `sid`) embedded in JWT at login; `require_auth()` now `async`
+  and checks revocation on every authenticated request
+- Login fails closed (HTTP 503) if session store is unavailable — no non-revocable
+  tokens issued
+- Five new session endpoints:
+  - `GET /api/v1/admin/users/{username}/sessions` (operator, admin)
+  - `DELETE /api/v1/admin/sessions/{session_id}` (admin)
+  - `DELETE /api/v1/admin/users/{username}/sessions` (admin)
+  - `GET /api/v1/me/sessions` (self)
+  - `DELETE /api/v1/me/sessions/others` (self — keeps current session)
+- `/admin/users/{id}/sessions` frontend page: device/browser columns, IP, timestamps,
+  orange `Sospechosa` badge, per-row and bulk "Terminar" actions
+- "Sesiones" link column added to `/admin/users` table
+
+**Pen-test CI (Fase 10.4D):**
+
+- `security-deps` CI job: `pip-audit` on `apps/api/requirements.txt` — blocks on
+  known CVEs
+- `.github/workflows/security-nightly.yml` — OWASP ZAP baseline + full scan against
+  staging; HIGH/CRITICAL findings Slack-notify and block deploy
+- `apps/api/tests/test_security.py` — authz escalation, IDOR cross-user sessions,
+  rate-limit burst (11 req → 429), brute-force error indistinguishability
+
+**Documentation (Fase 10.4E–H):**
+
+- `docs/demo-fase-10.md` — 45-min demo script with 10 sections, step-level URLs and
+  timing, Cognito placeholder notes
+- `docs/user-guide.md` — end-user guide (consulta, RAG, export, histórico, auditoría)
+- `docs/admin-guide-v2.md` — admin panel complete reference for Fase 10
+- `docs/admin-onboarding-playbook.md` — new-admin onboarding playbook
+- `docs/roadmap-fase-11.md` — 14-item Fase 11 roadmap (multi-tenant, Cognito,
+  multi-idioma, MFA, advanced AI)
+- `docs/branding/brand-approval-process.md` — brand asset approval workflow
+- ADRs: 0055 (CSP nonces + HSTS), 0056 (audit trail extension), 0057 (session
+  management adapter)
+
+### Changed
+
+- `require_auth()` is now `async` — FastAPI dependency injection handles this
+  transparently; all callers unchanged
+- `CurrentUser` model gains `session_id: str | None` field
+- `issue_token()` superseded by `issue_token_with_session()` in `auth.py`
+- `app.state.limiter` now references the same module-level `limiter` instance used by
+  `@limiter.limit()` decorators, ensuring consistent storage and rate-limit enforcement
+- Audit-write failures in auth/session routers now emit `logger.warning` instead of
+  silently passing
+- `revoke_other_sessions` endpoint requires a non-null `session_id` in the current
+  token (returns 409 otherwise) to prevent accidental self-revocation
+- `revoke_other_sessions` now emits a `session.terminate_all` audit entry
+- Admin `revoke_session` audit entry now includes the affected username in metadata
+
+---
+
 ## [0.5.0] — 2026-05-14
 
 ### Added

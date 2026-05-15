@@ -1,3 +1,9 @@
+[project]
+name = "lex-agents"
+version = "0.6.0"
+requires-python = ">=3.12"
+dependencies = []
+
 [tool.uv.workspace]
 members = [
     "apps/api",
@@ -142,6 +148,8 @@ module = [
     "prometheus_client.*",
     "structlog.*",
     "lex_agents_rag.*",
+    "lex_agents_agents.*",
+    "lex_agents_verifier.*",
     "lex_agents_ingest.*",
     "lex_agents_memory.*",
     "lex_agents_pipeline.*",

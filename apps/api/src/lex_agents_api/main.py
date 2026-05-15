@@ -11,9 +11,8 @@ from fastapi.responses import JSONResponse
 from lex_agents_audit.audit_store import AuditStore
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from prometheus_fastapi_instrumentator import Instrumentator
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import Response
@@ -24,6 +23,7 @@ from lex_agents_api.exceptions import (
     lex_agents_exception_handler,
     unhandled_exception_handler,
 )
+from lex_agents_api.limiter import limiter
 from lex_agents_api.logging_config import configure_logging
 from lex_agents_api.middleware import CorrelationIdMiddleware, SecurityHeadersMiddleware
 from lex_agents_api.routers import audit as audit_router
@@ -38,21 +38,12 @@ from lex_agents_api.routers.federation import router as federation_router
 from lex_agents_api.routers.governance import router as governance_router
 from lex_agents_api.routers.notifications import router as notifications_router
 from lex_agents_api.routers.ops import router as ops_router
+from lex_agents_api.routers.sessions import router as sessions_router
 from lex_agents_api.routers.system import router as system_router
 from lex_agents_api.settings import get_settings
 from lex_agents_api.tracing import configure_tracing
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
-
-# ---------------------------------------------------------------------------
-# Rate limiter
-# ---------------------------------------------------------------------------
-
-def _rate_key(request: Request) -> str:
-    return request.headers.get("X-User-ID") or get_remote_address(request) or "unknown"
-
-
-limiter = Limiter(key_func=_rate_key)
 
 # ---------------------------------------------------------------------------
 # Content-size guard
@@ -124,6 +115,26 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.info("governance_initialized", db_path=settings.governance_db_path)
     except ImportError:
         logger.warning("lex_agents_audit_audit_trail_not_available")
+
+    # Session management (ADR-0057)
+    try:
+        from lex_agents_admin.sessions import SessionManager, set_session_manager
+        session_mgr = SessionManager(settings.governance_db_path)
+        await session_mgr.init()
+        set_session_manager(session_mgr)
+        logger.info("session_manager_initialized", db_path=settings.governance_db_path)
+    except ImportError:
+        logger.warning("lex_agents_admin_sessions_not_available")
+
+    # User store (admin CRUD)
+    try:
+        from lex_agents_admin.user_store import UserStore, set_user_store
+        user_store_mgr = UserStore(settings.governance_db_path)
+        await user_store_mgr.init()
+        set_user_store(user_store_mgr)
+        logger.info("user_store_initialized", db_path=settings.governance_db_path)
+    except ImportError:
+        logger.warning("lex_agents_admin_user_store_not_available")
 
     # Kill switches & feature flags (ADR-0032)
     ssm = None
@@ -208,7 +219,8 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Rate limiter state
+    # Use the module-level limiter so @limiter.limit() decorators and
+    # app.state.limiter share the same storage and exception handler.
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
@@ -246,6 +258,7 @@ def create_app() -> FastAPI:
     app.include_router(ops_router)             # /api/v1/admin/agents, /rag, /memory, /sources
     app.include_router(notifications_router)   # /api/v1/admin/notifications/*
     app.include_router(federation_router)      # /api/v1/admin/federation/*
+    app.include_router(sessions_router)        # /api/v1/admin/users/*/sessions, /me/sessions
 
     # Prometheus metrics — /metrics (no auth, internal scrape only)
     Instrumentator(

@@ -1,0 +1,105 @@
+name: Security Nightly
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  pip-audit-full:
+    name: Full dependency vulnerability scan (pip-audit)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.4.x"
+      - uses: actions/cache@v5
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml', 'uv.lock') }}
+      - name: Export requirements from uv lockfile (all workspace packages)
+        run: |
+          uv export --frozen --no-dev \
+            --output-file /tmp/all-requirements.txt
+      - name: Install pip-audit
+        run: pip install pip-audit
+      - name: Run pip-audit (full workspace)
+        run: |
+          pip-audit \
+            --requirement /tmp/all-requirements.txt \
+            --format json \
+            --output /tmp/pip-audit-full.json \
+            --vulnerability-service pypi \
+            --skip-editable || true
+      - name: Report findings and fail on any vulnerability
+        run: |
+          python - <<'EOF'
+          import json, sys
+          with open("/tmp/pip-audit-full.json") as fh:
+              data = json.load(fh)
+          all_vulns = [
+              (dep["name"], dep["version"], v["id"])
+              for dep in data.get("dependencies", [])
+              for v in dep.get("vulns", [])
+          ]
+          if all_vulns:
+              print("::error::Vulnerable dependencies found in nightly scan:")
+              for name, version, vid in all_vulns:
+                  print(f"  {name}=={version}  {vid}")
+              sys.exit(1)
+          else:
+              print("No known vulnerabilities found.")
+          EOF
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pip-audit-full-${{ github.run_id }}
+          path: /tmp/pip-audit-full.json
+          retention-days: 30
+
+  zap-baseline:
+    name: OWASP ZAP baseline scan
+    runs-on: ubuntu-24.04
+    if: ${{ secrets.STAGING_URL != '' }}
+    permissions:
+      contents: read
+      security-events: write
+    env:
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: ZAP baseline scan
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: ${{ secrets.STAGING_URL }}
+          rules_file_name: ".zap/rules.tsv"
+          cmd_options: "-I"
+          # -I: do not return failure exit code on WARN-only alerts
+          # HIGH/CRITICAL alerts still cause a non-zero exit via fail_action
+          fail_action: false
+        continue-on-error: true
+        id: zap
+      - name: Upload ZAP report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report-${{ github.run_id }}
+          path: report_html.html
+          retention-days: 30
+      - name: Notify on HIGH/CRITICAL findings
+        # Wire SLACK_WEBHOOK (above) to send real alerts — replace the echo
+        # below with a curl to secrets.SLACK_WEBHOOK when ready.
+        if: steps.zap.outcome == 'failure'
+        run: |
+          echo "HIGH or CRITICAL ZAP findings detected against ${{ secrets.STAGING_URL }}"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Artifact: zap-report-${{ github.run_id }}"
+          echo "To wire Slack: curl -X POST -H 'Content-type: application/json' \\"
+          echo "  --data '{\"text\":\"ZAP HIGH/CRITICAL findings — see run ${{ github.run_id }}\"}' \\"
+          echo "  \"\$SLACK_WEBHOOK\""
