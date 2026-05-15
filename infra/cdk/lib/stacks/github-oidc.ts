@@ -77,6 +77,45 @@ export class GithubOidcStack extends cdk.Stack {
       }),
     );
 
+    // ECR push permissions — required for docker/build-push-action in CI
+    this.deployRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "EcrPush",
+        actions: [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:PutImage",
+          "ecr:DescribeRepositories",
+          "ecr:ListImages",
+        ],
+        resources: [
+          `arn:aws:ecr:*:${this.account}:repository/lex-agents-${envName}-*`,
+        ],
+      }),
+    );
+
+    // ECS update-service — required for rolling deploys after image push
+    this.deployRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "EcsRollingDeploy",
+        actions: [
+          "ecs:UpdateService",
+          "ecs:DescribeServices",
+          "ecs:DescribeClusters",
+          "ecs:RegisterTaskDefinition",
+          "ecs:DeregisterTaskDefinition",
+          "ecs:DescribeTaskDefinition",
+          "ecs:ListTaskDefinitions",
+          "iam:PassRole",
+        ],
+        resources: ["*"],
+      }),
+    );
+
     new cdk.CfnOutput(this, "DeployRoleArn", {
       value: this.deployRole.roleArn,
       exportName: `LexAgents-${envName}-GitHubDeployRoleArn`,
