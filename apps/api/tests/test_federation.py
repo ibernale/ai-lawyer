@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -122,17 +123,21 @@ def test_federation_returns_url_for_admin() -> None:
         "SessionToken": "tokentest",
     }
 
+    # boto3 is an optional runtime dep not installed in the test environment;
+    # inject a mock module into sys.modules so the lazy `import boto3` inside
+    # the endpoint succeeds without requiring the real package.
+    boto3_mock = MagicMock()
+    sts_mock = MagicMock()
+    sts_mock.assume_role.return_value = {"Credentials": mock_creds}
+    boto3_mock.client.return_value = sts_mock
+
     with (
-        patch("boto3.client") as mock_boto3,
+        patch.dict(sys.modules, {"boto3": boto3_mock}),
         patch(
             "lex_agents_api.routers.federation._build_signin_url",
             return_value="https://signin.aws.amazon.com/federation?Action=login&token=fake",
         ),
     ):
-        sts_mock = MagicMock()
-        sts_mock.assume_role.return_value = {"Credentials": mock_creds}
-        mock_boto3.return_value = sts_mock
-
         client = TestClient(app, raise_server_exceptions=False)
         res = client.post(
             "/api/v1/admin/federation/aws-console-url",
