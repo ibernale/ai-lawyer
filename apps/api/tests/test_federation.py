@@ -67,17 +67,13 @@ def test_federation_requires_auth(client_no_federation: TestClient) -> None:
 
 def test_federation_forbidden_for_analyst_role(client_no_federation: TestClient) -> None:
     """analyst role (legacy) must not access federation endpoint."""
-    from lex_agents_api.auth import require_role
+    from lex_agents_api.auth import require_auth
 
     app = create_app()
     settings = _make_settings()
     app.dependency_overrides[get_settings] = lambda: settings
-    # Override auth to inject analyst user
-    app.dependency_overrides[
-        require_role("viewer", "operator", "admin")
-    ] = lambda: (_ for _ in ()).throw(
-        __import__("fastapi", fromlist=["HTTPException"]).HTTPException(status_code=403)
-    )
+    # Inject analyst user via require_auth; require_role will reject it with 403
+    app.dependency_overrides[require_auth] = lambda: CurrentUser(username="test_analyst", role="analyst")
     client = TestClient(app, raise_server_exceptions=False)
     res = client.post(
         "/api/v1/admin/federation/aws-console-url",
