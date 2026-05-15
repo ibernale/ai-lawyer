@@ -196,7 +196,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_WORKLOADS_DEV_ACCOUNT_ID }}:role/github-deploy-dev
           aws-region: eu-central-1
       - name: CDK deploy workloads-dev stacks
         run: |
@@ -207,5 +207,5 @@ jobs:
             LexAgents-Dev-Data \
             LexAgents-Dev-App \
             --require-approval never \
-            --context lexAgents:rootOuId=${{ vars.AWS_ROOT_OU_ID }} \
-            --context lexAgents:identityCenterInstanceArn=${{ vars.AWS_IDC_INSTANCE_ARN }}
+            --context lexAgents:rootOuId=${{ secrets.AWS_ROOT_OU_ID }} \
+            --context lexAgents:identityCenterInstanceArn=${{ secrets.AWS_IDC_INSTANCE_ARN }}
