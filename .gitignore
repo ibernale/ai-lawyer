@@ -89,6 +89,7 @@ data/*.db
 # ─── Claude Code local state ──────────────────────────────────────────────────
 .claude/plans/
 .claude/worktrees/
+.claude/scheduled_tasks.lock
 
 # ─── Qdrant local indexes ─────────────────────────────────────────────────────
 .qdrant/
@@ -129,6 +130,7 @@ test-results/
 
 # ─── CDK ──────────────────────────────────────────────────────────────────────
 infra/cdk/cdk.out/
+infra/cdk/cdk.out*/
 infra/cdk/cdk.context.json
 infra/cdk/dist/
 infra/cdk/*.js
