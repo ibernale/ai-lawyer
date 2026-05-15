@@ -6,7 +6,7 @@ import {
   getSystemState,
   getVersion,
   type KillSwitchRow,
-  type VersionInfo,
+  type VersionResponse,
 } from "@/lib/api";
 
 function InfoRow({
@@ -48,7 +48,7 @@ function KillSwitchBadge({ engaged }: { engaged: boolean }) {
 }
 
 export default function SettingsPage() {
-  const [version, setVersion] = useState<VersionInfo | null>(null);
+  const [version, setVersion] = useState<VersionResponse | null>(null);
   const [killSwitches, setKillSwitches] = useState<KillSwitchRow[] | null>(
     null,
   );

@@ -909,16 +909,3 @@ export type UserRow = {
 };
 
 export const listUsers = () => apiFetch<UserRow[]>("/api/v1/admin/users");
-
-// ---------------------------------------------------------------------------
-// Version
-// ---------------------------------------------------------------------------
-
-export type VersionInfo = {
-  version: string;
-  commit_sha: string | null;
-  build_time: string | null;
-  python_version: string;
-};
-
-export const getVersion = () => apiFetch<VersionInfo>("/version");
