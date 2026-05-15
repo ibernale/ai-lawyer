@@ -22,6 +22,7 @@ function prettyJson(raw: string | null): string {
 export default function AuditTrailPage() {
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [actionError, setActionError] = useState("");
   const [verification, setVerification] = useState<ChainVerification | null>(
     null,
   );
@@ -43,17 +44,19 @@ export default function AuditTrailPage() {
 
   async function handleVerify() {
     setVerifying(true);
+    setActionError("");
     try {
       const result = await verifyAuditChain();
       setVerification(result);
     } catch (e) {
-      alert(`Error: ${e}`);
+      setActionError(`Error al verificar la cadena: ${e}`);
     } finally {
       setVerifying(false);
     }
   }
 
   async function handleExport(format: "csv" | "json") {
+    setActionError("");
     try {
       const blob = await exportAuditTrail(format);
       const url = URL.createObjectURL(blob);
@@ -65,7 +68,7 @@ export default function AuditTrailPage() {
       // Reload to show the meta-audit entry
       setTimeout(load, 500);
     } catch (e) {
-      alert(`Error al exportar: ${e}`);
+      setActionError(`Error al exportar: ${e}`);
     }
   }
 
@@ -104,6 +107,12 @@ export default function AuditTrailPage() {
           </button>
         </div>
       </div>
+
+      {actionError && (
+        <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          {actionError}
+        </p>
+      )}
 
       {/* Filters */}
       <div className="flex gap-3 mb-4 flex-wrap">
