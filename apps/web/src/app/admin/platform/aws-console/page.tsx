@@ -14,7 +14,7 @@ export default function AwsConsolePage() {
       </div>
 
       <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-700">
-        <strong>Nota:</strong> Al hacer clic en "Abrir en AWS" se generará un
+        <strong>Nota:</strong> Al hacer clic en &ldquo;Abrir en AWS&rdquo; se generará un
         acceso temporal (~15 min) en la consola AWS. El acceso se registra en
         el audit trail.
       </div>

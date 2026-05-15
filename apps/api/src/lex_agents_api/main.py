@@ -34,8 +34,8 @@ from lex_agents_api.routers import feedback as feedback_router
 from lex_agents_api.routers import health as health_router
 from lex_agents_api.routers import rag as rag_router
 from lex_agents_api.routers.audit_trail import router as audit_trail_router
-from lex_agents_api.routers.governance import router as governance_router
 from lex_agents_api.routers.federation import router as federation_router
+from lex_agents_api.routers.governance import router as governance_router
 from lex_agents_api.routers.notifications import router as notifications_router
 from lex_agents_api.routers.ops import router as ops_router
 from lex_agents_api.routers.system import router as system_router

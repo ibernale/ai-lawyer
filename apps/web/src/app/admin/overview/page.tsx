@@ -5,7 +5,7 @@ import {
   getSystemState,
   listSources,
   type KillSwitchRow,
-  type SourceRow,
+  type SourceStatus,
 } from "@/lib/api";
 
 interface OverviewCard {
@@ -29,7 +29,7 @@ export default function OverviewPage() {
           (k: KillSwitchRow) =>
             k.target !== "global" && !k.engaged,
         ).length;
-        const activeSources = (sources as SourceRow[]).filter(
+        const activeSources = (sources as SourceStatus[]).filter(
           (s) => s.status === "active",
         ).length;
 
@@ -51,12 +51,12 @@ export default function OverviewPage() {
           {
             label: "Fuentes activas",
             value: activeSources,
-            sub: `de ${(sources as SourceRow[]).length} totales`,
+            sub: `de ${(sources as SourceStatus[]).length} totales`,
             color: "text-gray-900",
           },
           {
             label: "Feature flags",
-            value: state.feature_flags?.length ?? 0,
+            value: state.flags?.length ?? 0,
             sub: "Flags configurados",
             color: "text-gray-900",
           },

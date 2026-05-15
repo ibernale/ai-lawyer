@@ -79,8 +79,6 @@ def _role_arn_for_user(user: CurrentUser, settings: Settings) -> str:
 
 def _build_signin_url(credentials: dict[str, str], destination: str, region: str) -> str:
     """Build a federation signin URL using temporary STS credentials."""
-    import boto3  # lazy import — not available in all envs
-
     session_token = {
         "sessionId": credentials["AccessKeyId"],
         "sessionKey": credentials["SecretAccessKey"],
@@ -88,7 +86,7 @@ def _build_signin_url(credentials: dict[str, str], destination: str, region: str
     }
     session_json = json.dumps(session_token)
 
-    signin_base = f"https://signin.aws.amazon.com/federation"
+    signin_base = "https://signin.aws.amazon.com/federation"
 
     # Step 1: exchange credentials for federation token
     params = urllib.parse.urlencode(
@@ -195,16 +193,16 @@ async def get_aws_console_url(
 
         atm = get_audit_trail_manager()
         if atm is not None:
-            await atm.record(
-                actor_user_id=user.username,
-                actor_role=user.role,
+            await atm.log(
                 action_type="aws.federation.url_generated",
                 target_type="aws_service",
-                target_id=body.service,
+                actor=user.username,
+                actor_role=user.role,
                 reason=f"Federation signin URL generated for {body.service}",
+                target_id=body.service,
             )
-    except Exception:
-        pass  # audit failure must not block the response
+    except Exception as exc:
+        logger.warning("audit_trail_record_failed", error=str(exc))
 
     logger.info(
         "federation_url_generated",

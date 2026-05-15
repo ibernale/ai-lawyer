@@ -6,12 +6,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
-
 from lex_agents_api.auth import CurrentUser
 from lex_agents_api.main import create_app
-from lex_agents_api.routers.federation import router as federation_router
 from lex_agents_api.settings import Settings, get_settings
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -19,12 +16,12 @@ from lex_agents_api.settings import Settings, get_settings
 
 
 def _make_settings(**kwargs: object) -> Settings:
-    base = dict(
-        env="dev",
-        log_level="DEBUG",
-        anthropic_api_key="sk-ant-test",
-        qdrant_url="http://localhost:6333",
-    )
+    base: dict[str, object] = {
+        "env": "dev",
+        "log_level": "DEBUG",
+        "anthropic_api_key": "sk-ant-test",
+        "qdrant_url": "http://localhost:6333",
+    }
     base.update(kwargs)
     return Settings(**base)  # type: ignore[arg-type]
 
