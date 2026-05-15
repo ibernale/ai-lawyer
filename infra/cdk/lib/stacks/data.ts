@@ -47,6 +47,11 @@ export class DataStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: DataStackProps) {
     super(scope, id, props);
+
+    // Required by CfnRotationSchedule.hostedRotationLambda — the transform
+    // creates the rotation Lambda function on deployment.
+    this.addTransform("AWS::SecretsManager-2020-07-23");
+
     const { envName, networkStack, kmsStack } = props;
 
     const vpc = networkStack.vpc;
