@@ -812,3 +812,85 @@ export const markNotificationRead = (id: number) =>
 
 export const markAllNotificationsRead = () =>
   apiFetch<void>("/api/v1/admin/notifications/read-all", { method: "PUT" });
+
+// ---------------------------------------------------------------------------
+// Federation — AWS Console signin URLs
+// ---------------------------------------------------------------------------
+
+export type AwsService =
+  | "cloudwatch"
+  | "xray"
+  | "step-functions"
+  | "bedrock"
+  | "agentcore";
+
+export interface FederationUrlOptions {
+  dashboard?: string;
+  resourceId?: string;
+}
+
+export interface FederationUrlResponse {
+  url: string;
+  expires_in: number;
+}
+
+export const getFederationUrl = (
+  service: AwsService,
+  options?: FederationUrlOptions,
+): Promise<FederationUrlResponse> =>
+  apiFetch<FederationUrlResponse>("/api/v1/admin/federation/aws-console-url", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      service,
+      dashboard: options?.dashboard,
+      resource_id: options?.resourceId,
+    }),
+  });
+
+// ---------------------------------------------------------------------------
+// Platform status — health of self-hosted tools
+// ---------------------------------------------------------------------------
+
+export interface ToolStatus {
+  name: string;
+  url: string;
+  pattern: "iframe" | "federated";
+  healthy: boolean | null;
+}
+
+export async function getPlatformStatus(): Promise<ToolStatus[]> {
+  const grafanaUrl = process.env.NEXT_PUBLIC_GRAFANA_URL ?? "";
+  const langfuseUrl = process.env.NEXT_PUBLIC_LANGFUSE_URL ?? "";
+  const jaegerUrl = process.env.NEXT_PUBLIC_JAEGER_URL ?? "";
+
+  const probes: Array<{ name: string; url: string; pattern: "iframe" | "federated" }> = [
+    { name: "Grafana", url: grafanaUrl, pattern: "iframe" },
+    { name: "Langfuse", url: langfuseUrl, pattern: "iframe" },
+    { name: "Jaeger", url: jaegerUrl, pattern: "iframe" },
+    { name: "CloudWatch", url: "", pattern: "federated" },
+    { name: "X-Ray", url: "", pattern: "federated" },
+    { name: "Step Functions", url: "", pattern: "federated" },
+    { name: "Bedrock", url: "", pattern: "federated" },
+    { name: "AgentCore", url: "", pattern: "federated" },
+  ];
+
+  const results = await Promise.all(
+    probes.map(async ({ name, url, pattern }) => {
+      if (pattern === "federated" || !url) {
+        return { name, url, pattern, healthy: null };
+      }
+      try {
+        const res = await fetch(`${url}/api/health`, {
+          signal: AbortSignal.timeout(3000),
+          mode: "no-cors",
+        });
+        return { name, url, pattern, healthy: res.type === "opaque" || res.ok };
+      } catch {
+        return { name, url, pattern, healthy: false };
+      }
+    }),
+  );
+
+  return results;
+}

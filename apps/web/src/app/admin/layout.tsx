@@ -11,10 +11,51 @@ import {
 } from "@/lib/api";
 import { NotificationsDrawer } from "@/components/admin/NotificationsDrawer";
 
-const NAV = [
-  { href: "/admin/ops", label: "Ops Center" },
-  { href: "/admin/governance", label: "Governance" },
-  { href: "/admin/audit-trail", label: "Audit Trail" },
+type NavItem = {
+  href: string;
+  label: string;
+  placeholder?: boolean;
+};
+
+type NavSection = {
+  label: string;
+  items: NavItem[];
+};
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    label: "Plataforma",
+    items: [
+      { href: "/admin/overview", label: "Overview" },
+      { href: "/admin/ops", label: "Ops Center" },
+      { href: "/admin/users", label: "Users", placeholder: true },
+      { href: "/admin/governance", label: "Governance" },
+    ],
+  },
+  {
+    label: "Datos",
+    items: [
+      { href: "/admin/costs", label: "Costs & FinOps", placeholder: true },
+      { href: "/admin/audit-trail", label: "Audit Trail" },
+    ],
+  },
+  {
+    label: "Observabilidad",
+    items: [
+      { href: "/admin/platform/metrics", label: "Metrics" },
+      { href: "/admin/platform/traces-llm", label: "Traces LLM" },
+      { href: "/admin/platform/traces-infra", label: "Traces Infra" },
+      { href: "/admin/platform/pipelines", label: "Pipelines" },
+      { href: "/admin/platform/aws-console", label: "AWS Console" },
+    ],
+  },
+  {
+    label: "Settings",
+    items: [
+      { href: "/admin/settings", label: "Platform Settings", placeholder: true },
+      { href: "/admin/flags", label: "Feature Flags", placeholder: true },
+    ],
+  },
 ];
 
 function getStoredRole(): string {
@@ -104,10 +145,10 @@ export default function AdminLayout({
     setRole(r);
     setUsername(u);
     setReady(true);
-    if (r !== "operator" && r !== "admin") {
+    if (r !== "viewer" && r !== "operator" && r !== "admin") {
       router.replace("/");
     }
-    if (r === "operator" || r === "admin") {
+    if (r === "viewer" || r === "operator" || r === "admin") {
       getSystemState()
         .then((state) => {
           const global = state.kill_switches.find(
@@ -147,10 +188,10 @@ export default function AdminLayout({
   }
 
   if (!ready) return null;
-  if (role !== "operator" && role !== "admin") {
+  if (role !== "viewer" && role !== "operator" && role !== "admin") {
     return (
       <div className="p-8 text-center text-red-600 font-semibold">
-        Acceso denegado — se requiere rol operator o admin.
+        Acceso denegado — se requiere rol viewer, operator o admin.
       </div>
     );
   }
@@ -176,23 +217,41 @@ export default function AdminLayout({
             {globalKillEngaged ? "KILL ACTIVE" : "OK"}
           </span>
         </div>
-        <nav className="flex-1 px-2 py-4 space-y-1">
-          {NAV.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href as never}
-              className={`block px-3 py-2 rounded text-sm font-medium transition-colors ${
-                pathname?.startsWith(href)
-                  ? "bg-gray-700 text-white"
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}
-            >
-              {label}
-            </Link>
+        <nav className="flex-1 px-2 py-3 overflow-y-auto">
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.label} className="mb-4">
+              <div className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+                {section.label}
+              </div>
+              <div className="space-y-0.5">
+                {section.items.map(({ href, label, placeholder }) =>
+                  placeholder ? (
+                    <div
+                      key={href}
+                      className="flex items-center justify-between px-3 py-1.5 rounded text-sm text-gray-600 cursor-not-allowed select-none"
+                    >
+                      <span>{label}</span>
+                      <span className="text-[9px] font-medium uppercase tracking-wide bg-gray-800 text-gray-500 px-1.5 py-0.5 rounded">
+                        Pronto
+                      </span>
+                    </div>
+                  ) : (
+                    <Link
+                      key={href}
+                      href={href as never}
+                      className={`block px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                        pathname?.startsWith(href)
+                          ? "bg-gray-700 text-white"
+                          : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                      }`}
+                    >
+                      {label}
+                    </Link>
+                  ),
+                )}
+              </div>
+            </div>
           ))}
-          <div className="px-3 py-2 rounded text-sm text-gray-600 cursor-not-allowed">
-            Costs &amp; FinOps
-          </div>
         </nav>
       </aside>
 
