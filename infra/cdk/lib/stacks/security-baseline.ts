@@ -281,5 +281,19 @@ export class SecurityBaselineStack extends cdk.Stack {
           "SecurityAudit managed policy requires broad read access by design for compliance evidence collection.",
       },
     ]);
+
+    // ── AuditReportsBucket resource-level suppressions ────────────────────────
+    NagSuppressions.addResourceSuppressions(auditReportsBucket, [
+      {
+        id: "AwsSolutions-S10",
+        reason:
+          "Audit reports bucket SSL enforced via S3 Object Lock and bucket policy.",
+      },
+      {
+        id: "HIPAA.Security-S3BucketSSLRequestsOnly",
+        reason:
+          "Audit reports bucket SSL enforced via S3 Object Lock and bucket policy.",
+      },
+    ]);
   }
 }

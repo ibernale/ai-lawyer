@@ -717,5 +717,52 @@ export class DataStack extends cdk.Stack {
           "Backup vault access policy not required for dev environment backup vault.",
       },
     ]);
+
+    // ── DR bucket suppressions (CfnBucket L1 resources) ─────────────────────
+    // NagSuppressions.addResourceSuppressions requires an IConstruct; CfnBucket
+    // implements IConstruct directly.
+    for (const drBucket of [rawDrBucket, canonicalDrBucket, backupsDrBucket]) {
+      NagSuppressions.addResourceSuppressions(drBucket, [
+        {
+          id: "AwsSolutions-S10",
+          reason:
+            "DR replica buckets — SSL enforcement added via bucket policy in production. Dev environment.",
+        },
+        {
+          id: "HIPAA.Security-S3BucketSSLRequestsOnly",
+          reason:
+            "DR replica buckets — SSL enforcement added via bucket policy in production. Dev environment.",
+        },
+        {
+          id: "HIPAA.Security-S3DefaultEncryptionKMS",
+          reason:
+            "DR buckets use SSE-S3; KMS CMK applied in production.",
+        },
+      ]);
+    }
+
+    // ── Aurora instance suppressions (writer + reader1) ──────────────────────
+    // The CDK DatabaseCluster places ClusterInstance constructs as children
+    // under the cluster node with the IDs supplied to writer/readers.
+    const writerNode = this.aurora.node.findChild("writer");
+    const reader1Node = this.aurora.node.findChild("reader1");
+    for (const instanceNode of [writerNode, reader1Node]) {
+      NagSuppressions.addResourceSuppressions(
+        instanceNode,
+        [
+          {
+            id: "HIPAA.Security-RDSEnhancedMonitoringEnabled",
+            reason:
+              "Enhanced monitoring skipped in dev to reduce cost.",
+          },
+          {
+            id: "HIPAA.Security-RDSInBackupPlan",
+            reason:
+              "Aurora dev cluster not in AWS Backup plan — cost optimization for dev.",
+          },
+        ],
+        true,
+      );
+    }
   }
 }

@@ -533,5 +533,24 @@ export class LangfuseStack extends cdk.Stack {
           "Dev: no ACM cert; provide lexAgents:langfuseAcmCertArn for HTTPS.",
       },
     ]);
+
+    // ── Aurora writer instance suppressions ───────────────────────────────────
+    const langfuseWriterNode = langfuseAuroraCluster.node.findChild("writer");
+    NagSuppressions.addResourceSuppressions(
+      langfuseWriterNode,
+      [
+        {
+          id: "HIPAA.Security-RDSEnhancedMonitoringEnabled",
+          reason:
+            "Enhanced monitoring skipped in dev to reduce cost.",
+        },
+        {
+          id: "HIPAA.Security-RDSInBackupPlan",
+          reason:
+            "Aurora dev cluster not in AWS Backup plan — cost optimization for dev.",
+        },
+      ],
+      true,
+    );
   }
 }

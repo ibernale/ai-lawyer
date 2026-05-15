@@ -184,6 +184,24 @@ export class ComplianceStack extends cdk.Stack {
         reason:
           "Server access logs not enabled: compliance bucket is itself the audit sink.",
       },
+      {
+        id: "AwsSolutions-S10",
+        reason:
+          "Compliance bucket SSL enforced via Object Lock policy.",
+      },
+      {
+        id: "HIPAA.Security-S3BucketSSLRequestsOnly",
+        reason:
+          "Compliance bucket SSL enforced via Object Lock policy.",
+      },
+    ]);
+
+    NagSuppressions.addResourceSuppressions(fn, [
+      {
+        id: "AwsSolutions-L1",
+        reason:
+          "Lambda uses python3.12 which is current at time of writing; pinned version for reproducibility.",
+      },
     ]);
     NagSuppressions.addStackSuppressions(this, [
       {

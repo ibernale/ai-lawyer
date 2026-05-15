@@ -843,5 +843,24 @@ def handler(event, context):
           "AWSLambdaVPCAccessExecutionRole attached by CDK for VPC Lambda execution.",
       },
     ]);
+
+    // ── SlackWebhookSecret resource-level suppressions ────────────────────────
+    NagSuppressions.addResourceSuppressions(slackWebhookSecret, [
+      {
+        id: "AwsSolutions-SMG4",
+        reason:
+          "Slack webhook secret does not require rotation — static external credential.",
+      },
+      {
+        id: "HIPAA.Security-SecretsManagerRotationEnabled",
+        reason:
+          "Slack webhook secret does not require rotation — static external credential.",
+      },
+      {
+        id: "HIPAA.Security-SecretsManagerUsingKMSKey",
+        reason:
+          "Slack webhook uses AWS managed key — no PII/PHI stored.",
+      },
+    ]);
   }
 }
