@@ -36,8 +36,8 @@ class Settings(BaseSettings):
     reranker_enabled: bool = False  # Voyage AI has no reranker; disabled until replaced
     reranker_model: str = "BAAI/bge-reranker-v2-m3"  # unused while reranker_enabled=False
 
-    # OpenTelemetry
-    otel_exporter_otlp_endpoint: str = "http://localhost:4317"
+    # OpenTelemetry — OTLP HTTP exporter (port 4318 for HTTP, vs 4317 for gRPC)
+    otel_exporter_otlp_endpoint: str = "http://localhost:4318"
     otel_service_name: str = "lex-agents-api"
 
     # Security

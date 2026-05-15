@@ -35,6 +35,7 @@ import { NetworkSpokeStack } from "./network-spoke";
 import { AppEcrStack } from "./app-ecr";
 import type { DataStack } from "./data";
 import type { LangfuseStack } from "./langfuse";
+import type { JaegerStack } from "./jaeger";
 
 export interface AppServicesStackProps extends cdk.StackProps {
   envName: string;
@@ -44,6 +45,8 @@ export interface AppServicesStackProps extends cdk.StackProps {
   dataStack: DataStack;
   /** LangfuseStack — optional; when provided, injects Langfuse API keys into the API container. */
   langfuseStack?: LangfuseStack;
+  /** JaegerStack — optional; when provided, injects OTEL_EXPORTER_OTLP_ENDPOINT and NEXT_PUBLIC_JAEGER_URL. */
+  jaegerStack?: JaegerStack;
 }
 
 export class AppServicesStack extends cdk.Stack {
@@ -52,7 +55,7 @@ export class AppServicesStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: AppServicesStackProps) {
     super(scope, id, props);
-    const { envName, networkStack, ecrStack, dataStack, langfuseStack } = props;
+    const { envName, networkStack, ecrStack, dataStack, langfuseStack, jaegerStack } = props;
     const vpc = networkStack.vpc;
 
     // Image digests pin ECS task definitions to exact images (no :latest drift).
@@ -502,6 +505,10 @@ export class AppServicesStack extends cdk.Stack {
         ...(langfuseStack
           ? { LANGFUSE_HOST: `http://${langfuseStack.langfuseUrl}` }
           : {}),
+        // Jaeger OTLP HTTP endpoint — OpenTelemetry SDK reads OTEL_EXPORTER_OTLP_ENDPOINT.
+        ...(jaegerStack
+          ? { OTEL_EXPORTER_OTLP_ENDPOINT: `http://${jaegerStack.jaegerOtlpUrl}:4318` }
+          : {}),
       },
       healthCheck: {
         command: [
@@ -645,6 +652,10 @@ export class AppServicesStack extends cdk.Stack {
         // Langfuse iframe URL for the LLM traces admin panel (Fase 11).
         ...(langfuseStack
           ? { NEXT_PUBLIC_LANGFUSE_URL: `http://${langfuseStack.langfuseUrl}` }
+          : {}),
+        // Jaeger UI iframe URL for the infra traces admin panel (Fase 11).
+        ...(jaegerStack
+          ? { NEXT_PUBLIC_JAEGER_URL: `http://${jaegerStack.jaegerUiUrl}` }
           : {}),
       },
       healthCheck: {
