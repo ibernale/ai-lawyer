@@ -15,12 +15,12 @@ Target WCAG 2.1 Level AA across all admin UI. Key rules:
 
 ### Contrast ratios (Success Criterion 1.4.3 / 1.4.11)
 
-| Combination | Ratio | Use |
-|-------------|-------|-----|
-| `#B30000` on `#FFFFFF` | 7.25:1 ✓ | Inline text links on white |
-| `#FFFFFF` on `#EC0000` | 4.48:1 ✓ | Button text (bold, ≥14px) |
-| `#FFFFFF` on `#1A1A1A` | 16.1:1 ✓ | Sidebar text |
-| `#6C757D` on `#FFFFFF` | 4.60:1 ✓ | Secondary text |
+| Combination               | Ratio    | Use                           |
+| ------------------------- | -------- | ----------------------------- |
+| `#B30000` on `#FFFFFF`    | 7.25:1 ✓ | Inline text links on white    |
+| `#FFFFFF` on `#EC0000`    | 4.48:1 ✓ | Button text (bold, ≥14px)     |
+| `#FFFFFF` on `#1A1A1A`    | 16.1:1 ✓ | Sidebar text                  |
+| `#6C757D` on `#FFFFFF`    | 4.60:1 ✓ | Secondary text                |
 | `#EC0000` as UI component | 4.48:1 ✓ | Borders, icons (3:1 required) |
 
 **Rule:** Never use `#EC0000` for body text on white — use `#B30000` instead.
