@@ -41,6 +41,10 @@ export class LangfuseStack extends cdk.Stack {
   /** Internal ALB DNS name for Langfuse (VPC-only). */
   public readonly langfuseUrl: string;
   public readonly langfuseAurora: rds.IDatabaseCluster;
+  /** Secrets Manager secret holding LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY.
+   *  Populate post-deploy: aws secretsmanager put-secret-value --secret-id <arn>
+   *    --secret-string '{"LANGFUSE_PUBLIC_KEY":"pk-lf-...","LANGFUSE_SECRET_KEY":"sk-lf-..."}' */
+  public readonly langfuseApiKeysSecret: secretsmanager.ISecret;
 
   constructor(scope: Construct, id: string, props: LangfuseStackProps) {
     super(scope, id, props);
@@ -88,7 +92,12 @@ export class LangfuseStack extends cdk.Stack {
       description: "Langfuse internal ALB",
       allowAllOutbound: false,
     });
-    // ALB ingress: HTTPS from within the VPC CIDR
+    // ALB ingress: HTTP and HTTPS from within the VPC CIDR (internal ALB, not internet-facing)
+    sgLangfuseAlb.addIngressRule(
+      ec2.Peer.ipv4(vpc.vpcCidrBlock),
+      ec2.Port.tcp(80),
+      "HTTP from VPC CIDR",
+    );
     sgLangfuseAlb.addIngressRule(
       ec2.Peer.ipv4(vpc.vpcCidrBlock),
       ec2.Port.tcp(443),
@@ -196,6 +205,21 @@ export class LangfuseStack extends cdk.Stack {
         },
       },
     );
+
+    // API keys — populated by operators post-deploy with real Langfuse public/secret keys.
+    const apiKeysSecret = new secretsmanager.Secret(this, "LangfuseApiKeysSecret", {
+      secretName: `/lex-agents/${envName}/langfuse/api-keys`,
+      description: `Langfuse ${envName} API keys (LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY) — populate post-deploy`,
+      generateSecretString: {
+        secretStringTemplate: JSON.stringify({
+          LANGFUSE_PUBLIC_KEY: "REPLACE_ME",
+          LANGFUSE_SECRET_KEY: "REPLACE_ME",
+        }),
+        generateStringKey: "_unused",
+        excludeCharacters: '"@/',
+      },
+    });
+    this.langfuseApiKeysSecret = apiKeysSecret;
 
     // ── ECS Cluster (dedicated for Langfuse) ─────────────────────────────────
     const langfuseCluster = new ecs.Cluster(this, "LangfuseCluster", {
@@ -361,6 +385,15 @@ export class LangfuseStack extends cdk.Stack {
         unhealthyThresholdCount: 3,
       },
       deregistrationDelay: cdk.Duration.seconds(30),
+    });
+
+    // HTTP listener (port 80) — always present for VPC-internal Langfuse SDK calls.
+    // The API container uses http://<alb-dns> as LANGFUSE_HOST in environments
+    // without an ACM certificate. HTTPS listener is added below when cert is provided.
+    alb.addListener("LangfuseHttpListener", {
+      port: 80,
+      open: false,
+      defaultAction: elbv2.ListenerAction.forward([langfuseTg]),
     });
 
     // Optional HTTPS listener — use ACM cert from context if provided

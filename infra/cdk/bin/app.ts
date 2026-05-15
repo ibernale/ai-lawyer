@@ -84,12 +84,19 @@ const devData = new DataStack(app, "LexAgents-Dev-Data", {
   kmsStack: devKms,
 });
 
+const devLangfuse = new LangfuseStack(app, "LexAgents-Dev-Langfuse", {
+  env: devEnv,
+  envName: "dev",
+  networkStack: networkSpoke,
+});
+
 const devApp = new AppServicesStack(app, "LexAgents-Dev-App", {
   env: devEnv,
   envName: "dev",
   networkStack: networkSpoke,
   ecrStack: devEcr,
   dataStack: devData,
+  langfuseStack: devLangfuse,
 });
 
 const devPipelines = new PipelinesStack(app, "LexAgents-Dev-Pipelines", {
@@ -98,12 +105,6 @@ const devPipelines = new PipelinesStack(app, "LexAgents-Dev-Pipelines", {
   networkStack: networkSpoke,
   dataStack: devData,
   appServicesStack: devApp,
-});
-
-new LangfuseStack(app, "LexAgents-Dev-Langfuse", {
-  env: devEnv,
-  envName: "dev",
-  networkStack: networkSpoke,
 });
 
 const devObservability = new ObservabilityStack(

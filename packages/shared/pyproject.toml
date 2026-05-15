@@ -13,6 +13,8 @@ dependencies = [
     # Database — asyncpg for Aurora (Fase 9.2); aiosqlite still used by packages
     # that fall back to SQLite when DATABASE_URL is not set.
     "asyncpg>=0.30.0",
+    # LLM observability (Fase 11) — no-op when LANGFUSE_SECRET_KEY is not set.
+    "langfuse>=2.0",
 ]
 
 [project.optional-dependencies]

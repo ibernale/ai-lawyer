@@ -77,6 +77,13 @@ class Settings(BaseSettings):
     federation_role_arn_operator: str = ""
     federation_role_arn_admin: str = ""
 
+    # Langfuse LLM observability (Fase 11) — injected by ECS secrets from
+    # /lex-agents/{env}/langfuse/api-keys. Empty = Langfuse SDK disabled.
+    langfuse_public_key: str = ""
+    langfuse_secret_key: SecretStr = SecretStr("")
+    # Internal ALB DNS name for self-hosted Langfuse; SDK reads LANGFUSE_HOST.
+    langfuse_host: str = ""
+
     # Build metadata (injected by Dockerfile ARG → ENV)
     commit_sha: str = "unknown"
     build_time: str = "unknown"

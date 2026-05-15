@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import time
 from enum import Enum
 from typing import Any
@@ -17,6 +18,76 @@ from tenacity import (
 )
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
+
+# ---------------------------------------------------------------------------
+# Langfuse tracing — optional; skipped when LANGFUSE_SECRET_KEY is not set
+# ---------------------------------------------------------------------------
+
+_lf_client: Any = None
+_lf_client_init_done = False
+
+
+def _get_lf() -> Any:
+    """Return a lazily-initialised Langfuse client, or None if not configured."""
+    global _lf_client, _lf_client_init_done
+    if _lf_client_init_done:
+        return _lf_client
+    _lf_client_init_done = True
+    if not os.getenv("LANGFUSE_SECRET_KEY"):
+        return None
+    try:
+        from langfuse import Langfuse
+        _lf_client = Langfuse()
+    except Exception as exc:
+        logger.debug("langfuse_init_skipped", error=str(exc))
+    return _lf_client
+
+
+def _lf_generation_start(kwargs: dict[str, Any]) -> Any:
+    """Open a Langfuse generation span; return the span handle (or None)."""
+    lf = _get_lf()
+    if lf is None:
+        return None
+    try:
+        trace = lf.trace(name="anthropic")
+        return trace.generation(
+            name="messages_create",
+            model=kwargs.get("model", "unknown"),
+            input=kwargs.get("messages", []),
+            model_parameters={
+                k: v for k, v in kwargs.items() if k not in ("model", "messages", "system")
+            },
+        )
+    except Exception:
+        return None
+
+
+def _lf_generation_end(
+    gen: Any,
+    result: anthropic.types.Message | None = None,
+    error: BaseException | None = None,
+) -> None:
+    """Close a Langfuse generation span; safe no-op on any failure."""
+    if gen is None:
+        return
+    try:
+        if result is not None:
+            first = result.content[0] if result.content else None
+            output = first.text if first and hasattr(first, "text") else str(result.content)
+            gen.end(
+                output=output,
+                usage={
+                    "input": result.usage.input_tokens,
+                    "output": result.usage.output_tokens,
+                },
+            )
+        else:
+            gen.end(level="ERROR", status_message=str(error))
+        lf = _get_lf()
+        if lf is not None:
+            lf.flush()
+    except Exception as exc:
+        logger.debug("langfuse_flush_failed", error=str(exc))
 
 # ---------------------------------------------------------------------------
 # Model constants — single source of truth for all packages
@@ -103,7 +174,7 @@ class AnthropicClientWrapper:
     # ------------------------------------------------------------------
 
     def messages_create(self, **kwargs: Any) -> anthropic.types.Message:
-        """Call `client.messages.create` with retries and circuit breaker."""
+        """Call `client.messages.create` with retries, circuit breaker, and Langfuse tracing."""
         if self._circuit.is_open():
             raise RuntimeError("Anthropic circuit breaker is OPEN — refusing request")
 
@@ -118,17 +189,21 @@ class AnthropicClientWrapper:
         def _call() -> anthropic.types.Message:
             return self._client.messages.create(**kwargs)  # type: ignore[no-any-return]
 
+        gen = _lf_generation_start(kwargs)
         try:
             result = _call()
             self._circuit.record_success()
-            return result
         except RetryError as exc:
             self._circuit.record_failure()
             cause = exc.last_attempt.exception() if exc.last_attempt else None
+            _lf_generation_end(gen, error=exc)
             raise RuntimeError("Max retries exceeded") from cause
-        except Exception:
+        except Exception as exc:
             self._circuit.record_failure()
+            _lf_generation_end(gen, error=exc)
             raise
+        _lf_generation_end(gen, result=result)
+        return result
 
     @property
     def circuit_state(self) -> str:
