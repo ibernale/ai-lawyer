@@ -150,7 +150,7 @@ export default function AdminLayout({
     setUsername(u);
     setReady(true);
     if (r !== "viewer" && r !== "operator" && r !== "admin") {
-      router.replace("/");
+      router.replace("/admin-login");
     }
     if (r === "viewer" || r === "operator" || r === "admin") {
       getSystemState()
