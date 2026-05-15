@@ -55,7 +55,22 @@ jobs:
         working-directory: .
       # Use example context (no real account IDs) for synth validation
       - run: cp cdk.context.json.example cdk.context.json
-      - run: pnpm exec cdk synth --all --context lexAgents:rootOuId=r-synth0 --context lexAgents:identityCenterInstanceArn=arn:aws:sso:::instance/ssoins-placeholder
+      # Synth workloads-dev stacks + shared infra. Exclude LexAgents-NetworkHub
+      # (network account) and multi-account stacks that require real AWS SDK calls.
+      - run: |
+          pnpm exec cdk synth \
+            "LexAgents-Dev-Kms" \
+            "LexAgents-Dev-Network" \
+            "LexAgents-Dev-Ecr" \
+            "LexAgents-Dev-GithubOidc" \
+            "LexAgents-Dev-Data" \
+            "LexAgents-Dev-App" \
+            "LexAgents-Dev-Observability" \
+            "LexAgents-Dev-Pipelines" \
+            "LexAgents-Dev-Langfuse" \
+            "LexAgents-Dev-Compliance" \
+            --context lexAgents:rootOuId=r-synth0 \
+            --context lexAgents:identityCenterInstanceArn=arn:aws:sso:::instance/ssoins-placeholder
       - name: Upload synth output
         uses: actions/upload-artifact@v4
         if: always()
@@ -82,7 +97,11 @@ jobs:
       - run: cp cdk.context.json.example cdk.context.json
       - name: Run cdk-nag via synth (nag runs as Aspects during synth)
         run: |
-          pnpm exec cdk synth --all \
+          pnpm exec cdk synth \
+            "LexAgents-Dev-Kms" "LexAgents-Dev-Network" "LexAgents-Dev-Ecr" \
+            "LexAgents-Dev-GithubOidc" "LexAgents-Dev-Data" "LexAgents-Dev-App" \
+            "LexAgents-Dev-Observability" "LexAgents-Dev-Pipelines" \
+            "LexAgents-Dev-Langfuse" "LexAgents-Dev-Compliance" \
             --context lexAgents:rootOuId=r-synth0 \
             --context lexAgents:identityCenterInstanceArn=arn:aws:sso:::instance/ssoins-placeholder \
             2>&1 | tee nag-output.txt
@@ -143,7 +162,11 @@ jobs:
       - run: cp cdk.context.json.example cdk.context.json
       - name: CDK diff (no AWS credentials — informational only)
         run: |
-          pnpm exec cdk diff --all \
+          pnpm exec cdk diff \
+            "LexAgents-Dev-Kms" "LexAgents-Dev-Network" "LexAgents-Dev-Ecr" \
+            "LexAgents-Dev-GithubOidc" "LexAgents-Dev-Data" "LexAgents-Dev-App" \
+            "LexAgents-Dev-Observability" "LexAgents-Dev-Pipelines" \
+            "LexAgents-Dev-Langfuse" "LexAgents-Dev-Compliance" \
             --context lexAgents:rootOuId=r-synth0 \
             --context lexAgents:identityCenterInstanceArn=arn:aws:sso:::instance/ssoins-placeholder \
             || true
