@@ -52,7 +52,11 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "Settings",
     items: [
-      { href: "/admin/settings", label: "Platform Settings", placeholder: true },
+      {
+        href: "/admin/settings",
+        label: "Platform Settings",
+        placeholder: true,
+      },
       { href: "/admin/flags", label: "Feature Flags", placeholder: true },
     ],
   },

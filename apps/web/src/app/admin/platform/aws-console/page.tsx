@@ -8,15 +8,15 @@ export default function AwsConsolePage() {
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-gray-900">AWS Console</h1>
         <p className="text-sm text-gray-500 mt-0.5">
-          Acceso federado a servicios AWS nativos. El rol asignado determina
-          los permisos en cada servicio.
+          Acceso federado a servicios AWS nativos. El rol asignado determina los
+          permisos en cada servicio.
         </p>
       </div>
 
       <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-700">
-        <strong>Nota:</strong> Al hacer clic en &ldquo;Abrir en AWS&rdquo; se generará un
-        acceso temporal (~15 min) en la consola AWS. El acceso se registra en
-        el audit trail.
+        <strong>Nota:</strong> Al hacer clic en &ldquo;Abrir en AWS&rdquo; se
+        generará un acceso temporal (~15 min) en la consola AWS. El acceso se
+        registra en el audit trail.
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">

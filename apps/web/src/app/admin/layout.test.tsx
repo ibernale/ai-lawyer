@@ -69,7 +69,11 @@ describe("admin layout NAV_SECTIONS structure", () => {
     {
       label: "Settings",
       items: [
-        { href: "/admin/settings", label: "Platform Settings", placeholder: true },
+        {
+          href: "/admin/settings",
+          label: "Platform Settings",
+          placeholder: true,
+        },
         { href: "/admin/flags", label: "Feature Flags", placeholder: true },
       ],
     },

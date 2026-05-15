@@ -864,7 +864,11 @@ export async function getPlatformStatus(): Promise<ToolStatus[]> {
   const langfuseUrl = process.env.NEXT_PUBLIC_LANGFUSE_URL ?? "";
   const jaegerUrl = process.env.NEXT_PUBLIC_JAEGER_URL ?? "";
 
-  const probes: Array<{ name: string; url: string; pattern: "iframe" | "federated" }> = [
+  const probes: Array<{
+    name: string;
+    url: string;
+    pattern: "iframe" | "federated";
+  }> = [
     { name: "Grafana", url: grafanaUrl, pattern: "iframe" },
     { name: "Langfuse", url: langfuseUrl, pattern: "iframe" },
     { name: "Jaeger", url: jaegerUrl, pattern: "iframe" },

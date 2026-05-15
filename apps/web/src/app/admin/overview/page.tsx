@@ -26,8 +26,7 @@ export default function OverviewPage() {
           (k: KillSwitchRow) => k.target === "global",
         );
         const activeAgents = state.kill_switches.filter(
-          (k: KillSwitchRow) =>
-            k.target !== "global" && !k.engaged,
+          (k: KillSwitchRow) => k.target !== "global" && !k.engaged,
         ).length;
         const activeSources = (sources as SourceStatus[]).filter(
           (s) => s.status === "active",
@@ -74,14 +73,15 @@ export default function OverviewPage() {
         </p>
       </div>
 
-      {error && (
-        <p className="text-sm text-red-600 mb-4">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
 
       {cards.length === 0 && !error && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-white border border-gray-200 rounded-lg p-4 animate-pulse">
+            <div
+              key={i}
+              className="bg-white border border-gray-200 rounded-lg p-4 animate-pulse"
+            >
               <div className="h-3 bg-gray-200 rounded w-2/3 mb-3" />
               <div className="h-6 bg-gray-200 rounded w-1/2 mb-2" />
               <div className="h-3 bg-gray-200 rounded w-3/4" />
@@ -93,9 +93,14 @@ export default function OverviewPage() {
       {cards.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {cards.map(({ label, value, sub, color }) => (
-            <div key={label} className="bg-white border border-gray-200 rounded-lg p-4">
+            <div
+              key={label}
+              className="bg-white border border-gray-200 rounded-lg p-4"
+            >
               <p className="text-xs text-gray-500 font-medium">{label}</p>
-              <p className={`text-2xl font-bold mt-1 ${color ?? "text-gray-900"}`}>
+              <p
+                className={`text-2xl font-bold mt-1 ${color ?? "text-gray-900"}`}
+              >
                 {value}
               </p>
               {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
@@ -105,8 +110,8 @@ export default function OverviewPage() {
       )}
 
       <div className="mt-8 text-sm text-gray-500 border-t border-gray-100 pt-4">
-        Navega a <strong>Ops Center</strong> para controlar agentes y fuentes,
-        o a <strong>Observabilidad</strong> para métricas detalladas.
+        Navega a <strong>Ops Center</strong> para controlar agentes y fuentes, o
+        a <strong>Observabilidad</strong> para métricas detalladas.
       </div>
     </div>
   );

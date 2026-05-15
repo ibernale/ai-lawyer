@@ -42,7 +42,9 @@ describe("AwsConsolePage service list", () => {
   });
 
   it("includes AgentCore Observability", () => {
-    expect(AWS_SERVICES.map((s) => s.name)).toContain("AgentCore Observability");
+    expect(AWS_SERVICES.map((s) => s.name)).toContain(
+      "AgentCore Observability",
+    );
   });
 
   it("includes Step Functions", () => {
@@ -69,13 +71,19 @@ describe("AwsConsolePage federation flow", () => {
       dashboard: undefined,
       resourceId: undefined,
     });
-    expect(openUrl).toHaveBeenCalledWith(mockUrl, "_blank", "noopener,noreferrer");
+    expect(openUrl).toHaveBeenCalledWith(
+      mockUrl,
+      "_blank",
+      "noopener,noreferrer",
+    );
   });
 
   it("propagates error when getFederationUrl rejects", async () => {
     const getFederationUrl = vi
       .fn()
-      .mockRejectedValue(new Error("AWS federation not configured in this environment."));
+      .mockRejectedValue(
+        new Error("AWS federation not configured in this environment."),
+      );
     const openUrl = vi.fn();
 
     await expect(
