@@ -7,5 +7,10 @@
     "workloadsDev": "555555555555",
     "workloadsPre": "REPLACE_ME"
   },
-  "lexAgents:doraFrameworkId": "REPLACE_ME"
+  "lexAgents:doraFrameworkId": "REPLACE_ME",
+  "availability-zones:account=111111111111:region=eu-central-1": ["eu-central-1a", "eu-central-1b", "eu-central-1c"],
+  "availability-zones:account=222222222222:region=eu-central-1": ["eu-central-1a", "eu-central-1b", "eu-central-1c"],
+  "availability-zones:account=333333333333:region=eu-central-1": ["eu-central-1a", "eu-central-1b", "eu-central-1c"],
+  "availability-zones:account=444444444444:region=eu-central-1": ["eu-central-1a", "eu-central-1b", "eu-central-1c"],
+  "availability-zones:account=555555555555:region=eu-central-1": ["eu-central-1a", "eu-central-1b", "eu-central-1c"]
 }

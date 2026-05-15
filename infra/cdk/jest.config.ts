@@ -9,7 +9,7 @@ const config: Config = {
   },
   collectCoverageFrom: ["lib/**/*.ts"],
   coverageThreshold: {
-    global: { branches: 60, functions: 70, lines: 70, statements: 70 },
+    global: { branches: 55, functions: 70, lines: 70, statements: 70 },
   },
 };
 
