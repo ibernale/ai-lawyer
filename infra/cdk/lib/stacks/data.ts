@@ -82,7 +82,7 @@ export class DataStack extends cdk.Stack {
       vpc,
       securityGroupName: `lex-agents-${envName}-aurora-data`,
       description:
-        "Aurora cluster SG (owned by DataStack — ingress from app services)",
+        "Aurora cluster SG (owned by DataStack - ingress from app services)",
       allowAllOutbound: false,
     });
 
@@ -584,28 +584,28 @@ export class DataStack extends cdk.Stack {
     new secretsmanager.Secret(this, "AnthropicApiKeySecret", {
       ...secretDefaults,
       secretName: `/lex-agents/${envName}/anthropic/api-key`,
-      description: `lex-agents ${envName} Anthropic API key — replace REPLACE_ME after deploy`,
+      description: `lex-agents ${envName} Anthropic API key - replace REPLACE_ME after deploy`,
       secretStringValue: cdk.SecretValue.unsafePlainText("REPLACE_ME"),
     });
 
     new secretsmanager.Secret(this, "LangfuseSecretKeySecret", {
       ...secretDefaults,
       secretName: `/lex-agents/${envName}/langfuse/secret-key`,
-      description: `lex-agents ${envName} Langfuse secret key — replace REPLACE_ME after deploy`,
+      description: `lex-agents ${envName} Langfuse secret key - replace REPLACE_ME after deploy`,
       secretStringValue: cdk.SecretValue.unsafePlainText("REPLACE_ME"),
     });
 
     new secretsmanager.Secret(this, "LangfusePublicKeySecret", {
       ...secretDefaults,
       secretName: `/lex-agents/${envName}/langfuse/public-key`,
-      description: `lex-agents ${envName} Langfuse public key — replace REPLACE_ME after deploy`,
+      description: `lex-agents ${envName} Langfuse public key - replace REPLACE_ME after deploy`,
       secretStringValue: cdk.SecretValue.unsafePlainText("REPLACE_ME"),
     });
 
     new secretsmanager.Secret(this, "JwtSigningKeySecret", {
       ...secretDefaults,
       secretName: `/lex-agents/${envName}/jwt/signing-key`,
-      description: `lex-agents ${envName} JWT signing key — replace REPLACE_ME after deploy`,
+      description: `lex-agents ${envName} JWT signing key - replace REPLACE_ME after deploy`,
       secretStringValue: cdk.SecretValue.unsafePlainText("REPLACE_ME"),
     });
 

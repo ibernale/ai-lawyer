@@ -604,7 +604,7 @@ export class ObservabilityStack extends cdk.Stack {
       "SlackWebhookSecret",
       {
         secretName: `/lex-agents/${envName}/slack/webhook-url`,
-        description: `lex-agents ${envName} Slack webhook URL — populate post-deploy`,
+        description: `lex-agents ${envName} Slack webhook URL - populate post-deploy`,
         generateSecretString: {
           secretStringTemplate: JSON.stringify({ url: "" }),
           generateStringKey: "_unused",

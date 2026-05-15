@@ -52,7 +52,7 @@ export class LangfuseStack extends cdk.Stack {
     const sgLangfuseAurora = new ec2.SecurityGroup(this, "SgLangfuseAurora", {
       vpc,
       securityGroupName: `langfuse-${envName}-aurora`,
-      description: "Langfuse Aurora cluster — allow PostgreSQL from ECS tasks",
+      description: "Langfuse Aurora cluster - allow PostgreSQL from ECS tasks",
       allowAllOutbound: false,
     });
 

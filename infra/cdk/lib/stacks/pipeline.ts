@@ -498,7 +498,7 @@ export class PipelineStack extends cdk.Stack {
 
     const dailyRule = new events.Rule(this, "DailyIngestRule", {
       ruleName: `lex-agents-${envName}-daily-ingest`,
-      description: "Daily ingest pipeline trigger — runs at 06:00 UTC",
+      description: "Daily ingest pipeline trigger - runs at 06:00 UTC",
       schedule: events.Schedule.cron({ minute: "0", hour: "6" }),
       enabled: true,
     });
