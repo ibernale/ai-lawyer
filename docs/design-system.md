@@ -13,48 +13,48 @@ See [`docs/decisions/0053`](decisions/0053-design-system-tokens.md) and
 
 ### Brand red (primary)
 
-| Token | Hex | Use |
-|-------|-----|-----|
-| `brand-50` | `#fff0f0` | Hover backgrounds, light fills |
-| `brand-100` | `#ffd6d6` | Light fills, info banners |
-| `brand-200` | `#ffadad` | Borders on light backgrounds |
-| `brand-300` | `#ff7070` | Interactive accents |
-| `brand-400` | `#ff3333` | Hover on primary |
+| Token           | Hex           | Use                                  |
+| --------------- | ------------- | ------------------------------------ |
+| `brand-50`      | `#fff0f0`     | Hover backgrounds, light fills       |
+| `brand-100`     | `#ffd6d6`     | Light fills, info banners            |
+| `brand-200`     | `#ffadad`     | Borders on light backgrounds         |
+| `brand-300`     | `#ff7070`     | Interactive accents                  |
+| `brand-400`     | `#ff3333`     | Hover on primary                     |
 | **`brand-500`** | **`#EC0000`** | **PRIMARY — buttons, active states** |
-| `brand-600` | `#cc0000` | Active/pressed primary |
-| `brand-700` | `#b30000` | Text on white (WCAG AA: 7.25:1) |
-| `brand-800` | `#8f0000` | High-contrast text |
-| `brand-900` | `#6b0000` | Darkest, use sparingly |
+| `brand-600`     | `#cc0000`     | Active/pressed primary               |
+| `brand-700`     | `#b30000`     | Text on white (WCAG AA: 7.25:1)      |
+| `brand-800`     | `#8f0000`     | High-contrast text                   |
+| `brand-900`     | `#6b0000`     | Darkest, use sparingly               |
 
 ### Semantic tokens (`:root` CSS vars)
 
-| Variable | Value | Use |
-|----------|-------|-----|
-| `--primary` | `#EC0000` | Brand color |
+| Variable               | Value     | Use             |
+| ---------------------- | --------- | --------------- |
+| `--primary`            | `#EC0000` | Brand color     |
 | `--primary-foreground` | `#FFFFFF` | Text on primary |
-| `--destructive` | red-600 | Error actions |
-| `--ring` | `#EC0000` | Focus ring |
+| `--destructive`        | red-600   | Error actions   |
+| `--ring`               | `#EC0000` | Focus ring      |
 
 ### Layout
 
-| Color | Hex | Use |
-|-------|-----|-----|
-| Sidebar background | `#1A1A1A` | Admin sidebar |
-| Sidebar active | `var(--primary)` | Active nav item |
-| Page background | `#F8F9FA` | Admin content area |
-| Surface | `#FFFFFF` | Cards, panels |
+| Color              | Hex              | Use                |
+| ------------------ | ---------------- | ------------------ |
+| Sidebar background | `#1A1A1A`        | Admin sidebar      |
+| Sidebar active     | `var(--primary)` | Active nav item    |
+| Page background    | `#F8F9FA`        | Admin content area |
+| Surface            | `#FFFFFF`        | Cards, panels      |
 
 ---
 
 ## Typography
 
-| Scale | Class | Use |
-|-------|-------|-----|
-| Page title | `text-xl font-semibold` | `<h1>` in `PageLayout` |
-| Section title | `text-sm font-semibold` | Card headers |
-| Body | `text-sm` | General content |
-| Small / label | `text-xs` | Badges, meta |
-| Mono | `font-mono text-xs` | Code, IDs, hashes |
+| Scale         | Class                   | Use                    |
+| ------------- | ----------------------- | ---------------------- |
+| Page title    | `text-xl font-semibold` | `<h1>` in `PageLayout` |
+| Section title | `text-sm font-semibold` | Card headers           |
+| Body          | `text-sm`               | General content        |
+| Small / label | `text-xs`               | Badges, meta           |
+| Mono          | `font-mono text-xs`     | Code, IDs, hashes      |
 
 Font: Inter (sans), JetBrains Mono (code).
 
@@ -103,17 +103,21 @@ import { Alert } from "@/components/ui/alert";
 ### Card
 
 ```tsx
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
 
 <Card>
   <CardHeader>
     <CardTitle>Título</CardTitle>
     <CardDescription>Descripción opcional</CardDescription>
   </CardHeader>
-  <CardContent>
-    {/* contenido */}
-  </CardContent>
-</Card>
+  <CardContent>{/* contenido */}</CardContent>
+</Card>;
 ```
 
 ### Tabs
@@ -128,7 +132,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
   </TabsList>
   <TabsContent value="tab1">Contenido 1</TabsContent>
   <TabsContent value="tab2">Contenido 2</TabsContent>
-</Tabs>
+</Tabs>;
 ```
 
 ### Input
@@ -152,7 +156,7 @@ import { PageLayout } from "@/components/admin/PageLayout";
   actions={<Button>Nuevo flag</Button>}
 >
   {/* contenido de la página */}
-</PageLayout>
+</PageLayout>;
 ```
 
 ### Logo
@@ -170,11 +174,11 @@ Override logo via `NEXT_PUBLIC_LOGO_URL` env var (any image URL).
 
 ## WCAG 2.1 AA — contrast summary
 
-| Combination | Ratio | Pass? |
-|-------------|-------|-------|
-| White text on `#EC0000` button | 4.48:1 | ✓ (UI component + large bold text) |
-| `#B30000` on white (inline text) | 7.25:1 | ✓ |
-| White on `#1A1A1A` sidebar | 16.1:1 | ✓ |
-| `#6C757D` on white (secondary text) | 4.60:1 | ✓ |
+| Combination                         | Ratio  | Pass?                              |
+| ----------------------------------- | ------ | ---------------------------------- |
+| White text on `#EC0000` button      | 4.48:1 | ✓ (UI component + large bold text) |
+| `#B30000` on white (inline text)    | 7.25:1 | ✓                                  |
+| White on `#1A1A1A` sidebar          | 16.1:1 | ✓                                  |
+| `#6C757D` on white (secondary text) | 4.60:1 | ✓                                  |
 
 **Never use `#EC0000` for body text on white** — use `#B30000` for inline links.

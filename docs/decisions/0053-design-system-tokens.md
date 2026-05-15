@@ -21,6 +21,7 @@ conventions; we prefer CVA directly over plain HTML elements or lightweight
 primitives.
 
 **Santander brand red palette (primary):**
+
 - `brand-500`: `#EC0000` — primary color for buttons, active states, links
 - `brand-700`: `#B30000` — inline text on white (WCAG AA safe: 7.25:1 ratio)
 - `brand-900`: `#6B0000` — darkest, for high-contrast uses
@@ -29,6 +30,7 @@ primitives.
 Active nav items use `bg-primary` (brand red).
 
 **Components created:**
+
 - `button.tsx`, `input.tsx`, `card.tsx`, `alert.tsx`, `tabs.tsx` — CVA pattern
 - `Logo.tsx` — configurable via `NEXT_PUBLIC_LOGO_URL`, fallback to "LA" initials
 - `PageLayout.tsx` — admin page wrapper
