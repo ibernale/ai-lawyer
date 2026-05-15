@@ -65,8 +65,9 @@ jobs:
 
       - name: Test (pytest)
         # Only test the packages installed above; other packages (agents, verifier,
-        # rag, ingest, evals_advanced…) are tested by ci.yml which runs uv sync --all-packages.
-        run: uv run pytest packages/shared packages/audit packages/admin apps/api/ -x -q --tb=short
+        # rag, ingest, evals_advanced…) are tested by ci.yml (uv sync --all-packages).
+        # Skip integration + e2e_aws tests: they need live infrastructure.
+        run: uv run pytest packages/shared packages/audit packages/admin apps/api/ -x -q --tb=short -m "not integration and not e2e_aws"
 
       - name: Upload test results
         if: always()
