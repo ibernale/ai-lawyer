@@ -601,34 +601,29 @@ export class PipelinesStack extends cdk.Stack {
     NagSuppressions.addResourceSuppressions(this.idempotencyTable, [
       {
         id: "HIPAA.Security-DynamoDBInBackupPlan",
-        reason:
-          "DynamoDB tables not in AWS Backup plan — dev environment.",
+        reason: "DynamoDB tables not in AWS Backup plan — dev environment.",
       },
     ]);
 
     NagSuppressions.addResourceSuppressions(this.quotaTable, [
       {
         id: "HIPAA.Security-DynamoDBInBackupPlan",
-        reason:
-          "DynamoDB tables not in AWS Backup plan — dev environment.",
+        reason: "DynamoDB tables not in AWS Backup plan — dev environment.",
       },
       {
         id: "HIPAA.Security-DynamoDBPITREnabled",
-        reason:
-          "PITR not enabled on dev DynamoDB tables — cost optimization.",
+        reason: "PITR not enabled on dev DynamoDB tables — cost optimization.",
       },
     ]);
 
     NagSuppressions.addResourceSuppressions(this.fingerprintsTable, [
       {
         id: "HIPAA.Security-DynamoDBInBackupPlan",
-        reason:
-          "DynamoDB tables not in AWS Backup plan — dev environment.",
+        reason: "DynamoDB tables not in AWS Backup plan — dev environment.",
       },
       {
         id: "HIPAA.Security-DynamoDBPITREnabled",
-        reason:
-          "PITR not enabled on dev DynamoDB tables — cost optimization.",
+        reason: "PITR not enabled on dev DynamoDB tables — cost optimization.",
       },
     ]);
   }

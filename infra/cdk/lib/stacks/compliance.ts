@@ -186,13 +186,11 @@ export class ComplianceStack extends cdk.Stack {
       },
       {
         id: "AwsSolutions-S10",
-        reason:
-          "Compliance bucket SSL enforced via Object Lock policy.",
+        reason: "Compliance bucket SSL enforced via Object Lock policy.",
       },
       {
         id: "HIPAA.Security-S3BucketSSLRequestsOnly",
-        reason:
-          "Compliance bucket SSL enforced via Object Lock policy.",
+        reason: "Compliance bucket SSL enforced via Object Lock policy.",
       },
     ]);
 

@@ -541,8 +541,7 @@ export class LangfuseStack extends cdk.Stack {
       [
         {
           id: "HIPAA.Security-RDSEnhancedMonitoringEnabled",
-          reason:
-            "Enhanced monitoring skipped in dev to reduce cost.",
+          reason: "Enhanced monitoring skipped in dev to reduce cost.",
         },
         {
           id: "HIPAA.Security-RDSInBackupPlan",

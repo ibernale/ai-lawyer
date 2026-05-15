@@ -858,8 +858,7 @@ def handler(event, context):
       },
       {
         id: "HIPAA.Security-SecretsManagerUsingKMSKey",
-        reason:
-          "Slack webhook uses AWS managed key — no PII/PHI stored.",
+        reason: "Slack webhook uses AWS managed key — no PII/PHI stored.",
       },
     ]);
   }

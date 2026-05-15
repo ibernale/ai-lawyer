@@ -740,8 +740,7 @@ export class DataStack extends cdk.Stack {
         },
         {
           id: "HIPAA.Security-S3DefaultEncryptionKMS",
-          reason:
-            "DR buckets use SSE-S3; KMS CMK applied in production.",
+          reason: "DR buckets use SSE-S3; KMS CMK applied in production.",
         },
       ]);
     }
@@ -757,8 +756,7 @@ export class DataStack extends cdk.Stack {
         [
           {
             id: "HIPAA.Security-RDSEnhancedMonitoringEnabled",
-            reason:
-              "Enhanced monitoring skipped in dev to reduce cost.",
+            reason: "Enhanced monitoring skipped in dev to reduce cost.",
           },
           {
             id: "HIPAA.Security-RDSInBackupPlan",
