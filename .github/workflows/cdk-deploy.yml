@@ -6,9 +6,11 @@ on:
       - main
     paths:
       - "infra/cdk/**"
+      - "pnpm-lock.yaml"
   pull_request:
     paths:
       - "infra/cdk/**"
+      - "pnpm-lock.yaml"
 
 permissions: {}
 
@@ -24,12 +26,16 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
-          cache-dependency-path: infra/cdk/package-lock.json
-      - run: npm ci
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
       - run: npx tsc --noEmit
 
   synth:
@@ -40,12 +46,16 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
-          cache-dependency-path: infra/cdk/package-lock.json
-      - run: npm ci
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
       # Use example context (no real account IDs) for synth validation
       - run: cp cdk.context.json.example cdk.context.json
       - run: npx cdk synth --all --context lexAgents:rootOuId=r-synth0 --context lexAgents:identityCenterInstanceArn=arn:aws:sso:::instance/ssoins-placeholder
@@ -64,12 +74,16 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
-          cache-dependency-path: infra/cdk/package-lock.json
-      - run: npm ci
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
       - run: cp cdk.context.json.example cdk.context.json
       - name: Run cdk-nag via synth (nag runs as Aspects during synth)
         run: |
@@ -98,12 +112,16 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
-          cache-dependency-path: infra/cdk/package-lock.json
-      - run: npm ci
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
       - run: npx jest --coverage
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -121,12 +139,16 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
-          cache-dependency-path: infra/cdk/package-lock.json
-      - run: npm ci
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
       - run: cp cdk.context.json.example cdk.context.json
       - name: CDK diff (no AWS credentials — informational only)
         run: |
@@ -147,12 +169,16 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
-          cache-dependency-path: infra/cdk/package-lock.json
-      - run: npm ci
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -164,6 +190,8 @@ jobs:
             LexAgents-Dev-Kms \
             LexAgents-Dev-Network \
             LexAgents-Dev-GithubOidc \
+            LexAgents-Dev-Data \
+            LexAgents-Dev-App \
             --require-approval never \
             --context lexAgents:rootOuId=${{ vars.AWS_ROOT_OU_ID }} \
             --context lexAgents:identityCenterInstanceArn=${{ vars.AWS_IDC_INSTANCE_ARN }}
