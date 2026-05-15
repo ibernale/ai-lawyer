@@ -234,7 +234,7 @@ export class AppServicesStack extends cdk.Stack {
     const sgAlbDemo = new ec2.SecurityGroup(this, "SgAlbDemo", {
       vpc,
       securityGroupName: `lex-agents-${envName}-alb-demo`,
-      description: "ALB demo - HTTP/HTTPS from internet",
+      description: "ALB demo - HTTP from internet",
       allowAllOutbound: true,
     });
     sgAlbDemo.addIngressRule(
