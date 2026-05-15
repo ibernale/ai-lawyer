@@ -35,7 +35,12 @@ export class GithubOidcStack extends cdk.Stack {
         {
           StringEquals: {
             "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-            "token.actions.githubusercontent.com:sub": `repo:${githubRepo}:ref:refs/heads/${githubBranch}`,
+          },
+          // StringLike allows both:
+          //   repo:owner/repo:ref:refs/heads/main  (push, build-push job)
+          //   repo:owner/repo:environment:aws-dev  (CDK deploy job with environment:)
+          StringLike: {
+            "token.actions.githubusercontent.com:sub": `repo:${githubRepo}:*`,
           },
         },
       ),
