@@ -35,7 +35,7 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
         working-directory: .
-      - run: npx tsc --noEmit
+      - run: pnpm exec tsc --noEmit
 
   synth:
     name: CDK synth
@@ -55,7 +55,7 @@ jobs:
         working-directory: .
       # Use example context (no real account IDs) for synth validation
       - run: cp cdk.context.json.example cdk.context.json
-      - run: npx cdk synth --all --context lexAgents:rootOuId=r-synth0 --context lexAgents:identityCenterInstanceArn=arn:aws:sso:::instance/ssoins-placeholder
+      - run: pnpm exec cdk synth --all --context lexAgents:rootOuId=r-synth0 --context lexAgents:identityCenterInstanceArn=arn:aws:sso:::instance/ssoins-placeholder
       - name: Upload synth output
         uses: actions/upload-artifact@v4
         if: always()
@@ -82,7 +82,7 @@ jobs:
       - run: cp cdk.context.json.example cdk.context.json
       - name: Run cdk-nag via synth (nag runs as Aspects during synth)
         run: |
-          npx cdk synth --all \
+          pnpm exec cdk synth --all \
             --context lexAgents:rootOuId=r-synth0 \
             --context lexAgents:identityCenterInstanceArn=arn:aws:sso:::instance/ssoins-placeholder \
             2>&1 | tee nag-output.txt
@@ -115,7 +115,7 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
         working-directory: .
-      - run: npx jest --coverage
+      - run: pnpm exec jest --coverage
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -143,7 +143,7 @@ jobs:
       - run: cp cdk.context.json.example cdk.context.json
       - name: CDK diff (no AWS credentials — informational only)
         run: |
-          npx cdk diff --all \
+          pnpm exec cdk diff --all \
             --context lexAgents:rootOuId=r-synth0 \
             --context lexAgents:identityCenterInstanceArn=arn:aws:sso:::instance/ssoins-placeholder \
             || true
@@ -175,7 +175,7 @@ jobs:
           aws-region: eu-central-1
       - name: CDK deploy workloads-dev stacks
         run: |
-          npx cdk deploy \
+          pnpm exec cdk deploy \
             LexAgents-Dev-Kms \
             LexAgents-Dev-Network \
             LexAgents-Dev-GithubOidc \
