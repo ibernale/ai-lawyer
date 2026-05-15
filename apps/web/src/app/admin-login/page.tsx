@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+// Use relative URL so the ALB routes /auth/token to the API in all envs.
+// Falls back to localhost for local dev where web and API run on different ports.
 const API_BASE =
-  typeof window !== "undefined"
-    ? (process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:8000")
+  typeof window !== "undefined" && window.location.port === "3000"
+    ? "http://localhost:8000"
     : "";
 
 export default function AdminLoginPage() {
