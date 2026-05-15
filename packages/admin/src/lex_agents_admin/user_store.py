@@ -275,5 +275,5 @@ def _fmt_ts(v: Any) -> str:
     if v is None:
         return ""
     if hasattr(v, "strftime"):
-        return v.strftime("%Y-%m-%dT%H:%M:%S")
+        return str(v.strftime("%Y-%m-%dT%H:%M:%S"))
     return str(v)

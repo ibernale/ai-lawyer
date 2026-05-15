@@ -23,8 +23,8 @@ from lex_agents_api.exceptions import (
     lex_agents_exception_handler,
     unhandled_exception_handler,
 )
+from lex_agents_api.limiter import limiter
 from lex_agents_api.logging_config import configure_logging
-from lex_agents_api.limiter import _rate_key, limiter
 from lex_agents_api.middleware import CorrelationIdMiddleware, SecurityHeadersMiddleware
 from lex_agents_api.routers import audit as audit_router
 from lex_agents_api.routers import auth as auth_router
@@ -35,10 +35,10 @@ from lex_agents_api.routers import health as health_router
 from lex_agents_api.routers import rag as rag_router
 from lex_agents_api.routers.audit_trail import router as audit_trail_router
 from lex_agents_api.routers.federation import router as federation_router
-from lex_agents_api.routers.sessions import router as sessions_router
 from lex_agents_api.routers.governance import router as governance_router
 from lex_agents_api.routers.notifications import router as notifications_router
 from lex_agents_api.routers.ops import router as ops_router
+from lex_agents_api.routers.sessions import router as sessions_router
 from lex_agents_api.routers.system import router as system_router
 from lex_agents_api.settings import get_settings
 from lex_agents_api.tracing import configure_tracing

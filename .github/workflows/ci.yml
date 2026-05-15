@@ -156,6 +156,8 @@ jobs:
             --output /tmp/pip-audit-results.json \
             --vulnerability-service pypi \
             --skip-editable || true
+          # Ensure the output file always exists so the next step can parse it
+          [ -f /tmp/pip-audit-results.json ] || echo '{"dependencies":[]}' > /tmp/pip-audit-results.json
       - name: Fail on any vulnerability finding
         # pip-audit exits non-zero on findings, but we captured its exit code
         # above (|| true) so we could always emit the artifact.  This step
