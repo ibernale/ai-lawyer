@@ -34,9 +34,7 @@ function KillSwitchBadge({ engaged }: { engaged: boolean }) {
   return (
     <span
       className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
-        engaged
-          ? "bg-red-100 text-red-700"
-          : "bg-green-100 text-green-700"
+        engaged ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
       }`}
     >
       <span
@@ -76,10 +74,7 @@ export default function SettingsPage() {
         <p className="text-sm text-gray-500 mt-1">
           Estado y configuración de la plataforma. La edición de flags se
           gestiona en{" "}
-          <Link
-            href="/admin/flags"
-            className="text-blue-600 hover:underline"
-          >
+          <Link href="/admin/flags" className="text-blue-600 hover:underline">
             Feature Flags
           </Link>
           .
@@ -101,7 +96,10 @@ export default function SettingsPage() {
           {!version ? (
             <div className="space-y-2">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />
+                <div
+                  key={i}
+                  className="h-8 bg-gray-100 rounded animate-pulse"
+                />
               ))}
             </div>
           ) : (
@@ -183,7 +181,10 @@ export default function SettingsPage() {
           {!killSwitches ? (
             <div className="space-y-2">
               {[1, 2].map((i) => (
-                <div key={i} className="h-10 bg-gray-100 rounded animate-pulse" />
+                <div
+                  key={i}
+                  className="h-10 bg-gray-100 rounded animate-pulse"
+                />
               ))}
             </div>
           ) : (

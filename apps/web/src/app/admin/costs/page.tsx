@@ -37,22 +37,25 @@ export default function CostsPage() {
 
   const totalInvocations =
     agents?.reduce((sum, a) => sum + a.invocations_last_24h, 0) ?? 0;
-  const totalCost = agents?.reduce((sum, a) => sum + a.cost_usd_last_24h, 0) ?? 0;
+  const totalCost =
+    agents?.reduce((sum, a) => sum + a.cost_usd_last_24h, 0) ?? 0;
   const avgLatency =
     agents && agents.length > 0
       ? agents
           .filter((a) => a.avg_latency_ms_last_24h !== null)
           .reduce((sum, a) => sum + (a.avg_latency_ms_last_24h ?? 0), 0) /
-          Math.max(
-            1,
-            agents.filter((a) => a.avg_latency_ms_last_24h !== null).length,
-          )
+        Math.max(
+          1,
+          agents.filter((a) => a.avg_latency_ms_last_24h !== null).length,
+        )
       : null;
 
   return (
     <div>
       <div className="mb-4">
-        <h1 className="text-xl font-semibold text-gray-900">Costs &amp; FinOps</h1>
+        <h1 className="text-xl font-semibold text-gray-900">
+          Costs &amp; FinOps
+        </h1>
         <p className="text-sm text-gray-500 mt-1">
           Métricas de uso e invocaciones de los agentes en las últimas 24 horas.
         </p>
@@ -97,9 +100,7 @@ export default function CostsPage() {
             />
             <MetricCard
               label="Latencia media"
-              value={
-                avgLatency !== null ? `${avgLatency.toFixed(0)} ms` : "—"
-              }
+              value={avgLatency !== null ? `${avgLatency.toFixed(0)} ms` : "—"}
               sub="Media entre agentes activos"
             />
             <MetricCard
@@ -142,7 +143,7 @@ export default function CostsPage() {
                           a.status === "active"
                             ? "bg-green-100 text-green-700"
                             : a.status === "killed"
-              ? "bg-red-100 text-red-700"
+                              ? "bg-red-100 text-red-700"
                               : "bg-amber-100 text-amber-700"
                         }`}
                       >

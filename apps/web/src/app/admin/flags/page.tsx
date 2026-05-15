@@ -192,10 +192,7 @@ export default function FlagsPage() {
       {!flags ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-12 bg-gray-100 rounded animate-pulse"
-            />
+            <div key={i} className="h-12 bg-gray-100 rounded animate-pulse" />
           ))}
         </div>
       ) : flags.length === 0 ? (
@@ -233,7 +230,9 @@ export default function FlagsPage() {
                     {flagValueDisplay(f.value)}
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs">
-                    {f.updated_at ? new Date(f.updated_at).toLocaleString() : "—"}
+                    {f.updated_at
+                      ? new Date(f.updated_at).toLocaleString()
+                      : "—"}
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs">
                     {f.updated_by || "—"}

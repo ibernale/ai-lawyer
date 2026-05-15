@@ -24,11 +24,13 @@ export default function UsersPage() {
   useEffect(() => {
     listUsers()
       .then((rows) =>
-        setUsers([...rows].sort((a, b) => {
-          const ra = ROLE_ORDER[a.role] ?? 99;
-          const rb = ROLE_ORDER[b.role] ?? 99;
-          return ra !== rb ? ra - rb : a.username.localeCompare(b.username);
-        })),
+        setUsers(
+          [...rows].sort((a, b) => {
+            const ra = ROLE_ORDER[a.role] ?? 99;
+            const rb = ROLE_ORDER[b.role] ?? 99;
+            return ra !== rb ? ra - rb : a.username.localeCompare(b.username);
+          }),
+        ),
       )
       .catch(() => setError("No se pudo cargar la lista de usuarios."));
   }, []);
@@ -85,7 +87,9 @@ export default function UsersPage() {
           ))}
         </div>
       ) : users && users.length === 0 ? (
-        <p className="text-sm text-gray-400 italic">Sin usuarios configurados.</p>
+        <p className="text-sm text-gray-400 italic">
+          Sin usuarios configurados.
+        </p>
       ) : users ? (
         <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
           <table className="min-w-full text-sm">
@@ -127,8 +131,8 @@ export default function UsersPage() {
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-xs text-blue-700">
         <strong>Gestión de usuarios:</strong> Añade o modifica entradas en el
         secreto{" "}
-        <code className="bg-blue-100 px-1 rounded">AUTH_USERS_JSON</code> de
-        AWS Secrets Manager. Cada entrada requiere{" "}
+        <code className="bg-blue-100 px-1 rounded">AUTH_USERS_JSON</code> de AWS
+        Secrets Manager. Cada entrada requiere{" "}
         <code className="bg-blue-100 px-1 rounded">username</code>,{" "}
         <code className="bg-blue-100 px-1 rounded">password_hash</code> (bcrypt)
         y <code className="bg-blue-100 px-1 rounded">role</code>. Los cambios
