@@ -217,12 +217,16 @@ jobs:
             ]
           }
           EOF
-      - name: CDK deploy workloads-dev stacks
+      - name: CDK deploy workloads-dev infrastructure stacks
+        # NOTE: LexAgents-Dev-App is intentionally excluded here.
+        # The App stack contains ECS task definitions with image digests
+        # that must come from app-deploy.yml (which builds images first).
+        # Deploying App without image context would use dummy digests and
+        # trigger the ECS circuit breaker.
         run: |
           pnpm exec cdk deploy \
             LexAgents-Dev-Kms \
             LexAgents-Dev-Network \
             LexAgents-Dev-GithubOidc \
             LexAgents-Dev-Data \
-            LexAgents-Dev-App \
             --require-approval never
