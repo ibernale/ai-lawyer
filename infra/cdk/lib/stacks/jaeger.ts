@@ -85,7 +85,11 @@ export class JaegerStack extends cdk.Stack {
 
     // ECS ingress from ALB
     sgJaegerEcs.addIngressRule(sgJaegerAlb, ec2.Port.tcp(16686), "UI from ALB");
-    sgJaegerEcs.addIngressRule(sgJaegerAlb, ec2.Port.tcp(4318), "OTLP HTTP from ALB");
+    sgJaegerEcs.addIngressRule(
+      sgJaegerAlb,
+      ec2.Port.tcp(4318),
+      "OTLP HTTP from ALB",
+    );
 
     // ── CloudWatch log group ──────────────────────────────────────────────────
     const logGroup = new logs.LogGroup(this, "JaegerLogGroup", {
@@ -140,8 +144,8 @@ export class JaegerStack extends cdk.Stack {
       logging,
       portMappings: [
         { containerPort: 16686 }, // Jaeger UI
-        { containerPort: 4318 },  // OTLP HTTP receiver
-        { containerPort: 4317 },  // OTLP gRPC receiver (VPC-internal, not exposed via ALB)
+        { containerPort: 4318 }, // OTLP HTTP receiver
+        { containerPort: 4317 }, // OTLP gRPC receiver (VPC-internal, not exposed via ALB)
       ],
       environment: {
         COLLECTOR_OTLP_ENABLED: "true",
@@ -253,13 +257,15 @@ export class JaegerStack extends cdk.Stack {
     new cdk.CfnOutput(this, "JaegerUiUrl", {
       value: `http://${alb.loadBalancerDnsName}`,
       exportName: `${id}-JaegerUiUrl`,
-      description: "Jaeger UI internal URL (VPC-only) — use as NEXT_PUBLIC_JAEGER_URL",
+      description:
+        "Jaeger UI internal URL (VPC-only) — use as NEXT_PUBLIC_JAEGER_URL",
     });
 
     new cdk.CfnOutput(this, "JaegerOtlpUrl", {
       value: `http://${alb.loadBalancerDnsName}:4318`,
       exportName: `${id}-JaegerOtlpUrl`,
-      description: "Jaeger OTLP HTTP endpoint — use as OTEL_EXPORTER_OTLP_ENDPOINT",
+      description:
+        "Jaeger OTLP HTTP endpoint — use as OTEL_EXPORTER_OTLP_ENDPOINT",
     });
 
     new cdk.CfnOutput(this, "JaegerClusterArn", {
@@ -271,15 +277,18 @@ export class JaegerStack extends cdk.Stack {
     NagSuppressions.addStackSuppressions(this, [
       {
         id: "AwsSolutions-ECS2",
-        reason: "Jaeger all-in-one has no secrets to inject; env vars are non-sensitive config.",
+        reason:
+          "Jaeger all-in-one has no secrets to inject; env vars are non-sensitive config.",
       },
       {
         id: "AwsSolutions-ELB2",
-        reason: "Jaeger is VPC-internal only; access logs add cost with no security benefit here.",
+        reason:
+          "Jaeger is VPC-internal only; access logs add cost with no security benefit here.",
       },
       {
         id: "AwsSolutions-EC23",
-        reason: "Internal ALB SG allows VPC CIDR — acceptable for internal-only tracing backend.",
+        reason:
+          "Internal ALB SG allows VPC CIDR — acceptable for internal-only tracing backend.",
       },
       {
         id: "HIPAA.Security-ECSTaskDefinitionUserForHostMode",

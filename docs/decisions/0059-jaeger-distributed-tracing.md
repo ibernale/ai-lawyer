@@ -16,6 +16,7 @@ a self-hosted Jaeger deployment on AWS and the correct OTLP endpoint injected in
 the API container.
 
 Constraints:
+
 - The existing OTEL Collector in docker-compose already accepts both gRPC (4317)
   and HTTP (4318) — both protocols are supported locally.
 - AWS ALB can proxy HTTP but not raw TCP/gRPC on arbitrary ports without
@@ -28,6 +29,7 @@ Constraints:
 
 Replace `opentelemetry-exporter-otlp-proto-grpc` with
 `opentelemetry-exporter-otlp-proto-http` in `apps/api`. The HTTP exporter:
+
 - Sends traces to `POST /v1/traces` over plain HTTP — fully ALB-compatible.
 - Works identically with the existing docker-compose OTEL Collector (which
   already listens on port 4318).
@@ -38,6 +40,7 @@ Default `OTEL_EXPORTER_OTLP_ENDPOINT` updated to `http://localhost:4318`.
 ### Infrastructure: `JaegerStack` CDK stack
 
 A new `JaegerStack` (`infra/cdk/lib/stacks/jaeger.ts`) deploys:
+
 - ECS Fargate with `jaegertracing/all-in-one:1.76.0`, 512 CPU / 1024 MB.
 - In-memory trace storage (`SPAN_STORAGE_TYPE=memory`, max 50 000 traces).
 - Internal ALB (VPC-only) with two listeners:
@@ -47,6 +50,7 @@ A new `JaegerStack` (`infra/cdk/lib/stacks/jaeger.ts`) deploys:
 
 `AppServicesStack` accepts an optional `jaegerStack?: JaegerStack` prop.
 When provided:
+
 - `OTEL_EXPORTER_OTLP_ENDPOINT=http://<alb-dns>:4318` is injected into the API
   container environment.
 - `NEXT_PUBLIC_JAEGER_URL=http://<alb-dns>` is injected into the web container.

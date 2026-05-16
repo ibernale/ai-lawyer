@@ -55,7 +55,14 @@ export class AppServicesStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: AppServicesStackProps) {
     super(scope, id, props);
-    const { envName, networkStack, ecrStack, dataStack, langfuseStack, jaegerStack } = props;
+    const {
+      envName,
+      networkStack,
+      ecrStack,
+      dataStack,
+      langfuseStack,
+      jaegerStack,
+    } = props;
     const vpc = networkStack.vpc;
 
     // Image digests pin ECS task definitions to exact images (no :latest drift).
@@ -507,7 +514,9 @@ export class AppServicesStack extends cdk.Stack {
           : {}),
         // Jaeger OTLP HTTP endpoint — OpenTelemetry SDK reads OTEL_EXPORTER_OTLP_ENDPOINT.
         ...(jaegerStack
-          ? { OTEL_EXPORTER_OTLP_ENDPOINT: `http://${jaegerStack.jaegerOtlpUrl}:4318` }
+          ? {
+              OTEL_EXPORTER_OTLP_ENDPOINT: `http://${jaegerStack.jaegerOtlpUrl}:4318`,
+            }
           : {}),
       },
       healthCheck: {

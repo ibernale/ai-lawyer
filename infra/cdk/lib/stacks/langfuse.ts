@@ -207,18 +207,22 @@ export class LangfuseStack extends cdk.Stack {
     );
 
     // API keys — populated by operators post-deploy with real Langfuse public/secret keys.
-    const apiKeysSecret = new secretsmanager.Secret(this, "LangfuseApiKeysSecret", {
-      secretName: `/lex-agents/${envName}/langfuse/api-keys`,
-      description: `Langfuse ${envName} API keys (LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY) — populate post-deploy`,
-      generateSecretString: {
-        secretStringTemplate: JSON.stringify({
-          LANGFUSE_PUBLIC_KEY: "REPLACE_ME",
-          LANGFUSE_SECRET_KEY: "REPLACE_ME",
-        }),
-        generateStringKey: "_unused",
-        excludeCharacters: '"@/',
+    const apiKeysSecret = new secretsmanager.Secret(
+      this,
+      "LangfuseApiKeysSecret",
+      {
+        secretName: `/lex-agents/${envName}/langfuse/api-keys`,
+        description: `Langfuse ${envName} API keys (LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY) — populate post-deploy`,
+        generateSecretString: {
+          secretStringTemplate: JSON.stringify({
+            LANGFUSE_PUBLIC_KEY: "REPLACE_ME",
+            LANGFUSE_SECRET_KEY: "REPLACE_ME",
+          }),
+          generateStringKey: "_unused",
+          excludeCharacters: '"@/',
+        },
       },
-    });
+    );
     this.langfuseApiKeysSecret = apiKeysSecret;
 
     // ── ECS Cluster (dedicated for Langfuse) ─────────────────────────────────

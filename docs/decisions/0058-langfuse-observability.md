@@ -12,6 +12,7 @@ self-hosted Langfuse v3 cluster (ADR from Fase 9.4, `LangfuseStack` in
 application SDK.
 
 Relevant constraints:
+
 - All LLM calls go through `AnthropicClientWrapper.messages_create` in
   `packages/shared` — a single instrumentation point covers all agents.
 - Langfuse must degrade gracefully: if `LANGFUSE_SECRET_KEY` is not set (local
