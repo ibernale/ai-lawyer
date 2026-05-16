@@ -204,8 +204,11 @@ export class LangfuseStack extends cdk.Stack {
         generateSecretString: {
           passwordLength: 64,
           // Langfuse v3 validates ENCRYPTION_KEY against /^[0-9a-f]+$/i (AES-256 hex).
-          // Must be exactly 64 hex characters — no other characters allowed.
-          allowedCharacters: "0123456789abcdef",
+          // CDK SecretStringGenerator has no allowedCharacters; use exclusions instead.
+          // excludeUppercase + excludePunctuation + excludeCharacters('g-z') → 0-9 + a-f only.
+          excludeUppercase: true,
+          excludePunctuation: true,
+          excludeCharacters: "ghijklmnopqrstuvwxyz",
         },
       },
     );
