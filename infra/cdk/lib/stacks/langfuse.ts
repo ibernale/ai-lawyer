@@ -275,11 +275,7 @@ export class LangfuseStack extends cdk.Stack {
     const logGroup = new logs.LogGroup(this, "LangfuseLogGroup", {
       logGroupName: `/lex-agents/${envName}/langfuse`,
       retention: logs.RetentionDays.ONE_MONTH,
-      // RETAIN: keeps container logs after stack rollbacks for post-mortem.
-      // When the stack deploys successfully, flip back to DESTROY.
-      // Note: if a previous rollback left an orphaned log group, delete it
-      // manually before deploying: aws logs delete-log-group --log-group-name /lex-agents/dev/langfuse
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
     const logging = ecs.LogDriver.awsLogs({

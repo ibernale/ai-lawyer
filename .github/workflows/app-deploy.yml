@@ -230,6 +230,12 @@ jobs:
             --context imageDigestApi=${{ needs.build-and-push.outputs.api-image }} \
             --context imageDigestWeb=${{ needs.build-and-push.outputs.web-image }}
 
+      - name: Delete orphaned Langfuse log group (RETAIN remnant from prior rollbacks)
+        run: |
+          aws logs delete-log-group \
+            --log-group-name /lex-agents/dev/langfuse \
+            --region eu-central-1 || true
+
       - name: CDK deploy AppServicesStack
         working-directory: infra/cdk
         run: |
