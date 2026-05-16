@@ -381,7 +381,35 @@ def on_event(event, context):
     // Grant executionRole access to the composed DATABASE_URL secret
     dbUrlSecret.grantRead(executionRole);
 
-    langfuseTaskDef.addContainer("langfuse", {
+    // ── Aurora readiness init container ──────────────────────────────────────
+    // aurora-wait uses busybox nc (included in Alpine) to poll TCP port 5432
+    // until Aurora accepts connections, then exits 0. The langfuse container
+    // has a dependsOn:SUCCESS on this container so it will not start until
+    // Aurora is reachable. While aurora-wait is running the ECS task stays in
+    // RUNNING state — the Deployment Circuit Breaker only counts STOPPED tasks,
+    // so it cannot fire during the Aurora warm-up window.
+    const auroraWaitContainer = langfuseTaskDef.addContainer("aurora-wait", {
+      containerName: "aurora-wait",
+      // Alpine provides busybox nc for the TCP probe; uses ECR Public mirror to
+      // avoid Docker Hub rate limits and stay within the existing HTTPS egress rule.
+      image: ecs.ContainerImage.fromRegistry(
+        "public.ecr.aws/docker/library/alpine:3.20",
+      ),
+      command: [
+        "sh",
+        "-c",
+        "until nc -zw 2 \"$AURORA_HOST\" 5432; do echo 'aurora-wait: sleeping 3s'; sleep 3; done; echo 'aurora-wait: Aurora reachable'",
+      ],
+      environment: {
+        AURORA_HOST: langfuseAuroraCluster.clusterEndpoint.hostname,
+      },
+      essential: false,
+      logging,
+      cpu: 16,
+      memoryReservationMiB: 32,
+    });
+
+    const langfuseContainer = langfuseTaskDef.addContainer("langfuse", {
       containerName: "langfuse",
       // v2: Langfuse v3 requires ClickHouse + Redis + S3 which are not yet
       // provisioned in this stack. Pin to v2 (Postgres-only) for the MVP.
@@ -419,13 +447,20 @@ def on_event(event, context):
         ],
         interval: cdk.Duration.seconds(30),
         timeout: cdk.Duration.seconds(10),
-        // Aurora Serverless v2 with minCapacity=0 may need ~60s to resume from
-        // auto-pause. Langfuse also runs DB migrations on first start.
-        // 180s start period + 8 retries = ~420s total budget before circuit breaker.
-        retries: 8,
-        startPeriod: cdk.Duration.seconds(180),
+        // startPeriod covers Prisma migration time on a fresh DB (can be 3-5 min).
+        // aurora-wait guarantees Aurora is connectable before Langfuse starts,
+        // so this budget is purely for migrations + app boot, not Aurora warm-up.
+        // 10 retries × 30s = 300s extra after the start period.
+        retries: 10,
+        startPeriod: cdk.Duration.seconds(300),
       },
       readonlyRootFilesystem: false,
+    });
+
+    // Start langfuse only after aurora-wait confirms TCP connectivity to Aurora.
+    langfuseContainer.addContainerDependencies({
+      container: auroraWaitContainer,
+      condition: ecs.ContainerDependencyCondition.SUCCESS,
     });
 
     // X-Ray sidecar
@@ -552,7 +587,7 @@ def on_event(event, context):
       {
         id: "AwsSolutions-ECS2",
         reason:
-          "Langfuse image pulled from ghcr.io (not ECR). No ECR alternative exists for official Langfuse v3 image.",
+          "Langfuse image pulled from ghcr.io (not ECR private). aurora-wait uses ECR Public mirror (public.ecr.aws). No ECR private alternative for official Langfuse v2 image.",
       },
       {
         id: "AwsSolutions-EC23",
