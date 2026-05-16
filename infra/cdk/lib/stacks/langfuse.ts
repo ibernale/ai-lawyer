@@ -274,7 +274,11 @@ export class LangfuseStack extends cdk.Stack {
     const logGroup = new logs.LogGroup(this, "LangfuseLogGroup", {
       logGroupName: `/lex-agents/${envName}/langfuse`,
       retention: logs.RetentionDays.ONE_MONTH,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      // RETAIN: keeps container logs after stack rollbacks for post-mortem.
+      // When the stack deploys successfully, flip back to DESTROY.
+      // Note: if a previous rollback left an orphaned log group, delete it
+      // manually before deploying: aws logs delete-log-group --log-group-name /lex-agents/dev/langfuse
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
     const logging = ecs.LogDriver.awsLogs({
@@ -327,7 +331,12 @@ def on_event(event, context):
         user = quote(data['username'], safe='')
         pw   = quote(data['password'], safe='')
         db   = quote(props['DbName'], safe='')
-        url  = "postgresql://{}:{}@{}:{}/{}".format(
+        # Aurora PostgreSQL 16 defaults to rds.force_ssl=1 (mandatory SSL for
+        # PG14+). Add sslmode=require so Prisma uses SSL without cert
+        # verification (RDS cert is from AWS CA, not self-signed, but we do
+        # not bundle the CA in the container). Without this, Prisma exits with
+        # "SSL connection is required" on every startup attempt.
+        url  = "postgresql://{}:{}@{}:{}/{}?sslmode=require".format(
             user, pw, data['host'], data.get('port', 5432), db)
         try:
             arn = sm.create_secret(Name=name, SecretString=url)['ARN']
@@ -382,23 +391,27 @@ def on_event(event, context):
     dbUrlSecret.grantRead(executionRole);
 
     // ── Aurora readiness init container ──────────────────────────────────────
-    // aurora-wait uses busybox nc (included in Alpine) to poll TCP port 5432
-    // until Aurora accepts connections, then exits 0. The langfuse container
-    // has a dependsOn:SUCCESS on this container so it will not start until
-    // Aurora is reachable. While aurora-wait is running the ECS task stays in
-    // RUNNING state — the Deployment Circuit Breaker only counts STOPPED tasks,
-    // so it cannot fire during the Aurora warm-up window.
+    // aurora-wait uses pg_isready (libpq) to probe Aurora at the PostgreSQL
+    // protocol level. Unlike nc (TCP-only), pg_isready negotiates SSL and
+    // confirms the server is accepting queries before exiting 0. This matters
+    // because Aurora PostgreSQL 16 runs with rds.force_ssl=1: a TCP connection
+    // succeeds before the SSL handshake, so nc exits prematurely and Langfuse
+    // starts before Aurora is ready → Prisma exits with "SSL connection is
+    // required" → ECS crash-loop → circuit breaker.
+    //
+    // While aurora-wait is running the ECS task stays RUNNING (not STOPPED),
+    // so the Deployment Circuit Breaker cannot fire during Aurora warm-up.
     const auroraWaitContainer = langfuseTaskDef.addContainer("aurora-wait", {
       containerName: "aurora-wait",
-      // Alpine provides busybox nc for the TCP probe; uses ECR Public mirror to
-      // avoid Docker Hub rate limits and stay within the existing HTTPS egress rule.
+      // postgres:16-alpine ships pg_isready (libpq); ECR Public mirror avoids
+      // Docker Hub rate limits and is reachable via the existing HTTPS egress rule.
       image: ecs.ContainerImage.fromRegistry(
-        "public.ecr.aws/docker/library/alpine:3.20",
+        "public.ecr.aws/docker/library/postgres:16-alpine",
       ),
       command: [
         "sh",
         "-c",
-        "until nc -zw 2 \"$AURORA_HOST\" 5432; do echo 'aurora-wait: sleeping 3s'; sleep 3; done; echo 'aurora-wait: Aurora reachable'",
+        "until pg_isready -h \"$AURORA_HOST\" -p 5432 -q; do echo 'aurora-wait: not ready, sleeping 5s'; sleep 5; done; echo 'aurora-wait: PostgreSQL accepting connections'",
       ],
       environment: {
         AURORA_HOST: langfuseAuroraCluster.clusterEndpoint.hostname,
@@ -406,7 +419,7 @@ def on_event(event, context):
       essential: false,
       logging,
       cpu: 16,
-      memoryReservationMiB: 32,
+      memoryReservationMiB: 64,
     });
 
     const langfuseContainer = langfuseTaskDef.addContainer("langfuse", {
