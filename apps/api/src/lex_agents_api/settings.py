@@ -36,8 +36,8 @@ class Settings(BaseSettings):
     reranker_enabled: bool = False  # Voyage AI has no reranker; disabled until replaced
     reranker_model: str = "BAAI/bge-reranker-v2-m3"  # unused while reranker_enabled=False
 
-    # OpenTelemetry
-    otel_exporter_otlp_endpoint: str = "http://localhost:4317"
+    # OpenTelemetry — OTLP HTTP exporter (port 4318 for HTTP, vs 4317 for gRPC)
+    otel_exporter_otlp_endpoint: str = "http://localhost:4318"
     otel_service_name: str = "lex-agents-api"
 
     # Security
@@ -76,6 +76,13 @@ class Settings(BaseSettings):
     federation_role_arn_viewer: str = ""
     federation_role_arn_operator: str = ""
     federation_role_arn_admin: str = ""
+
+    # Langfuse LLM observability (Fase 11) — injected by ECS secrets from
+    # /lex-agents/{env}/langfuse/api-keys. Empty = Langfuse SDK disabled.
+    langfuse_public_key: str = ""
+    langfuse_secret_key: SecretStr = SecretStr("")
+    # Internal ALB DNS name for self-hosted Langfuse; SDK reads LANGFUSE_HOST.
+    langfuse_host: str = ""
 
     # Build metadata (injected by Dockerfile ARG → ENV)
     commit_sha: str = "unknown"

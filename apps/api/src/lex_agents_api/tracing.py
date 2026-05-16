@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -25,7 +25,9 @@ def configure_tracing(
             "service.version": service_version,
         }
     )
-    exporter = OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True)
+    # HTTP OTLP exporter — works through ALB without gRPC/HTTP2 complexity.
+    # Endpoint example: http://jaeger-alb:4318 (SDK appends /v1/traces automatically).
+    exporter = OTLPSpanExporter(endpoint=otlp_endpoint)
     provider = TracerProvider(resource=resource)
     provider.add_span_processor(BatchSpanProcessor(exporter))
     trace.set_tracer_provider(provider)

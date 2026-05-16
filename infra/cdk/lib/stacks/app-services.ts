@@ -34,6 +34,8 @@ import { NagSuppressions } from "cdk-nag";
 import { NetworkSpokeStack } from "./network-spoke";
 import { AppEcrStack } from "./app-ecr";
 import type { DataStack } from "./data";
+import type { LangfuseStack } from "./langfuse";
+import type { JaegerStack } from "./jaeger";
 
 export interface AppServicesStackProps extends cdk.StackProps {
   envName: string;
@@ -41,6 +43,10 @@ export interface AppServicesStackProps extends cdk.StackProps {
   ecrStack: AppEcrStack;
   /** DataStack — required from Fase 9.2 onwards. */
   dataStack: DataStack;
+  /** LangfuseStack — optional; when provided, injects Langfuse API keys into the API container. */
+  langfuseStack?: LangfuseStack;
+  /** JaegerStack — optional; when provided, injects OTEL_EXPORTER_OTLP_ENDPOINT and NEXT_PUBLIC_JAEGER_URL. */
+  jaegerStack?: JaegerStack;
 }
 
 export class AppServicesStack extends cdk.Stack {
@@ -49,7 +55,14 @@ export class AppServicesStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: AppServicesStackProps) {
     super(scope, id, props);
-    const { envName, networkStack, ecrStack, dataStack } = props;
+    const {
+      envName,
+      networkStack,
+      ecrStack,
+      dataStack,
+      langfuseStack,
+      jaegerStack,
+    } = props;
     const vpc = networkStack.vpc;
 
     // Image digests pin ECS task definitions to exact images (no :latest drift).
@@ -151,6 +164,7 @@ export class AppServicesStack extends cdk.Stack {
     // so CDK does not auto-grant ECR pull to the execution role.
     ecrStack.apiRepo.grantPull(executionRole);
     ecrStack.webRepo.grantPull(executionRole);
+    langfuseStack?.langfuseApiKeysSecret.grantRead(executionRole);
 
     // ── IAM task role (runtime permissions) ───────────────────────────────
     const taskRole = new iam.Role(this, "EcsTaskRole", {
@@ -461,6 +475,23 @@ export class AppServicesStack extends cdk.Stack {
           appSecret,
           "AUTH_USERS_JSON",
         ),
+        // Langfuse API keys — injected when LangfuseStack is deployed (Fase 11).
+        // Populate the secret post-deploy:
+        //   aws secretsmanager put-secret-value \
+        //     --secret-id /lex-agents/{env}/langfuse/api-keys \
+        //     --secret-string '{"LANGFUSE_PUBLIC_KEY":"pk-lf-...","LANGFUSE_SECRET_KEY":"sk-lf-..."}'
+        ...(langfuseStack
+          ? {
+              LANGFUSE_PUBLIC_KEY: ecs.Secret.fromSecretsManager(
+                langfuseStack.langfuseApiKeysSecret,
+                "LANGFUSE_PUBLIC_KEY",
+              ),
+              LANGFUSE_SECRET_KEY: ecs.Secret.fromSecretsManager(
+                langfuseStack.langfuseApiKeysSecret,
+                "LANGFUSE_SECRET_KEY",
+              ),
+            }
+          : {}),
       },
       environment: {
         QDRANT_URL: "http://qdrant.lex-agents.local:6333",
@@ -477,6 +508,16 @@ export class AppServicesStack extends cdk.Stack {
         // between NetworkSpokeStack and DataStack at synthesis time.
         DB_PORT: "5432",
         DB_NAME: "lex_agents",
+        // Langfuse internal ALB — SDK reads LANGFUSE_HOST automatically.
+        ...(langfuseStack
+          ? { LANGFUSE_HOST: `http://${langfuseStack.langfuseUrl}` }
+          : {}),
+        // Jaeger OTLP HTTP endpoint — OpenTelemetry SDK reads OTEL_EXPORTER_OTLP_ENDPOINT.
+        ...(jaegerStack
+          ? {
+              OTEL_EXPORTER_OTLP_ENDPOINT: `http://${jaegerStack.jaegerOtlpUrl}:4318`,
+            }
+          : {}),
       },
       healthCheck: {
         command: [
@@ -617,6 +658,14 @@ export class AppServicesStack extends cdk.Stack {
         // browser-side components use relative paths via Next.js rewrites instead)
         NEXT_PUBLIC_API_URL: `http://${this.alb.loadBalancerDnsName}`,
         NODE_ENV: "production",
+        // Langfuse iframe URL for the LLM traces admin panel (Fase 11).
+        ...(langfuseStack
+          ? { NEXT_PUBLIC_LANGFUSE_URL: `http://${langfuseStack.langfuseUrl}` }
+          : {}),
+        // Jaeger UI iframe URL for the infra traces admin panel (Fase 11).
+        ...(jaegerStack
+          ? { NEXT_PUBLIC_JAEGER_URL: `http://${jaegerStack.jaegerUiUrl}` }
+          : {}),
       },
       healthCheck: {
         // The Dockerfile CMD forces HOSTNAME=0.0.0.0 so Next.js listens on all

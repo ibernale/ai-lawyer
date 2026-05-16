@@ -18,6 +18,7 @@ import { DataStack } from "../lib/stacks/data";
 import { ObservabilityStack } from "../lib/stacks/observability";
 import { PipelinesStack } from "../lib/stacks/pipelines";
 import { LangfuseStack } from "../lib/stacks/langfuse";
+import { JaegerStack } from "../lib/stacks/jaeger";
 import { ComplianceStack } from "../lib/stacks/compliance";
 
 const app = new cdk.App();
@@ -84,12 +85,26 @@ const devData = new DataStack(app, "LexAgents-Dev-Data", {
   kmsStack: devKms,
 });
 
+const devLangfuse = new LangfuseStack(app, "LexAgents-Dev-Langfuse", {
+  env: devEnv,
+  envName: "dev",
+  networkStack: networkSpoke,
+});
+
+const devJaeger = new JaegerStack(app, "LexAgents-Dev-Jaeger", {
+  env: devEnv,
+  envName: "dev",
+  networkStack: networkSpoke,
+});
+
 const devApp = new AppServicesStack(app, "LexAgents-Dev-App", {
   env: devEnv,
   envName: "dev",
   networkStack: networkSpoke,
   ecrStack: devEcr,
   dataStack: devData,
+  langfuseStack: devLangfuse,
+  jaegerStack: devJaeger,
 });
 
 const devPipelines = new PipelinesStack(app, "LexAgents-Dev-Pipelines", {
@@ -98,12 +113,6 @@ const devPipelines = new PipelinesStack(app, "LexAgents-Dev-Pipelines", {
   networkStack: networkSpoke,
   dataStack: devData,
   appServicesStack: devApp,
-});
-
-new LangfuseStack(app, "LexAgents-Dev-Langfuse", {
-  env: devEnv,
-  envName: "dev",
-  networkStack: networkSpoke,
 });
 
 const devObservability = new ObservabilityStack(
