@@ -1,13 +1,14 @@
 /**
  * LangfuseStack — Fase 9.4
  *
- * Deploys Langfuse v3 LLM observability platform on ECS Fargate with a
+ * Deploys Langfuse v2 LLM observability platform on ECS Fargate with a
  * dedicated Aurora Serverless v2 PostgreSQL backend (ADR 0048).
+ * (Pinned to :2 — v3 requires ClickHouse/Redis/S3 not yet provisioned.)
  *
  * Architecture:
  *   - Internal ALB (not internet-facing) on port 443
- *   - ECS Fargate service: langfuse-web (ghcr.io/langfuse/langfuse:3)
- *   - Aurora Serverless v2 (PG 16), auto-pause in dev
+ *   - ECS Fargate service: langfuse-web (ghcr.io/langfuse/langfuse:2)
+ *   - Aurora Serverless v2 (PG 16), minCapacity 0.5 (never fully pauses)
  *   - Secrets Manager: nextauth-secret, salt, encryption-key
  *
  * TODO: langfuse-worker ECS service: add when event-processing queue exceeds
