@@ -19,11 +19,13 @@
  */
 
 import * as cdk from "aws-cdk-lib";
+import * as cr from "aws-cdk-lib/custom-resources";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as acm from "aws-cdk-lib/aws-certificatemanager";
 import * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as rds from "aws-cdk-lib/aws-rds";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
@@ -281,15 +283,84 @@ export class LangfuseStack extends cdk.Stack {
       },
     );
 
-    // Build DATABASE_URL from the aurora master secret
-    // The secret JSON contains: { username, password, host, port, dbname }
-    // Langfuse expects: postgresql://user:password@host:port/dbname
-    // We inject the secret ARN so Langfuse can read it at runtime via secretsmanager.
-    // For simplicity, we pass the DB connection components as individual secrets.
-
-    const dbHost = langfuseAuroraCluster.clusterEndpoint.hostname;
     // Import the auto-generated Aurora master secret for DB credentials injection
     const dbMasterSecret = langfuseAuroraCluster.secret!;
+
+    // ── DATABASE_URL assembly (Langfuse v3 / Prisma requires a full URL) ────────
+    // Prisma reads DATABASE_URL directly; individual DB_HOST/USER/PASS vars are
+    // not recognised. A Lambda-backed custom resource reads the Aurora master secret
+    // at deploy time and stores the composed URL in a dedicated Secrets Manager
+    // secret so ECS can inject it as DATABASE_URL.
+    const dbUrlFn = new lambda.Function(this, "LangfuseDbUrlFn", {
+      functionName: `langfuse-${envName}-db-url-assembler`,
+      runtime: lambda.Runtime.PYTHON_3_12,
+      handler: "index.on_event",
+      timeout: cdk.Duration.minutes(2),
+      code: lambda.Code.fromInline(`
+import boto3, json
+sm = boto3.client('secretsmanager')
+
+def on_event(event, context):
+    props = event['ResourceProperties']
+    req = event['RequestType']
+    name = props['UrlSecretName']
+
+    if req in ('Create', 'Update'):
+        data = json.loads(sm.get_secret_value(SecretId=props['AuroraSecretArn'])['SecretString'])
+        url = "postgresql://{}:{}@{}:{}/{}".format(
+            data['username'], data['password'],
+            data['host'], data.get('port', 5432), props['DbName'])
+        try:
+            arn = sm.create_secret(Name=name, SecretString=url)['ARN']
+        except sm.exceptions.ResourceExistsException:
+            sm.put_secret_value(SecretId=name, SecretString=url)
+            arn = sm.describe_secret(SecretId=name)['ARN']
+        return {'PhysicalResourceId': arn, 'Data': {'Arn': arn}}
+
+    phys_id = event.get('PhysicalResourceId', name)
+    if req == 'Delete':
+        try:
+            sm.delete_secret(SecretId=phys_id, ForceDeleteWithoutRecovery=True)
+        except Exception:
+            pass
+    return {'PhysicalResourceId': phys_id}
+`),
+    });
+    dbMasterSecret.grantRead(dbUrlFn);
+    dbUrlFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: [
+          "secretsmanager:CreateSecret",
+          "secretsmanager:PutSecretValue",
+          "secretsmanager:DeleteSecret",
+          "secretsmanager:DescribeSecret",
+        ],
+        resources: [
+          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:/lex-agents/${envName}/langfuse/database-url*`,
+        ],
+      }),
+    );
+
+    const dbUrlProvider = new cr.Provider(this, "LangfuseDbUrlProvider", {
+      onEventHandler: dbUrlFn,
+    });
+
+    const dbUrlCr = new cdk.CustomResource(this, "LangfuseDbUrlResource", {
+      serviceToken: dbUrlProvider.serviceToken,
+      properties: {
+        AuroraSecretArn: dbMasterSecret.secretArn,
+        UrlSecretName: `/lex-agents/${envName}/langfuse/database-url`,
+        DbName: "langfuse",
+      },
+    });
+
+    const dbUrlSecret = secretsmanager.Secret.fromSecretCompleteArn(
+      this,
+      "LangfuseDbUrlSecretRef",
+      dbUrlCr.getAttString("Arn"),
+    );
+    // Grant executionRole access to the composed DATABASE_URL secret
+    dbUrlSecret.grantRead(executionRole);
 
     langfuseTaskDef.addContainer("langfuse", {
       containerName: "langfuse",
@@ -299,20 +370,17 @@ export class LangfuseStack extends cdk.Stack {
       environment: {
         NODE_ENV: "production",
         LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "false",
-        DATABASE_HOST: dbHost,
-        DATABASE_PORT: "5432",
-        DATABASE_NAME: "langfuse",
-        NEXTAUTH_URL: `https://langfuse.${envName}.internal`,
+        // NEXTAUTH_URL must be the URL the browser uses to reach Langfuse.
+        // In dev, Langfuse is accessed via SSM port-forward; use localhost:3000
+        // as the canonical NEXTAUTH_URL (update if a real hostname is configured).
+        NEXTAUTH_URL: "http://localhost:3000",
       },
       secrets: {
-        DATABASE_USERNAME: ecs.Secret.fromSecretsManager(
-          dbMasterSecret,
-          "username",
-        ),
-        DATABASE_PASSWORD: ecs.Secret.fromSecretsManager(
-          dbMasterSecret,
-          "password",
-        ),
+        // Langfuse v3 uses Prisma which requires a full DATABASE_URL connection
+        // string. Individual DATABASE_HOST/USER/PASS vars are not recognised.
+        // The URL is assembled at deploy time by the LangfuseDbUrlFn custom
+        // resource and stored in Secrets Manager.
+        DATABASE_URL: ecs.Secret.fromSecretsManager(dbUrlSecret),
         NEXTAUTH_SECRET: ecs.Secret.fromSecretsManager(nextauthSecret),
         SALT: ecs.Secret.fromSecretsManager(saltSecret),
         ENCRYPTION_KEY: ecs.Secret.fromSecretsManager(encryptionKeySecret),
@@ -323,9 +391,12 @@ export class LangfuseStack extends cdk.Stack {
           "curl -f http://localhost:3000/api/public/health || exit 1",
         ],
         interval: cdk.Duration.seconds(30),
-        timeout: cdk.Duration.seconds(5),
-        retries: 5,
-        startPeriod: cdk.Duration.seconds(60),
+        timeout: cdk.Duration.seconds(10),
+        // Aurora Serverless v2 with minCapacity=0 may need ~60s to resume from
+        // auto-pause. Langfuse also runs DB migrations on first start.
+        // 180s start period + 8 retries = ~420s total budget before circuit breaker.
+        retries: 8,
+        startPeriod: cdk.Duration.seconds(180),
       },
       readonlyRootFilesystem: false,
     });
@@ -568,6 +639,27 @@ export class LangfuseStack extends cdk.Stack {
         id: "HIPAA.Security-ELBv2ACMCertificateRequired",
         reason:
           "Dev: no ACM cert; provide lexAgents:langfuseAcmCertArn for HTTPS.",
+      },
+      // Database URL assembler Lambda (LangfuseDbUrlFn + cr.Provider framework Lambda)
+      {
+        id: "AwsSolutions-L1",
+        reason:
+          "LangfuseDbUrlFn pinned to python3.12. cr.Provider framework Lambda runtime managed by CDK.",
+      },
+      {
+        id: "HIPAA.Security-LambdaInsideVPC",
+        reason:
+          "LangfuseDbUrlFn is a one-shot deploy-time custom resource; VPC placement not required for Secrets Manager API calls.",
+      },
+      {
+        id: "HIPAA.Security-LambdaConcurrency",
+        reason:
+          "LangfuseDbUrlFn runs only during CloudFormation deploy; reserved concurrency not needed.",
+      },
+      {
+        id: "HIPAA.Security-LambdaDLQ",
+        reason:
+          "LangfuseDbUrlFn is synchronous during CFn deploy; DLQ not applicable.",
       },
     ]);
 
