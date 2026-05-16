@@ -234,7 +234,7 @@ jobs:
         run: |
           aws logs delete-log-group \
             --log-group-name /lex-agents/dev/langfuse \
-            --region eu-central-1 || true
+            --region $AWS_REGION || true
 
       - name: CDK deploy AppServicesStack
         working-directory: infra/cdk
