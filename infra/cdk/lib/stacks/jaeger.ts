@@ -294,6 +294,46 @@ export class JaegerStack extends cdk.Stack {
         id: "HIPAA.Security-ECSTaskDefinitionUserForHostMode",
         reason: "Jaeger all-in-one runs as its default non-root user.",
       },
+      {
+        id: "HIPAA.Security-CloudWatchLogGroupEncrypted",
+        reason:
+          "Jaeger trace logs are internal observability data with no PII/PHI; KMS encryption not required in dev.",
+      },
+      {
+        id: "AwsSolutions-IAM4",
+        reason:
+          "AmazonECSTaskExecutionRolePolicy is the standard CDK-managed policy for ECS task execution; no custom policy needed.",
+      },
+      {
+        id: "HIPAA.Security-ALBHttpDropInvalidHeaderEnabled",
+        reason:
+          "Jaeger ALB is VPC-internal only; invalid header dropping is not required for internal tracing traffic.",
+      },
+      {
+        id: "HIPAA.Security-ELBDeletionProtectionEnabled",
+        reason:
+          "Dev environment internal ALB; deletion protection not required.",
+      },
+      {
+        id: "HIPAA.Security-ELBLoggingEnabled",
+        reason:
+          "Jaeger is VPC-internal only; ALB access logs add cost with no security benefit for an internal tracing backend.",
+      },
+      {
+        id: "HIPAA.Security-IAMNoInlinePolicy",
+        reason:
+          "Inline policies on ECS execution/task roles are CDK-generated minimal grants (CloudWatch Logs, ECR pull); no user-managed inline policies.",
+      },
+      {
+        id: "HIPAA.Security-ALBHttpToHttpsRedirection",
+        reason:
+          "Jaeger ALB is VPC-internal only and serves plain HTTP; HTTPS redirection is not applicable for an internal tracing endpoint.",
+      },
+      {
+        id: "HIPAA.Security-ELBv2ACMCertificateRequired",
+        reason:
+          "Jaeger ALB serves VPC-internal traffic only; TLS termination at the ALB is not required for an internal tracing backend.",
+      },
     ]);
 
     void jaegerService; // suppress CDK unused-construct lint
