@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   getSessions,
@@ -51,7 +51,7 @@ export default function UserSessionsPage() {
   const [revoking, setRevoking] = useState<string | null>(null);
   const [revokingAll, setRevokingAll] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     try {
       const data = await getSessions(username);
       setSessions(data);
@@ -59,11 +59,11 @@ export default function UserSessionsPage() {
     } catch {
       setError("No se pudieron cargar las sesiones.");
     }
-  }
+  }, [username]);
 
   useEffect(() => {
     void load();
-  }, [username]);
+  }, [load]);
 
   async function handleRevoke(sessionId: string) {
     setRevoking(sessionId);
