@@ -231,6 +231,7 @@ jobs:
             --context imageDigestWeb=${{ needs.build-and-push.outputs.web-image }}
 
       - name: CDK deploy AppServicesStack
+        id: cdk-deploy
         working-directory: infra/cdk
         run: |
           npx cdk deploy LexAgents-Dev-App \
@@ -239,8 +240,39 @@ jobs:
             --context imageDigestWeb=${{ needs.build-and-push.outputs.web-image }} \
             --outputs-file /tmp/cdk-outputs.json
 
+      - name: Diagnose Langfuse container failure
+        if: failure() && steps.cdk-deploy.outcome == 'failure'
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}
+        run: |
+          echo "=== CDK deploy failed — fetching Langfuse container logs for diagnosis ==="
+          LOG_GROUP="/lex-agents/dev/langfuse-web"
+          # Get the most recent log stream
+          STREAM=$(aws logs describe-log-streams \
+            --log-group-name "$LOG_GROUP" \
+            --order-by LastEventTime \
+            --descending \
+            --limit 1 \
+            --region "$AWS_REGION" \
+            --query 'logStreams[0].logStreamName' \
+            --output text 2>/dev/null || echo "NONE")
+          if [ "$STREAM" = "NONE" ] || [ -z "$STREAM" ]; then
+            echo "No log streams found in $LOG_GROUP (container may not have started at all)"
+          else
+            echo "=== Log stream: $STREAM ==="
+            aws logs get-log-events \
+              --log-group-name "$LOG_GROUP" \
+              --log-stream-name "$STREAM" \
+              --start-from-head \
+              --limit 200 \
+              --region "$AWS_REGION" \
+              --query 'events[*].[timestamp,message]' \
+              --output text 2>/dev/null || echo "Could not retrieve log events"
+          fi
+
       - name: Upload CDK outputs
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: cdk-outputs
           path: /tmp/cdk-outputs.json

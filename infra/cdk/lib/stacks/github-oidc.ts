@@ -121,6 +121,21 @@ export class GithubOidcStack extends cdk.Stack {
       }),
     );
 
+    // CloudWatch Logs read — lets CI fetch container logs for deploy diagnostics
+    // after a circuit-breaker failure without needing a human to log into AWS.
+    this.deployRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "CloudWatchLogsDiagnostics",
+        actions: [
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams",
+          "logs:GetLogEvents",
+          "logs:FilterLogEvents",
+        ],
+        resources: ["*"],
+      }),
+    );
+
     new cdk.CfnOutput(this, "DeployRoleArn", {
       value: this.deployRole.roleArn,
       exportName: `LexAgents-${envName}-GitHubDeployRoleArn`,

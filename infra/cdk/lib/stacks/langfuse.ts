@@ -292,10 +292,12 @@ export class LangfuseStack extends cdk.Stack {
       "LangfuseWebTaskDef",
       {
         family: `langfuse-web-${envName}`,
-        // 1 vCPU / 2 GiB: Langfuse self-hosting docs recommend ≥2 GiB;
-        // first-boot Prisma migrations spike memory above 1 GiB.
-        cpu: 1024,
-        memoryLimitMiB: 2048,
+        // 2 vCPU / 4 GiB: Langfuse self-hosting docs recommend ≥2 GiB;
+        // first-boot Prisma migrations on Aurora Serverless v2 have been
+        // observed to spike above 2 GiB, triggering OOM kills that look
+        // identical to an immediate crash in the circuit-breaker logs.
+        cpu: 2048,
+        memoryLimitMiB: 4096,
         executionRole,
         taskRole,
       },
@@ -309,19 +311,13 @@ export class LangfuseStack extends cdk.Stack {
     const dbMasterSecret = langfuseAuroraCluster.secret!;
 
     // ── Aurora readiness init container ──────────────────────────────────────
-    // aurora-wait uses pg_isready (libpq) to probe Aurora at the PostgreSQL
-    // protocol level. Unlike nc (TCP-only), pg_isready negotiates SSL and
-    // confirms the server is accepting queries before exiting 0. This matters
-    // because Aurora PostgreSQL 16 runs with rds.force_ssl=1: a TCP connection
-    // succeeds before the SSL handshake, so nc exits prematurely and Langfuse
-    // starts before Aurora is ready → Prisma exits with "SSL connection is
-    // required" → ECS crash-loop → circuit breaker.
-    //
-    // While aurora-wait is running the ECS task stays RUNNING (not STOPPED),
-    // so the Deployment Circuit Breaker cannot fire during Aurora warm-up.
+    // aurora-wait does a full authenticated psql connection (not just pg_isready)
+    // so it catches: Aurora still initialising, langfuse DB not yet created,
+    // RDS SSL handshake not ready, and wrong credentials.  Only when psql
+    // succeeds does the circuit-breaker-sensitive langfuse container start.
     const auroraWaitContainer = langfuseTaskDef.addContainer("aurora-wait", {
       containerName: "aurora-wait",
-      // postgres:16-alpine ships pg_isready (libpq); ECR Public mirror avoids
+      // postgres:16-alpine ships psql + pg_isready; ECR Public mirror avoids
       // Docker Hub rate limits and is reachable via the existing HTTPS egress rule.
       image: ecs.ContainerImage.fromRegistry(
         "public.ecr.aws/docker/library/postgres:16-alpine",
@@ -329,10 +325,19 @@ export class LangfuseStack extends cdk.Stack {
       command: [
         "sh",
         "-c",
-        "until pg_isready -h \"$AURORA_HOST\" -p 5432 -q; do echo 'aurora-wait: not ready, sleeping 5s'; sleep 5; done; echo 'aurora-wait: PostgreSQL accepting connections'",
+        // Full psql connection check — verifies SSL, authentication, and that
+        // the langfuse database exists (defaultDatabaseName creates it on Aurora
+        // init, but RDS can take a few extra seconds to commit it).
+        "until psql \"postgresql://$DB_USER:$DB_PASS@$AURORA_HOST:5432/langfuse?sslmode=require\" -c 'SELECT 1' -q 2>/dev/null; do " +
+          "echo 'aurora-wait: not ready, sleeping 5s'; sleep 5; " +
+          "done; echo 'aurora-wait: langfuse DB accepting authenticated connections'",
       ],
       environment: {
         AURORA_HOST: langfuseAuroraCluster.clusterEndpoint.hostname,
+      },
+      secrets: {
+        DB_USER: ecs.Secret.fromSecretsManager(dbMasterSecret, "username"),
+        DB_PASS: ecs.Secret.fromSecretsManager(dbMasterSecret, "password"),
       },
       essential: false,
       logging,
@@ -357,12 +362,25 @@ export class LangfuseStack extends cdk.Stack {
       // password is safe to interpolate directly without percent-encoding.
       entryPoint: ["sh", "-c"],
       command: [
-        "export DATABASE_URL=\"postgresql://$DB_USER:$DB_PASS@$DB_HOST:5432/langfuse?sslmode=require\" && " +
-          "export DIRECT_URL=\"$DATABASE_URL\" && " +
-          "exec node server.js",
+        // Assemble DATABASE_URL at runtime from the per-field secrets so no
+        // Lambda custom resource is needed (avoids ResourceInitializationError
+        // on CFn rollbacks that delete custom-resource secrets).
+        // find /app handles both standalone layouts:
+        //   /app/server.js          (Langfuse v2 standalone build)
+        //   /app/web/server.js      (monorepo-root standalone build)
+        "set -eu; " +
+          'export DATABASE_URL="postgresql://$DB_USER:$DB_PASS@$DB_HOST:5432/langfuse?sslmode=require"; ' +
+          'export DIRECT_URL="$DATABASE_URL"; ' +
+          "SERVER=$(find /app -name 'server.js' -maxdepth 3 2>/dev/null | head -1); " +
+          'echo "aurora-ok DB_HOST=$DB_HOST SERVER=${SERVER:-not-found}"; ' +
+          "exec node ${SERVER:-server.js}",
       ],
       environment: {
         NODE_ENV: "production",
+        // HOSTNAME=0.0.0.0 ensures Next.js standalone server listens on all
+        // interfaces (not just 127.0.0.1), making it reachable from the ALB.
+        HOSTNAME: "0.0.0.0",
+        PORT: "3000",
         LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "false",
         TELEMETRY_ENABLED: "false",
         NEXTAUTH_URL: "http://localhost:3000",
@@ -438,6 +456,9 @@ export class LangfuseStack extends cdk.Stack {
       securityGroup: sgLangfuseAlb,
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
     });
+    // Explicitly destroy ALB on stack deletion so rollbacks don't leave
+    // orphaned load balancers that block future CREATE attempts.
+    alb.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
 
     this.langfuseUrl = alb.loadBalancerDnsName;
 

@@ -197,7 +197,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_WORKLOADS_DEV_ACCOUNT_ID }}:role/github-deploy-dev
-          aws-region: eu-central-1
+          aws-region: eu-west-1
       - name: Write CDK context (real account IDs)
         run: |
           ACCT="${{ secrets.AWS_WORKLOADS_DEV_ACCOUNT_ID }}"
@@ -210,10 +210,10 @@ jobs:
               "network":      "$ACCT",
               "workloadsDev": "$ACCT"
             },
-            "availability-zones:account=${ACCT}:region=eu-central-1": [
-              "eu-central-1a",
-              "eu-central-1b",
-              "eu-central-1c"
+            "availability-zones:account=${ACCT}:region=eu-west-1": [
+              "eu-west-1a",
+              "eu-west-1b",
+              "eu-west-1c"
             ]
           }
           EOF
