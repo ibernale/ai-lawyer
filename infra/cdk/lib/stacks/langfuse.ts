@@ -127,7 +127,7 @@ export class LangfuseStack extends cdk.Stack {
         description: `Langfuse ${envName} Aurora subnet group`,
         vpc,
         vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
-        removalPolicy: cdk.RemovalPolicy.RETAIN,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
       },
     );
 
@@ -274,9 +274,7 @@ export class LangfuseStack extends cdk.Stack {
     const logGroup = new logs.LogGroup(this, "LangfuseLogGroup", {
       logGroupName: `/lex-agents/${envName}/langfuse`,
       retention: logs.RetentionDays.ONE_MONTH,
-      // RETAIN so container logs survive CloudFormation rollbacks and are
-      // available for post-mortem debugging.
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
     const logging = ecs.LogDriver.awsLogs({
