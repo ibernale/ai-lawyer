@@ -64,7 +64,7 @@ export class JaegerStack extends cdk.Stack {
     const sgJaegerAlb = new ec2.SecurityGroup(this, "SgJaegerAlb", {
       vpc,
       securityGroupName: `jaeger-${envName}-alb`,
-      description: "Jaeger internal ALB — VPC-only ingress",
+      description: "Jaeger internal ALB - VPC-only ingress",
       allowAllOutbound: false,
     });
     // ALB ingress: UI and OTLP HTTP from within the VPC
