@@ -138,9 +138,12 @@ export class LangfuseStack extends cdk.Stack {
         engine: rds.DatabaseClusterEngine.auroraPostgres({
           version: rds.AuroraPostgresEngineVersion.VER_16_4,
         }),
-        serverlessV2MinCapacity: 0,
+        // minCapacity: 0.5 (not 0) — prevents full auto-pause so Aurora is
+        // immediately reachable when ECS starts the Langfuse container.
+        // With minCapacity: 0, Prisma's migrate-on-startup exits ("Exiting...")
+        // before Aurora wakes up, triggering the ECS circuit breaker every time.
+        serverlessV2MinCapacity: 0.5,
         serverlessV2MaxCapacity: 4,
-        serverlessV2AutoPauseDuration: cdk.Duration.minutes(5), // dev auto-pause
         writer: rds.ClusterInstance.serverlessV2("writer", {
           publiclyAccessible: false,
         }),
