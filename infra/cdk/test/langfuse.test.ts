@@ -157,6 +157,59 @@ describe("LangfuseStack — ECS", () => {
     );
     expect(xrayContainer).toBeDefined();
   });
+
+  test("aurora-wait init container exists in task definition", () => {
+    const taskDefs = template.findResources("AWS::ECS::TaskDefinition");
+    const langfuseTaskDef = Object.values(taskDefs).find((td: any) =>
+      td.Properties.ContainerDefinitions?.some(
+        (c: any) => c.Image === "ghcr.io/langfuse/langfuse:2",
+      ),
+    );
+    expect(langfuseTaskDef).toBeDefined();
+    const containers = (langfuseTaskDef as any).Properties.ContainerDefinitions;
+    const waitContainer = containers.find((c: any) => c.Name === "aurora-wait");
+    expect(waitContainer).toBeDefined();
+    expect(waitContainer.Essential).toBe(false);
+    expect(waitContainer.Image).toContain("alpine");
+  });
+
+  test("langfuse container has DependsOn SUCCESS on aurora-wait", () => {
+    const taskDefs = template.findResources("AWS::ECS::TaskDefinition");
+    const langfuseTaskDef = Object.values(taskDefs).find((td: any) =>
+      td.Properties.ContainerDefinitions?.some(
+        (c: any) => c.Image === "ghcr.io/langfuse/langfuse:2",
+      ),
+    );
+    const containers = (langfuseTaskDef as any).Properties.ContainerDefinitions;
+    const langfuseContainer = containers.find(
+      (c: any) => c.Image === "ghcr.io/langfuse/langfuse:2",
+    );
+    expect(langfuseContainer?.DependsOn).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          ContainerName: "aurora-wait",
+          Condition: "SUCCESS",
+        }),
+      ]),
+    );
+  });
+
+  test("langfuse container health check has adequate start period and retries", () => {
+    const taskDefs = template.findResources("AWS::ECS::TaskDefinition");
+    const langfuseTaskDef = Object.values(taskDefs).find((td: any) =>
+      td.Properties.ContainerDefinitions?.some(
+        (c: any) => c.Image === "ghcr.io/langfuse/langfuse:2",
+      ),
+    );
+    const containers = (langfuseTaskDef as any).Properties.ContainerDefinitions;
+    const langfuseContainer = containers.find(
+      (c: any) => c.Image === "ghcr.io/langfuse/langfuse:2",
+    );
+    expect(langfuseContainer?.HealthCheck?.StartPeriod).toBeGreaterThanOrEqual(
+      300,
+    );
+    expect(langfuseContainer?.HealthCheck?.Retries).toBeGreaterThanOrEqual(10);
+  });
 });
 
 // ── ALB ───────────────────────────────────────────────────────────────────────
