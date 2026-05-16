@@ -124,12 +124,12 @@ describe("LangfuseStack — ECS", () => {
     });
   });
 
-  test("Task definition uses ghcr.io/langfuse/langfuse:3 image", () => {
+  test("Task definition uses ghcr.io/langfuse/langfuse:2 image", () => {
     const taskDefs = template.findResources("AWS::ECS::TaskDefinition");
     const langfuseTaskDef = Object.values(taskDefs).find((td: any) => {
       const containers = td.Properties.ContainerDefinitions ?? [];
       return containers.some(
-        (c: any) => c.Image === "ghcr.io/langfuse/langfuse:3",
+        (c: any) => c.Image === "ghcr.io/langfuse/langfuse:2",
       );
     });
     expect(langfuseTaskDef).toBeDefined();
@@ -146,7 +146,7 @@ describe("LangfuseStack — ECS", () => {
     const langfuseTaskDef = Object.values(taskDefs).find((td: any) => {
       const containers = td.Properties.ContainerDefinitions ?? [];
       return containers.some(
-        (c: any) => c.Image === "ghcr.io/langfuse/langfuse:3",
+        (c: any) => c.Image === "ghcr.io/langfuse/langfuse:2",
       );
     });
     expect(langfuseTaskDef).toBeDefined();
