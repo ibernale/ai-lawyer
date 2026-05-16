@@ -10,6 +10,9 @@
  *   - ECS Fargate service: langfuse-web (ghcr.io/langfuse/langfuse:2)
  *   - Aurora Serverless v2 (PG 16), minCapacity 0.5 (never fully pauses)
  *   - Secrets Manager: nextauth-secret, salt, encryption-key
+ *   - DATABASE_URL assembled at container startup from Aurora master secret
+ *     fields (no Lambda custom resource — eliminates ResourceInitializationError
+ *     caused by custom-resource secrets being deleted on CFn rollbacks)
  *
  * TODO: langfuse-worker ECS service: add when event-processing queue exceeds
  * web capacity (LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES=false means web handles
@@ -20,13 +23,11 @@
  */
 
 import * as cdk from "aws-cdk-lib";
-import * as cr from "aws-cdk-lib/custom-resources";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as acm from "aws-cdk-lib/aws-certificatemanager";
 import * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import * as iam from "aws-cdk-lib/aws-iam";
-import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as rds from "aws-cdk-lib/aws-rds";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
@@ -262,8 +263,8 @@ export class LangfuseStack extends cdk.Stack {
       assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
     });
 
-    // Grant secret read to execution role only — ECS injects secrets at task startup.
-    // The task role (runtime identity) does not need access to bootstrap secrets.
+    // Execution role needs all secrets it will inject at task startup.
+    // Task role gets Aurora master secret so Prisma can re-read creds at runtime.
     [nextauthSecret, saltSecret, encryptionKeySecret].forEach((s) => {
       s.grantRead(executionRole);
     });
@@ -301,94 +302,12 @@ export class LangfuseStack extends cdk.Stack {
       },
     );
 
-    // Import the auto-generated Aurora master secret for DB credentials injection
+    // Aurora master secret — contains username, password, host, port, dbname.
+    // Injected into the container as individual fields (DB_USER, DB_PASS) so the
+    // shell entrypoint wrapper can assemble DATABASE_URL at runtime without a
+    // Lambda custom resource. Aurora password excludeCharacters covers all
+    // URL-special chars so no percent-encoding is needed in the shell assembly.
     const dbMasterSecret = langfuseAuroraCluster.secret!;
-
-    // ── DATABASE_URL assembly (Langfuse v3 / Prisma requires a full URL) ────────
-    // Prisma reads DATABASE_URL directly; individual DB_HOST/USER/PASS vars are
-    // not recognised. A Lambda-backed custom resource reads the Aurora master secret
-    // at deploy time and stores the composed URL in a dedicated Secrets Manager
-    // secret so ECS can inject it as DATABASE_URL.
-    const dbUrlFn = new lambda.Function(this, "LangfuseDbUrlFn", {
-      functionName: `langfuse-${envName}-db-url-assembler`,
-      runtime: lambda.Runtime.PYTHON_3_12,
-      handler: "index.on_event",
-      timeout: cdk.Duration.minutes(2),
-      code: lambda.Code.fromInline(`
-import boto3, json
-from urllib.parse import quote
-sm = boto3.client('secretsmanager')
-
-def on_event(event, context):
-    props = event['ResourceProperties']
-    req = event['RequestType']
-    name = props['UrlSecretName']
-
-    if req in ('Create', 'Update'):
-        data = json.loads(sm.get_secret_value(SecretId=props['AuroraSecretArn'])['SecretString'])
-        # Percent-encode user/password so URL-special chars (@ / : ? # etc.)
-        # in the Secrets Manager-generated password do not corrupt the URL.
-        user = quote(data['username'], safe='')
-        pw   = quote(data['password'], safe='')
-        db   = quote(props['DbName'], safe='')
-        # Aurora PostgreSQL 16 defaults to rds.force_ssl=1 (mandatory SSL for
-        # PG14+). Add sslmode=require so Prisma uses SSL without cert
-        # verification (RDS cert is from AWS CA, not self-signed, but we do
-        # not bundle the CA in the container). Without this, Prisma exits with
-        # "SSL connection is required" on every startup attempt.
-        url  = "postgresql://{}:{}@{}:{}/{}?sslmode=require".format(
-            user, pw, data['host'], data.get('port', 5432), db)
-        try:
-            arn = sm.create_secret(Name=name, SecretString=url)['ARN']
-        except sm.exceptions.ResourceExistsException:
-            sm.put_secret_value(SecretId=name, SecretString=url)
-            arn = sm.describe_secret(SecretId=name)['ARN']
-        return {'PhysicalResourceId': arn, 'Data': {'Arn': arn}}
-
-    phys_id = event.get('PhysicalResourceId', name)
-    if req == 'Delete':
-        try:
-            sm.delete_secret(SecretId=phys_id, ForceDeleteWithoutRecovery=True)
-        except Exception:
-            pass
-    return {'PhysicalResourceId': phys_id}
-`),
-    });
-    dbMasterSecret.grantRead(dbUrlFn);
-    dbUrlFn.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          "secretsmanager:CreateSecret",
-          "secretsmanager:PutSecretValue",
-          "secretsmanager:DeleteSecret",
-          "secretsmanager:DescribeSecret",
-        ],
-        resources: [
-          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:/lex-agents/${envName}/langfuse/database-url*`,
-        ],
-      }),
-    );
-
-    const dbUrlProvider = new cr.Provider(this, "LangfuseDbUrlProvider", {
-      onEventHandler: dbUrlFn,
-    });
-
-    const dbUrlCr = new cdk.CustomResource(this, "LangfuseDbUrlResource", {
-      serviceToken: dbUrlProvider.serviceToken,
-      properties: {
-        AuroraSecretArn: dbMasterSecret.secretArn,
-        UrlSecretName: `/lex-agents/${envName}/langfuse/database-url`,
-        DbName: "langfuse",
-      },
-    });
-
-    const dbUrlSecret = secretsmanager.Secret.fromSecretCompleteArn(
-      this,
-      "LangfuseDbUrlSecretRef",
-      dbUrlCr.getAttString("Arn"),
-    );
-    // Grant executionRole access to the composed DATABASE_URL secret
-    dbUrlSecret.grantRead(executionRole);
 
     // ── Aurora readiness init container ──────────────────────────────────────
     // aurora-wait uses pg_isready (libpq) to probe Aurora at the PostgreSQL
@@ -430,25 +349,32 @@ def on_event(event, context):
       image: ecs.ContainerImage.fromRegistry("ghcr.io/langfuse/langfuse:2"),
       logging,
       portMappings: [{ containerPort: 3000 }],
+      // Shell wrapper assembles DATABASE_URL at container startup from the
+      // DB_USER / DB_PASS / DB_HOST env vars injected by ECS secrets. This
+      // eliminates the Lambda custom resource that previously assembled the URL
+      // at deploy time — a pattern that caused ResourceInitializationError when
+      // the custom resource secret was deleted during CFn rollbacks.
+      // Aurora password excludeCharacters strips all URL-special chars so the
+      // password is safe to interpolate directly without percent-encoding.
+      entryPoint: ["sh", "-c"],
+      command: [
+        "export DATABASE_URL=\"postgresql://$DB_USER:$DB_PASS@$DB_HOST:5432/langfuse?sslmode=require\" && " +
+          "export DIRECT_URL=\"$DATABASE_URL\" && " +
+          "exec node server.js",
+      ],
       environment: {
         NODE_ENV: "production",
         LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "false",
-        // Disable phone-home telemetry in regulated environments.
         TELEMETRY_ENABLED: "false",
-        // NEXTAUTH_URL must be the URL the browser uses to reach Langfuse.
-        // In dev, Langfuse is accessed via SSM port-forward; use localhost:3000
-        // as the canonical NEXTAUTH_URL (update if a real hostname is configured).
         NEXTAUTH_URL: "http://localhost:3000",
+        // DB_HOST resolved by CloudFormation from the Aurora cluster endpoint.
+        DB_HOST: langfuseAuroraCluster.clusterEndpoint.hostname,
       },
       secrets: {
-        // Langfuse v2 uses Prisma which requires a full DATABASE_URL connection
-        // string. Individual DATABASE_HOST/USER/PASS vars are not recognised.
-        // The URL is assembled at deploy time by the LangfuseDbUrlFn custom
-        // resource and stored in Secrets Manager.
-        DATABASE_URL: ecs.Secret.fromSecretsManager(dbUrlSecret),
-        // DIRECT_URL: used by Prisma for migrations (bypasses any connection
-        // pooler). Same value as DATABASE_URL since Aurora is directly reachable.
-        DIRECT_URL: ecs.Secret.fromSecretsManager(dbUrlSecret),
+        // Inject individual fields from the Aurora master secret JSON so the
+        // shell wrapper can assemble DATABASE_URL without a custom resource.
+        DB_USER: ecs.Secret.fromSecretsManager(dbMasterSecret, "username"),
+        DB_PASS: ecs.Secret.fromSecretsManager(dbMasterSecret, "password"),
         NEXTAUTH_SECRET: ecs.Secret.fromSecretsManager(nextauthSecret),
         SALT: ecs.Secret.fromSecretsManager(saltSecret),
         ENCRYPTION_KEY: ecs.Secret.fromSecretsManager(encryptionKeySecret),
@@ -714,27 +640,6 @@ def on_event(event, context):
         id: "HIPAA.Security-ELBv2ACMCertificateRequired",
         reason:
           "Dev: no ACM cert; provide lexAgents:langfuseAcmCertArn for HTTPS.",
-      },
-      // Database URL assembler Lambda (LangfuseDbUrlFn + cr.Provider framework Lambda)
-      {
-        id: "AwsSolutions-L1",
-        reason:
-          "LangfuseDbUrlFn pinned to python3.12. cr.Provider framework Lambda runtime managed by CDK.",
-      },
-      {
-        id: "HIPAA.Security-LambdaInsideVPC",
-        reason:
-          "LangfuseDbUrlFn is a one-shot deploy-time custom resource; VPC placement not required for Secrets Manager API calls.",
-      },
-      {
-        id: "HIPAA.Security-LambdaConcurrency",
-        reason:
-          "LangfuseDbUrlFn runs only during CloudFormation deploy; reserved concurrency not needed.",
-      },
-      {
-        id: "HIPAA.Security-LambdaDLQ",
-        reason:
-          "LangfuseDbUrlFn is synchronous during CFn deploy; DLQ not applicable.",
       },
     ]);
 
