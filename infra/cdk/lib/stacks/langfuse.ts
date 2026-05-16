@@ -152,6 +152,9 @@ export class LangfuseStack extends cdk.Stack {
         // AWS managed key — no KMS stack cross-dep
         credentials: rds.Credentials.fromGeneratedSecret("langfuse", {
           secretName: `/lex-agents/${envName}/langfuse/db-master`,
+          // Exclude URL-special chars so the password is safe to embed in a
+          // postgresql:// URL without percent-encoding causing parse errors.
+          excludeCharacters: " %+~`#$&*()|[]{}:;<>?!'/@\"\\=",
         }),
         defaultDatabaseName: "langfuse",
         iamAuthentication: false, // Langfuse uses password auth
@@ -267,7 +270,9 @@ export class LangfuseStack extends cdk.Stack {
     const logGroup = new logs.LogGroup(this, "LangfuseLogGroup", {
       logGroupName: `/lex-agents/${envName}/langfuse`,
       retention: logs.RetentionDays.ONE_MONTH,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      // RETAIN so container logs survive CloudFormation rollbacks and are
+      // available for post-mortem debugging.
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
     const logging = ecs.LogDriver.awsLogs({
@@ -281,8 +286,10 @@ export class LangfuseStack extends cdk.Stack {
       "LangfuseWebTaskDef",
       {
         family: `langfuse-web-${envName}`,
-        cpu: 512,
-        memoryLimitMiB: 1024,
+        // 1 vCPU / 2 GiB: Langfuse self-hosting docs recommend ≥2 GiB;
+        // first-boot Prisma migrations spike memory above 1 GiB.
+        cpu: 1024,
+        memoryLimitMiB: 2048,
         executionRole,
         taskRole,
       },
@@ -303,6 +310,7 @@ export class LangfuseStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(2),
       code: lambda.Code.fromInline(`
 import boto3, json
+from urllib.parse import quote
 sm = boto3.client('secretsmanager')
 
 def on_event(event, context):
@@ -312,9 +320,13 @@ def on_event(event, context):
 
     if req in ('Create', 'Update'):
         data = json.loads(sm.get_secret_value(SecretId=props['AuroraSecretArn'])['SecretString'])
-        url = "postgresql://{}:{}@{}:{}/{}".format(
-            data['username'], data['password'],
-            data['host'], data.get('port', 5432), props['DbName'])
+        # Percent-encode user/password so URL-special chars (@ / : ? # etc.)
+        # in the Secrets Manager-generated password do not corrupt the URL.
+        user = quote(data['username'], safe='')
+        pw   = quote(data['password'], safe='')
+        db   = quote(props['DbName'], safe='')
+        url  = "postgresql://{}:{}@{}:{}/{}".format(
+            user, pw, data['host'], data.get('port', 5432), db)
         try:
             arn = sm.create_secret(Name=name, SecretString=url)['ARN']
         except sm.exceptions.ResourceExistsException:
@@ -369,23 +381,31 @@ def on_event(event, context):
 
     langfuseTaskDef.addContainer("langfuse", {
       containerName: "langfuse",
-      image: ecs.ContainerImage.fromRegistry("ghcr.io/langfuse/langfuse:3"),
+      // v2: Langfuse v3 requires ClickHouse + Redis + S3 which are not yet
+      // provisioned in this stack. Pin to v2 (Postgres-only) for the MVP.
+      // Upgrade to v3 once those dependencies are added.
+      image: ecs.ContainerImage.fromRegistry("ghcr.io/langfuse/langfuse:2"),
       logging,
       portMappings: [{ containerPort: 3000 }],
       environment: {
         NODE_ENV: "production",
         LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "false",
+        // Disable phone-home telemetry in regulated environments.
+        TELEMETRY_ENABLED: "false",
         // NEXTAUTH_URL must be the URL the browser uses to reach Langfuse.
         // In dev, Langfuse is accessed via SSM port-forward; use localhost:3000
         // as the canonical NEXTAUTH_URL (update if a real hostname is configured).
         NEXTAUTH_URL: "http://localhost:3000",
       },
       secrets: {
-        // Langfuse v3 uses Prisma which requires a full DATABASE_URL connection
+        // Langfuse v2 uses Prisma which requires a full DATABASE_URL connection
         // string. Individual DATABASE_HOST/USER/PASS vars are not recognised.
         // The URL is assembled at deploy time by the LangfuseDbUrlFn custom
         // resource and stored in Secrets Manager.
         DATABASE_URL: ecs.Secret.fromSecretsManager(dbUrlSecret),
+        // DIRECT_URL: used by Prisma for migrations (bypasses any connection
+        // pooler). Same value as DATABASE_URL since Aurora is directly reachable.
+        DIRECT_URL: ecs.Secret.fromSecretsManager(dbUrlSecret),
         NEXTAUTH_SECRET: ecs.Secret.fromSecretsManager(nextauthSecret),
         SALT: ecs.Secret.fromSecretsManager(saltSecret),
         ENCRYPTION_KEY: ecs.Secret.fromSecretsManager(encryptionKeySecret),
