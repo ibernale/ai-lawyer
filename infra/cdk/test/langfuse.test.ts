@@ -167,9 +167,7 @@ describe("LangfuseStack — ECS", () => {
     );
     expect(langfuseTaskDef).toBeDefined();
     const containers = (langfuseTaskDef as any).Properties.ContainerDefinitions;
-    const waitContainer = containers.find(
-      (c: any) => c.Name === "aurora-wait",
-    );
+    const waitContainer = containers.find((c: any) => c.Name === "aurora-wait");
     expect(waitContainer).toBeDefined();
     expect(waitContainer.Essential).toBe(false);
     expect(waitContainer.Image).toContain("alpine");
