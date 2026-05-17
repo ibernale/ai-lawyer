@@ -44,7 +44,11 @@ export class GithubOidcStack extends cdk.Stack {
           },
         },
       ),
-      maxSessionDuration: cdk.Duration.hours(1),
+      // 4 hours: CDK deploys can exceed 1 hour when ECS service stabilisation
+      // is slow (Langfuse Prisma migrations on cold Aurora + circuit-breaker
+      // retries can push past 60 min).  AWS allows up to 12h; 4h is enough
+      // for the worst observed deploy time with margin.
+      maxSessionDuration: cdk.Duration.hours(4),
     });
 
     // Scoped permissions: CloudFormation + CDK bootstrap + ECR (Fase 9.2 prep)

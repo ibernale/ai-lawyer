@@ -271,52 +271,64 @@ jobs:
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
         run: |
-          echo "=== CDK deploy failed — diagnosing Langfuse ECS tasks ==="
+          set +e
+          echo "=== CDK deploy failed — diagnosing Langfuse ECS service ==="
 
-          # 1. ECS stopped tasks (available while stack is in CREATE_FAILED)
-          echo "--- ECS stopped tasks in langfuse-dev cluster ---"
-          TASK_ARNS=$(aws ecs list-tasks \
+          # 1. ECS service events — shows deployment-level issues (image pull,
+          # network, secrets injection) without needing tasks to reach STOPPED.
+          echo "--- ECS service events (langfuse-web-dev) ---"
+          aws ecs describe-services \
             --cluster langfuse-dev \
-            --desired-status STOPPED \
+            --services langfuse-web-dev \
             --region "$AWS_REGION" \
-            --query 'taskArns' \
-            --output text 2>/dev/null || echo "")
-          if [ -z "$TASK_ARNS" ] || [ "$TASK_ARNS" = "None" ]; then
-            echo "No stopped tasks found in langfuse-dev cluster (cluster may not exist yet)"
-          else
-            echo "Stopped tasks: $TASK_ARNS"
-            aws ecs describe-tasks \
-              --cluster langfuse-dev \
-              --tasks $TASK_ARNS \
-              --region "$AWS_REGION" \
-              --query 'tasks[*].{taskArn:taskArn,lastStatus:lastStatus,stoppedReason:stoppedReason,containers:containers[*].{name:name,exitCode:exitCode,reason:reason}}' \
-              --output json 2>/dev/null || echo "Could not describe tasks"
-          fi
+            --query 'services[0].events[0:20].{at:createdAt,msg:message}' \
+            --output table
 
-          # 2. CloudWatch container logs (intact because --rollback=false left resources alive)
+          # 2. ALL tasks (any state), not just STOPPED.  Useful when tasks are
+          # stuck in PROVISIONING/PENDING and have not yet stopped.
+          echo "--- ECS tasks in langfuse-dev (all states) ---"
+          for STATUS in RUNNING STOPPED; do
+            TASK_ARNS=$(aws ecs list-tasks \
+              --cluster langfuse-dev \
+              --desired-status "$STATUS" \
+              --region "$AWS_REGION" \
+              --query 'taskArns' \
+              --output text)
+            if [ -n "$TASK_ARNS" ] && [ "$TASK_ARNS" != "None" ]; then
+              echo "[$STATUS] tasks: $TASK_ARNS"
+              aws ecs describe-tasks \
+                --cluster langfuse-dev \
+                --tasks $TASK_ARNS \
+                --region "$AWS_REGION" \
+                --query 'tasks[*].{lastStatus:lastStatus,healthStatus:healthStatus,stoppedReason:stoppedReason,containers:containers[*].{name:name,lastStatus:lastStatus,exitCode:exitCode,reason:reason,healthStatus:healthStatus}}' \
+                --output json
+            else
+              echo "[$STATUS] no tasks"
+            fi
+          done
+
+          # 3. CloudWatch container logs (intact because --rollback=false)
           echo "--- CloudWatch logs: /lex-agents/dev/langfuse-web ---"
           LOG_GROUP="/lex-agents/dev/langfuse-web"
-          STREAM=$(aws logs describe-log-streams \
+          aws logs describe-log-streams \
             --log-group-name "$LOG_GROUP" \
             --order-by LastEventTime \
             --descending \
-            --limit 1 \
+            --limit 5 \
             --region "$AWS_REGION" \
-            --query 'logStreams[0].logStreamName' \
-            --output text 2>/dev/null || echo "NONE")
-          if [ "$STREAM" = "NONE" ] || [ -z "$STREAM" ]; then
-            echo "No log streams found in $LOG_GROUP — containers did not start"
-          else
-            echo "Log stream: $STREAM"
-            aws logs get-log-events \
-              --log-group-name "$LOG_GROUP" \
-              --log-stream-name "$STREAM" \
-              --start-from-head \
-              --limit 300 \
-              --region "$AWS_REGION" \
-              --query 'events[*].[timestamp,message]' \
-              --output text 2>/dev/null || echo "Could not retrieve log events"
-          fi
+            --query 'logStreams[*].logStreamName' \
+            --output text | tr '\t' '\n' | while read STREAM; do
+              [ -z "$STREAM" ] && continue
+              echo "=== stream: $STREAM ==="
+              aws logs get-log-events \
+                --log-group-name "$LOG_GROUP" \
+                --log-stream-name "$STREAM" \
+                --start-from-head \
+                --limit 200 \
+                --region "$AWS_REGION" \
+                --query 'events[*].[timestamp,message]' \
+                --output text
+            done
 
       - name: Upload CDK outputs
         uses: actions/upload-artifact@v4

@@ -68,22 +68,16 @@ export class LangfuseStack extends cdk.Stack {
       vpc,
       securityGroupName: `langfuse-${envName}-ecs`,
       description: "Langfuse ECS tasks",
-      allowAllOutbound: false,
+      // allowAllOutbound: true matches the working api/web/qdrant pattern in
+      // AppServicesStack.  Restricting egress to 443+5432 *should* be enough
+      // in theory, but Fargate platform v1.4 makes many implicit calls (ECR
+      // pull, SM secrets injection, CW logs, ECS agent telemetry) and any
+      // single egress rule gap manifests as silent task-startup failures with
+      // no logs.  This is the variable we control to remove that risk.
+      allowAllOutbound: true,
     });
-    // ECS → Aurora
-    sgLangfuseEcs.addEgressRule(
-      sgLangfuseAurora,
-      ec2.Port.tcp(5432),
-      "PostgreSQL to Langfuse Aurora",
-    );
-    // ECS → internet (HTTPS for container registry etc.)
-    sgLangfuseEcs.addEgressRule(
-      ec2.Peer.anyIpv4(),
-      ec2.Port.tcp(443),
-      "HTTPS outbound",
-    );
-
-    // Aurora ingress from ECS
+    // Aurora ingress from ECS (required even with allowAllOutbound:true on
+    // sgLangfuseEcs — Aurora's SG must explicitly permit inbound :5432)
     sgLangfuseAurora.addIngressRule(
       sgLangfuseEcs,
       ec2.Port.tcp(5432),
@@ -397,16 +391,19 @@ export class LangfuseStack extends cdk.Stack {
         ENCRYPTION_KEY: ecs.Secret.fromSecretsManager(encryptionKeySecret),
       },
       healthCheck: {
+        // TCP-based check via bash /dev/tcp — works without wget or curl
+        // (same pattern proven on the qdrant container in AppServicesStack).
+        // ALB target-group health check still hits /api/public/health for
+        // proper readiness; the container health check only needs to confirm
+        // the process is listening on :3000.
         command: [
           "CMD-SHELL",
-          "wget -qO- http://localhost:3000/api/public/health || exit 1",
+          "node -e \"require('net').connect(3000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))\"",
         ],
         interval: cdk.Duration.seconds(30),
         timeout: cdk.Duration.seconds(10),
-        // startPeriod covers Prisma migration time on a fresh DB (can be 3-5 min).
-        // aurora-wait guarantees Aurora is connectable before Langfuse starts,
-        // so this budget is purely for migrations + app boot, not Aurora warm-up.
-        // 10 retries × 30s = 300s extra after the start period.
+        // startPeriod covers Prisma migration on a fresh DB (3-5 min).
+        // aurora-wait guarantees Aurora is reachable before Langfuse starts.
         retries: 10,
         startPeriod: cdk.Duration.seconds(300),
       },
