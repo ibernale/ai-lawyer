@@ -43,6 +43,11 @@ export function middleware(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  // CSP must also be on the request headers so Next.js detects it during SSR
+  // and automatically injects the nonce into <script> tags it generates.
+  // Without this, strict-dynamic + nonce blocks every Next.js bundle and the
+  // page renders blank under <main> (only the layout shell shows up).
+  requestHeaders.set("Content-Security-Policy", csp);
 
   const response = NextResponse.next({
     request: { headers: requestHeaders },
