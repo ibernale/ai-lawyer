@@ -9,7 +9,6 @@ import {
 } from "@/lib/api";
 import type { UploadResponse, AnalysisResponse, AnalysisMode } from "@/lib/api";
 import { ErrorBanner } from "@/components/ui/error-banner";
-import { LegalDisclaimer } from "@/components/legal-disclaimer";
 
 const ANALYSIS_MODES: { value: AnalysisMode; label: string; desc: string }[] = [
   {
@@ -373,7 +372,6 @@ export default function DocumentosPage() {
         )}
       </main>
 
-      <LegalDisclaimer />
     </div>
   );
 }

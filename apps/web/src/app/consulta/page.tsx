@@ -2,7 +2,6 @@
 
 import { Suspense, useCallback, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { ResponseView } from "@/components/ResponseView";
 import { StreamProgressBar } from "@/components/StreamProgressBar";
 import { ErrorBanner } from "@/components/ui/error-banner";
@@ -303,7 +302,6 @@ function ConsultaInner() {
         )}
       </main>
 
-      <LegalDisclaimer />
     </div>
   );
 }

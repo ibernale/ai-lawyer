@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { listConsultations } from "@/lib/api";
 import type { ConsultationSummary } from "@/lib/api";
-import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { ErrorBanner } from "@/components/ui/error-banner";
 
 const STATUS_OPTIONS = [
@@ -334,7 +333,6 @@ function HistoricoInner() {
         )}
       </main>
 
-      <LegalDisclaimer />
     </div>
   );
 }
