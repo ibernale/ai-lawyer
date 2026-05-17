@@ -101,8 +101,8 @@ class ConsultationStore:
             for stmt in (_MIGRATE_ADD_DEPTH, _MIGRATE_ADD_BRANCH):
                 try:
                     await db.execute(stmt)
-                except Exception:
-                    pass  # column already exists
+                except Exception as exc:
+                    logger.debug("migration_column_already_exists", stmt=stmt, exc=str(exc))
             await db.commit()
         logger.info("consultation_store_initialized", db_path=self._db_path)
 
@@ -232,7 +232,7 @@ class ConsultationStore:
 
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
         params += [limit, offset]
-        sql = f"SELECT * FROM consultations {where} ORDER BY created_at DESC LIMIT ${idx} OFFSET ${idx + 1}"
+        sql = f"SELECT * FROM consultations {where} ORDER BY created_at DESC LIMIT ${idx} OFFSET ${idx + 1}"  # noqa: S608
         async with pg_conn() as conn:
             rows = await conn.fetch(sql, *params)
         return [_pg_row_to_record(r) for r in rows]
@@ -319,7 +319,7 @@ class ConsultationStore:
             params.append(until)
 
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
-        sql = f"SELECT * FROM consultations {where} ORDER BY created_at DESC LIMIT ? OFFSET ?"
+        sql = f"SELECT * FROM consultations {where} ORDER BY created_at DESC LIMIT ? OFFSET ?"  # noqa: S608
         params += [limit, offset]
 
         async with aiosqlite.connect(self._db_path) as db:

@@ -8,10 +8,25 @@ import type { ConsultationSummary } from "@/lib/api";
 import { ErrorBanner } from "@/components/ui/error-banner";
 
 const STATUS_OPTIONS = [
-  { value: "green", label: "Verificado", bg: "bg-green-100", text: "text-green-700" },
-  { value: "amber", label: "Parcial", bg: "bg-amber-100", text: "text-amber-700" },
+  {
+    value: "green",
+    label: "Verificado",
+    bg: "bg-green-100",
+    text: "text-green-700",
+  },
+  {
+    value: "amber",
+    label: "Parcial",
+    bg: "bg-amber-100",
+    text: "text-amber-700",
+  },
   { value: "red", label: "Errores", bg: "bg-red-100", text: "text-red-700" },
-  { value: "pending", label: "Pendiente", bg: "bg-gray-100", text: "text-gray-600" },
+  {
+    value: "pending",
+    label: "Pendiente",
+    bg: "bg-gray-100",
+    text: "text-gray-600",
+  },
 ];
 
 const DEPTH_OPTIONS = [
@@ -70,34 +85,35 @@ function HistoricoInner() {
 
   // Controlled filter state — initialized from URL
   const [searchText, setSearchText] = useState(searchParams.get("q") ?? "");
-  const [depthFilter, setDepthFilter] = useState(searchParams.get("depth") ?? "");
-  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") ?? "");
+  const [depthFilter, setDepthFilter] = useState(
+    searchParams.get("depth") ?? "",
+  );
+  const [statusFilter, setStatusFilter] = useState(
+    searchParams.get("status") ?? "",
+  );
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const load = useCallback(
-    async (q: string, depth: string, status: string) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await listConsultations({
-          q: q || undefined,
-          depth: depth || undefined,
-          status: status || undefined,
-          limit: 50,
-        });
-        setRecords(data);
-      } catch (e) {
-        setError(
-          e instanceof Error
-            ? e.message
-            : "No se pudieron cargar las consultas. Inténtalo de nuevo.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    },
-    [],
-  );
+  const load = useCallback(async (q: string, depth: string, status: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await listConsultations({
+        q: q || undefined,
+        depth: depth || undefined,
+        status: status || undefined,
+        limit: 50,
+      });
+      setRecords(data);
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "No se pudieron cargar las consultas. Inténtalo de nuevo.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   // Sync URL params → fetch (runs on mount and when filters change via URL)
   useEffect(() => {
@@ -207,7 +223,9 @@ function HistoricoInner() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground font-medium">Profundidad:</span>
+            <span className="text-xs text-muted-foreground font-medium">
+              Profundidad:
+            </span>
             {DEPTH_OPTIONS.map((opt) => (
               <FilterChip
                 key={opt.value}
@@ -216,7 +234,9 @@ function HistoricoInner() {
                 onClick={() => toggleDepth(opt.value)}
               />
             ))}
-            <span className="text-xs text-muted-foreground font-medium ml-3">Estado:</span>
+            <span className="text-xs text-muted-foreground font-medium ml-3">
+              Estado:
+            </span>
             {STATUS_OPTIONS.map((opt) => (
               <FilterChip
                 key={opt.value}
@@ -237,7 +257,12 @@ function HistoricoInner() {
           </div>
         </div>
 
-        {error && <ErrorBanner message={error} onRetry={() => load(searchText, depthFilter, statusFilter)} />}
+        {error && (
+          <ErrorBanner
+            message={error}
+            onRetry={() => load(searchText, depthFilter, statusFilter)}
+          />
+        )}
 
         {loading && (
           <div className="flex items-center justify-center py-16">
@@ -332,7 +357,6 @@ function HistoricoInner() {
           </div>
         )}
       </main>
-
     </div>
   );
 }

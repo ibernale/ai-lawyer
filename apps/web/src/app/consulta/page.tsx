@@ -104,32 +104,36 @@ function ConsultaInner() {
     setStreamMessage("Iniciando consulta…");
     setStreamPct(0);
 
-    const cancel = consultQueryStream(query.trim(), {
-      onProgress: (step, message, pct) => {
-        setStreamStep(step);
-        setStreamMessage(message);
-        setStreamPct(pct);
+    const cancel = consultQueryStream(
+      query.trim(),
+      {
+        onProgress: (step, message, pct) => {
+          setStreamStep(step);
+          setStreamMessage(message);
+          setStreamPct(pct);
+        },
+        onToken: (delta) => {
+          setAnswerDraft((prev: string) => prev + delta);
+        },
+        onResult: (resp) => {
+          setResponse(resp);
+        },
+        onError: (msg) => {
+          setError(msg);
+          setStreaming(false);
+          setAnswerDraft("");
+        },
+        onDone: () => {
+          setStreaming(false);
+          setAnswerDraft("");
+        },
       },
-      onToken: (delta) => {
-        setAnswerDraft((prev: string) => prev + delta);
+      {
+        outputType,
+        depth,
+        jurisdictions: selectedJurisdictions,
       },
-      onResult: (resp) => {
-        setResponse(resp);
-      },
-      onError: (msg) => {
-        setError(msg);
-        setStreaming(false);
-        setAnswerDraft("");
-      },
-      onDone: () => {
-        setStreaming(false);
-        setAnswerDraft("");
-      },
-    }, {
-      outputType,
-      depth,
-      jurisdictions: selectedJurisdictions,
-    });
+    );
     cancelRef.current = cancel;
   }
 
@@ -301,7 +305,6 @@ function ConsultaInner() {
           />
         )}
       </main>
-
     </div>
   );
 }
