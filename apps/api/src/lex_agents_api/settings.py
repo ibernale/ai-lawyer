@@ -28,7 +28,9 @@ class Settings(BaseSettings):
     # Qdrant
     qdrant_url: str = "http://localhost:6333"
     qdrant_api_key: SecretStr = SecretStr("")
-    qdrant_collection: str = "lex_legal_docs"
+    qdrant_collection: str = "lex_legal_docs"           # shared regulatory corpus
+    qdrant_docs_prefix: str = "docs"                    # per-tenant: docs_{tenant_id}
+    docs_max_bytes: int = 65_536                        # 64 KB upload limit
 
     # RAG
     rag_top_k: int = 10
