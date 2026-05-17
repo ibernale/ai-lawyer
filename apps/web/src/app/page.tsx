@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { Suspense } from "react";
 import Link from "next/link";
+import type { Route } from "next";
 import { StatusBadge } from "@/components/status-badge";
 import { getHealth } from "@/lib/api";
 import type { HealthResponse } from "@/lib/api";
@@ -22,7 +23,7 @@ function QuickActionCard({
   icon,
   cta,
 }: {
-  href: string;
+  href: Route;
   title: string;
   description: string;
   icon: React.ReactNode;

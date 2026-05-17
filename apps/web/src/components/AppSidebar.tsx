@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { Route } from "next";
 import { CommandPalette } from "./CommandPalette";
 
 type NavItem =
-  | { href: string; label: string; disabled?: false }
+  | { href: Route; label: string; disabled?: false }
   | { label: string; disabled: true };
 
 type NavSection = {
