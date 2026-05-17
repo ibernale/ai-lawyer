@@ -159,8 +159,8 @@ def _make_chunk_point_id(doc_id: str, chunk_idx: int) -> int:
 def _extract_text_from_pdf(data: bytes) -> tuple[str, int]:
     """Extract text from PDF bytes. Returns (text, page_count)."""
     try:
-        from pdfminer.high_level import extract_text as _pdf_text  # type: ignore[import-untyped]
-        from pdfminer.pdfpage import PDFPage  # type: ignore[import-untyped]
+        from pdfminer.high_level import extract_text as _pdf_text
+        from pdfminer.pdfpage import PDFPage
 
         text = _pdf_text(io.BytesIO(data)) or ""
         page_count = sum(
@@ -179,7 +179,7 @@ def _extract_text_from_pdf(data: bytes) -> tuple[str, int]:
 def _extract_text_from_docx(data: bytes) -> tuple[str, None]:
     """Extract text from DOCX bytes."""
     try:
-        import docx  # type: ignore[import-untyped]
+        import docx
 
         doc = docx.Document(io.BytesIO(data))
         text = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
