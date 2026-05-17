@@ -11,13 +11,48 @@ type PaletteItem = {
 };
 
 const ITEMS: PaletteItem[] = [
-  { href: "/", label: "Inicio / Dashboard", section: "Navegación", keywords: "home dashboard inicio" },
-  { href: "/consulta", label: "Nueva consulta", section: "Asesoría", keywords: "consultar normativa regulatorio" },
-  { href: "/documentos", label: "Análisis de documentos", section: "Asesoría", keywords: "subir analizar contrato" },
-  { href: "/historico", label: "Histórico de consultas", section: "Historial", keywords: "historial buscar anteriores" },
-  { href: "/auditoria", label: "Auditoría", section: "Historial", keywords: "revisar calidad feedback" },
-  { href: "/admin", label: "Panel de administración", section: "Admin", keywords: "admin ops governance" },
-  { href: "/legal", label: "Aviso legal", section: "Legal", keywords: "disclaimer aviso" },
+  {
+    href: "/",
+    label: "Inicio / Dashboard",
+    section: "Navegación",
+    keywords: "home dashboard inicio",
+  },
+  {
+    href: "/consulta",
+    label: "Nueva consulta",
+    section: "Asesoría",
+    keywords: "consultar normativa regulatorio",
+  },
+  {
+    href: "/documentos",
+    label: "Análisis de documentos",
+    section: "Asesoría",
+    keywords: "subir analizar contrato",
+  },
+  {
+    href: "/historico",
+    label: "Histórico de consultas",
+    section: "Historial",
+    keywords: "historial buscar anteriores",
+  },
+  {
+    href: "/auditoria",
+    label: "Auditoría",
+    section: "Historial",
+    keywords: "revisar calidad feedback",
+  },
+  {
+    href: "/admin",
+    label: "Panel de administración",
+    section: "Admin",
+    keywords: "admin ops governance",
+  },
+  {
+    href: "/legal",
+    label: "Aviso legal",
+    section: "Legal",
+    keywords: "disclaimer aviso",
+  },
 ];
 
 function highlight(text: string, query: string): React.ReactNode {
@@ -27,7 +62,9 @@ function highlight(text: string, query: string): React.ReactNode {
   return (
     <>
       {text.slice(0, idx)}
-      <mark className="bg-brand-100 text-brand-800 rounded-sm">{text.slice(idx, idx + query.length)}</mark>
+      <mark className="bg-brand-100 text-brand-800 rounded-sm">
+        {text.slice(idx, idx + query.length)}
+      </mark>
       {text.slice(idx + query.length)}
     </>
   );
@@ -101,8 +138,19 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       >
         {/* Search input */}
         <div className="flex items-center gap-3 px-4 border-b border-border">
-          <svg className="w-4 h-4 text-muted-foreground shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <svg
+            className="w-4 h-4 text-muted-foreground shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
           </svg>
           <input
             ref={inputRef}
@@ -124,7 +172,11 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Results */}
-        <ul ref={listRef} className="max-h-72 overflow-y-auto py-1.5" role="listbox">
+        <ul
+          ref={listRef}
+          className="max-h-72 overflow-y-auto py-1.5"
+          role="listbox"
+        >
           {filtered.length === 0 ? (
             <li className="px-4 py-8 text-sm text-muted-foreground text-center">
               Sin resultados para &ldquo;{query}&rdquo;
@@ -154,9 +206,15 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
 
         {/* Footer hint */}
         <div className="border-t border-border px-4 py-2 flex items-center gap-4 text-[11px] text-muted-foreground">
-          <span><kbd className="font-mono">↑↓</kbd> navegar</span>
-          <span><kbd className="font-mono">↵</kbd> abrir</span>
-          <span><kbd className="font-mono">Esc</kbd> cerrar</span>
+          <span>
+            <kbd className="font-mono">↑↓</kbd> navegar
+          </span>
+          <span>
+            <kbd className="font-mono">↵</kbd> abrir
+          </span>
+          <span>
+            <kbd className="font-mono">Esc</kbd> cerrar
+          </span>
         </div>
       </div>
     </div>
