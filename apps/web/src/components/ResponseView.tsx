@@ -212,14 +212,24 @@ function renderAnswerWithChips(
         />
       );
     }
-    // Render each text segment as markdown so headers, bold, and lists are styled
+    // A text segment between chips is "inline" iff it has no paragraph break
+    // (no double newline).  Inline segments (e.g. ", " between consecutive
+    // chips) must render as a fragment so the surrounding inline chips stay
+    // on the same line.  Multi-paragraph segments keep block paragraph
+    // spacing.  Without this every chip and every comma-only segment ended
+    // up on its own visual line.
+    const hasParagraphBreak = /\n\s*\n/.test(part);
     return (
       <ReactMarkdown
         key={i}
         remarkPlugins={[remarkGfm]}
         components={{
-          // Inline rendering — no extra wrapper div between paragraphs
-          p: ({ children }) => <span className="block mb-2">{children}</span>,
+          p: ({ children }) =>
+            hasParagraphBreak ? (
+              <span className="block mb-2">{children}</span>
+            ) : (
+              <>{children}</>
+            ),
         }}
       >
         {part}
