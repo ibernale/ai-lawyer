@@ -8,6 +8,16 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/web/package.json ./apps/web/
 RUN pnpm install --frozen-lockfile --filter @lex-agents/web
 
+FROM base AS development
+WORKDIR /app
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/web/package.json ./apps/web/
+RUN pnpm install --frozen-lockfile --filter @lex-agents/web
+WORKDIR /app/apps/web
+ENV NODE_ENV=development
+EXPOSE 3000
+CMD ["pnpm", "dev"]
+
 FROM base AS builder
 WORKDIR /app
 # Workspace manifests needed for Turbopack root detection in Next.js 16

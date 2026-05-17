@@ -29,6 +29,7 @@ from lex_agents_api.middleware import CorrelationIdMiddleware, SecurityHeadersMi
 from lex_agents_api.routers import audit as audit_router
 from lex_agents_api.routers import auth as auth_router
 from lex_agents_api.routers import consult as consult_router
+from lex_agents_api.routers.consult_stream import router as consult_stream_router
 from lex_agents_api.routers import export as export_router
 from lex_agents_api.routers import feedback as feedback_router
 from lex_agents_api.routers import health as health_router
@@ -248,7 +249,8 @@ def create_app() -> FastAPI:
     app.include_router(auth_router.router)    # POST /auth/token — public
     app.include_router(health_router.router)  # GET /health, /version — public
     app.include_router(rag_router.router)     # /api/v1/rag/* — auth required
-    app.include_router(consult_router.router) # /api/v1/consult/* — auth required
+    app.include_router(consult_router.router)  # /api/v1/consult/* — auth required
+    app.include_router(consult_stream_router)  # /api/v1/consult/stream — SSE
     app.include_router(export_router.router)   # /api/v1/consult/{id}/export, /feedback
     app.include_router(feedback_router.router) # /api/v1/feedback
     app.include_router(audit_router.router)    # /api/v1/audit

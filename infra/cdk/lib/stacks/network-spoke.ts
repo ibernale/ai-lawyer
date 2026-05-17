@@ -177,10 +177,15 @@ export class NetworkSpokeStack extends cdk.Stack {
       subnetSelection: { subnets: dataSubnets },
     });
 
-    // Allow PostgreSQL from private-app CIDR ranges
-    cfg.privateAppSubnets.forEach((cidr, idx) => {
+    // Allow PostgreSQL from private-app subnets.
+    // Use CDK synthesis-time CIDRs, not the stale hardcoded list in environments.ts
+    // (CDK auto-assigns sequential /24 blocks; the config values never matched).
+    const appSubnets = this.vpc.selectSubnets({
+      subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+    }).subnets;
+    appSubnets.forEach((subnet, idx) => {
       dataNacl.addEntry(`AllowPostgresIn${idx}`, {
-        cidr: ec2.AclCidr.ipv4(cidr),
+        cidr: ec2.AclCidr.ipv4(subnet.ipv4CidrBlock),
         ruleNumber: 100 + idx,
         traffic: ec2.AclTraffic.tcpPort(5432),
         direction: ec2.TrafficDirection.INGRESS,

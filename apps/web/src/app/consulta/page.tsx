@@ -1,11 +1,12 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useCallback, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { ResponseView } from "@/components/ResponseView";
+import { StreamProgressBar } from "@/components/StreamProgressBar";
 import { ErrorBanner } from "@/components/ui/error-banner";
-import { consultQuery, getConsultation } from "@/lib/api";
+import { consultQueryStream, getConsultation } from "@/lib/api";
 import type { ConsultResponse } from "@/lib/api";
 
 const JURISDICTIONS = [
@@ -64,9 +65,14 @@ function ConsultaInner() {
   const [selectedJurisdictions, setSelectedJurisdictions] = useState<string[]>(
     [],
   );
-  const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState(false);
+  const [streamStep, setStreamStep] = useState("");
+  const [streamMessage, setStreamMessage] = useState("");
+  const [streamPct, setStreamPct] = useState(0);
+  const [answerDraft, setAnswerDraft] = useState("");
   const [response, setResponse] = useState<ConsultResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const cancelRef = useRef<(() => void) | null>(null);
 
   // Load from trace ID if provided via ?trace=...
   const traceId = searchParams.get("trace") ?? undefined;
@@ -79,26 +85,53 @@ function ConsultaInner() {
       .catch((e: Error) => setError(e.message));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  const handleCancel = useCallback(() => {
+    cancelRef.current?.();
+    setStreaming(false);
+    setAnswerDraft("");
+    setStreamStep("");
+    setStreamMessage("");
+    setStreamPct(0);
+  }, []);
+
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!query.trim()) return;
-    setLoading(true);
+    setStreaming(true);
     setError(null);
     setResponse(null);
-    try {
-      const resp = await consultQuery(
-        query.trim(),
-        outputType,
-        undefined,
-        depth,
-        selectedJurisdictions,
-      );
-      setResponse(resp);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error desconocido");
-    } finally {
-      setLoading(false);
-    }
+    setAnswerDraft("");
+    setStreamStep("routing");
+    setStreamMessage("Iniciando consulta…");
+    setStreamPct(0);
+
+    const cancel = consultQueryStream(query.trim(), {
+      onProgress: (step, message, pct) => {
+        setStreamStep(step);
+        setStreamMessage(message);
+        setStreamPct(pct);
+      },
+      onToken: (delta) => {
+        setAnswerDraft((prev: string) => prev + delta);
+      },
+      onResult: (resp) => {
+        setResponse(resp);
+      },
+      onError: (msg) => {
+        setError(msg);
+        setStreaming(false);
+        setAnswerDraft("");
+      },
+      onDone: () => {
+        setStreaming(false);
+        setAnswerDraft("");
+      },
+    }, {
+      outputType,
+      depth,
+      jurisdictions: selectedJurisdictions,
+    });
+    cancelRef.current = cancel;
   }
 
   return (
@@ -137,7 +170,7 @@ function ConsultaInner() {
             placeholder="Escriba su consulta normativa…"
             rows={5}
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
-            disabled={loading}
+            disabled={streaming}
           />
 
           {/* Depth selector */}
@@ -151,7 +184,7 @@ function ConsultaInner() {
                 type="button"
                 title={opt.tooltip}
                 onClick={() => setDepth(opt.value)}
-                disabled={loading}
+                disabled={streaming}
                 className={[
                   "px-3 py-1 text-xs font-medium rounded-md border transition-colors",
                   depth === opt.value
@@ -181,7 +214,7 @@ function ConsultaInner() {
                   <button
                     key={j.code}
                     type="button"
-                    disabled={loading}
+                    disabled={streaming}
                     onClick={() =>
                       setSelectedJurisdictions((prev) =>
                         active
@@ -208,7 +241,7 @@ function ConsultaInner() {
                 <button
                   type="button"
                   onClick={() => setSelectedJurisdictions([])}
-                  disabled={loading}
+                  disabled={streaming}
                   className="px-2 py-1 text-xs text-muted-foreground hover:text-foreground underline"
                 >
                   Limpiar
@@ -229,7 +262,7 @@ function ConsultaInner() {
                 id="output-type"
                 value={outputType}
                 onChange={(e) => setOutputType(e.target.value)}
-                disabled={loading}
+                disabled={streaming}
                 className="rounded-md border border-input bg-background px-2 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 {OUTPUT_TYPES.map((t) => (
@@ -242,24 +275,27 @@ function ConsultaInner() {
 
             <button
               type="submit"
-              disabled={loading || !query.trim()}
+              disabled={streaming || !query.trim()}
               className="ml-auto rounded-md bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                  Consultando…
-                </span>
-              ) : (
-                "Consultar"
-              )}
+              Consultar
             </button>
           </div>
         </form>
 
         {error && <ErrorBanner message={error} />}
 
-        {response && (
+        {streaming && (
+          <StreamProgressBar
+            step={streamStep}
+            message={streamMessage}
+            pct={streamPct}
+            answerDraft={answerDraft}
+            onCancel={handleCancel}
+          />
+        )}
+
+        {!streaming && response && (
           <ResponseView
             response={response}
             selectedJurisdictions={selectedJurisdictions}

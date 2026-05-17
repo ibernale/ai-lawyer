@@ -270,6 +270,8 @@ export class AppServicesStack extends cdk.Stack {
       securityGroup: sgAlbDemo,
       vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
     });
+    // Extend idle timeout so SSE streams (consult/stream) are not cut mid-response
+    this.alb.setAttribute("idle_timeout.timeout_seconds", "305");
 
     const httpListener = this.alb.addListener("HttpListener", {
       port: 80,

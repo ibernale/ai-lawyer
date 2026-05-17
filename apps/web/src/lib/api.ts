@@ -351,6 +351,129 @@ export async function consultQuery(
   });
 }
 
+// ---------------------------------------------------------------------------
+// Streaming consult
+// ---------------------------------------------------------------------------
+
+export type StreamHandlers = {
+  onProgress: (step: string, message: string, pct: number) => void;
+  onToken: (delta: string) => void;
+  onResult: (response: ConsultResponse) => void;
+  onError: (message: string) => void;
+  onDone: () => void;
+};
+
+/**
+ * POST /api/v1/consult/stream — SSE streaming variant.
+ * Uses fetch + ReadableStream (not EventSource, which only supports GET).
+ * Returns a cleanup function that aborts the stream.
+ */
+export function consultQueryStream(
+  query: string,
+  handlers: StreamHandlers,
+  options?: {
+    outputType?: string;
+    jurisdictionHint?: string;
+    depth?: "shallow" | "standard" | "deep";
+    jurisdictions?: string[];
+  },
+): () => void {
+  const controller = new AbortController();
+
+  (async () => {
+    try {
+      const token = typeof window !== "undefined"
+        ? localStorage.getItem("auth_token")
+        : null;
+
+      const res = await fetch(`${API_BASE}/api/v1/consult/stream`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          query,
+          output_type: options?.outputType ?? null,
+          jurisdiction_hint: options?.jurisdictionHint ?? null,
+          depth: options?.depth ?? null,
+          jurisdictions:
+            options?.jurisdictions && options.jurisdictions.length > 0
+              ? options.jurisdictions
+              : null,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        handlers.onError(`Error ${res.status}: ${text || res.statusText}`);
+        return;
+      }
+
+      if (!res.body) {
+        handlers.onError("No response body");
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete SSE messages (delimited by \n\n)
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() ?? "";
+
+        for (const part of parts) {
+          const lines = part.split("\n");
+          let eventName = "message";
+          let dataStr = "";
+
+          for (const line of lines) {
+            if (line.startsWith("event: ")) {
+              eventName = line.slice(7).trim();
+            } else if (line.startsWith("data: ")) {
+              dataStr = line.slice(6).trim();
+            }
+          }
+
+          if (!dataStr) continue;
+          let payload: Record<string, unknown>;
+          try {
+            payload = JSON.parse(dataStr);
+          } catch {
+            continue;
+          }
+
+          if (eventName === "progress") {
+            handlers.onProgress(
+              String(payload["step"] ?? ""),
+              String(payload["message"] ?? ""),
+              Number(payload["pct"] ?? 0),
+            );
+          } else if (eventName === "token") {
+            handlers.onToken(String(payload["delta"] ?? ""));
+          } else if (eventName === "result") {
+            handlers.onResult(payload as unknown as ConsultResponse);
+          } else if (eventName === "done") {
+            handlers.onDone();
+          }
+        }
+      }
+    } catch (err) {
+      if ((err as Error).name === "AbortError") return;
+      handlers.onError((err as Error).message ?? "Error desconocido");
+    }
+  })();
+
+  return () => controller.abort();
+}
+
 export async function getConsultation(
   traceId: string,
 ): Promise<ConsultResponse> {
