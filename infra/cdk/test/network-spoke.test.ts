@@ -36,6 +36,31 @@ describe("NetworkSpokeStack", () => {
     template.resourceCountIs("AWS::EC2::NetworkAcl", 1);
   });
 
+  test("NACL allows PostgreSQL ingress from every private-app subnet CIDR", () => {
+    // CDK assigns sequential /24 blocks: public 10.10.0-2, private-app 10.10.3-5,
+    // private-data 10.10.6-8. The NACL rules must cover the actual assigned CIDRs,
+    // not the stale hardcoded list from environments.ts (10.10.10-12.0/24).
+    const appSubnets = stack.vpc.selectSubnets({
+      subnetType: require("aws-cdk-lib/aws-ec2").SubnetType.PRIVATE_WITH_EGRESS,
+    }).subnets;
+
+    const naclEntries = template.findResources("AWS::EC2::NetworkAclEntry");
+    const postgresIngressCidrs = Object.values(naclEntries)
+      .filter(
+        (e: any) =>
+          e.Properties.Egress === false &&
+          e.Properties.Protocol === 6 &&
+          e.Properties.PortRange?.From === 5432 &&
+          e.Properties.RuleAction === "allow",
+      )
+      .map((e: any) => e.Properties.CidrBlock as string);
+
+    expect(postgresIngressCidrs.length).toBe(appSubnets.length);
+    appSubnets.forEach((subnet) => {
+      expect(postgresIngressCidrs).toContain(subnet.ipv4CidrBlock);
+    });
+  });
+
   test("Aurora SG has no direct internet egress", () => {
     const sgs = template.findResources("AWS::EC2::SecurityGroup");
     const auroraSg = Object.values(sgs).find((sg: any) =>

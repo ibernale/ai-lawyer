@@ -7,10 +7,11 @@ depth=deep:     planner  → maker(s) → judge ↔ maker(s) (≤2 iter) → ver
 
 from __future__ import annotations
 
+import asyncio
 import time
 import uuid
-from dataclasses import dataclass
-from typing import Any, Literal
+from dataclasses import dataclass, field
+from typing import Any, AsyncGenerator, Literal
 
 import structlog
 from lex_agents_rag.assembler import ContextAssembler
@@ -67,6 +68,12 @@ class ConsultResponse(BaseModel):
 
 
 @dataclass
+class SseEvent:
+    event: str  # "progress" | "token" | "result" | "done"
+    data: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
 class OrchestratorDeps:
     retriever: HybridRetriever
     reranker: BaseReranker
@@ -107,6 +114,159 @@ class OrchestratorV2:
             result.metadata["latency_ms"] = total_ms
             log.info("orchestrator_v2_complete", depth=depth, latency_ms=total_ms)
             return result
+
+    async def run_streaming(
+        self, req: ConsultRequest
+    ) -> AsyncGenerator[SseEvent, None]:
+        """SSE pipeline: yields progress/token/result/done events.
+
+        Primary specialist streams tokens; remaining specialists (if any)
+        run concurrently via asyncio.gather. Existing _run_* paths untouched.
+        """
+        trace_id = str(uuid.uuid4())
+        log = logger.bind(trace_id=trace_id)
+        depth = req.depth or "standard"
+
+        yield SseEvent("progress", {"step": "routing", "message": "Analizando consulta…", "pct": 5})
+
+        # ── Routing / planning ───────────────────────────────────────────────
+        if depth == "shallow":
+            decision: RoutingDecision = self._router.route(req.query)
+            if decision.branch == "fuera_de_alcance":
+                resp = self._out_of_scope(trace_id, req.query, "shallow")
+                yield SseEvent("result", resp.model_dump())
+                yield SseEvent("done", {})
+                return
+            plan: PlannerOutput | None = None
+        else:
+            yield SseEvent("progress", {"step": "planning", "message": "Elaborando plan jurídico…", "pct": 10})
+            plan = self._planner.plan(
+                req.query, req.jurisdiction_hint, req.output_type,
+                depth_hint="deep" if depth == "deep" else "standard",
+            )
+            if self._is_out_of_scope(plan):
+                resp = self._out_of_scope(trace_id, req.query, depth, plan)
+                yield SseEvent("result", resp.model_dump())
+                yield SseEvent("done", {})
+                return
+            decision = self._plan_to_routing(plan)
+
+        # ── RAG ──────────────────────────────────────────────────────────────
+        yield SseEvent("progress", {"step": "retrieval", "message": "Recuperando fuentes jurídicas…", "pct": 30})
+        assembled, rewritten = await self._rag(req, decision.jurisdictions)
+        frag_count = len(assembled.citation_mapping)
+        yield SseEvent("progress", {
+            "step": "retrieval",
+            "message": f"{frag_count} fragmentos relevantes recuperados",
+            "pct": 45,
+        })
+
+        # ── Specialist streaming ─────────────────────────────────────────────
+        yield SseEvent("progress", {"step": "specialists", "message": "Consultando especialistas jurídicos…", "pct": 50})
+
+        sub_tasks = plan.sub_tasks if plan else []
+        if depth == "shallow" or len(sub_tasks) <= 1:
+            # Single specialist — stream all tokens
+            task = sub_tasks[0] if sub_tasks else BranchTask(
+                id="T1", branch=decision.branch, priority=1, weight=1.0,
+                query=rewritten.expanded_query,
+            )
+            specialist_cls = get_specialist_class(task.branch)
+            primary_specialist = specialist_cls(self._deps.client)
+
+            streamed_text = ""
+            async for token in primary_specialist._invoke_streaming(
+                rewritten.expanded_query, assembled, trace_id
+            ):
+                streamed_text += token
+                yield SseEvent("token", {"delta": token})
+
+            # Build full AgentResponse using non-streaming path for metadata
+            agent_resp = await primary_specialist.run_async(
+                rewritten.expanded_query, assembled, trace_id,
+                sub_task=task if depth != "shallow" else None,
+            )
+            agent_resp.answer_text = streamed_text or agent_resp.answer_text
+            branch_answers: dict[str, str] = {task.branch: agent_resp.answer_text}
+
+        else:
+            # Multi-specialist: stream primary (highest weight), run rest in parallel
+            sorted_tasks = sorted(sub_tasks, key=lambda t: t.weight, reverse=True)
+            primary_task = sorted_tasks[0]
+            secondary_tasks = sorted_tasks[1:]
+
+            primary_cls = get_specialist_class(primary_task.branch)
+            primary_specialist = primary_cls(self._deps.client)
+
+            # Launch secondary tasks concurrently
+            secondary_futures = [
+                asyncio.create_task(
+                    get_specialist_class(t.branch)(self._deps.client).run_async(
+                        rewritten.expanded_query, assembled, trace_id, sub_task=t
+                    )
+                )
+                for t in secondary_tasks
+            ]
+
+            streamed_text = ""
+            async for token in primary_specialist._invoke_streaming(
+                rewritten.expanded_query, assembled, trace_id
+            ):
+                streamed_text += token
+                yield SseEvent("token", {"delta": token})
+
+            primary_resp = await primary_specialist.run_async(
+                rewritten.expanded_query, assembled, trace_id, sub_task=primary_task
+            )
+            primary_resp.answer_text = streamed_text or primary_resp.answer_text
+
+            secondary_responses: list[AgentResponse] = await asyncio.gather(*secondary_futures)
+            all_responses = [primary_resp] + list(secondary_responses)
+
+            branch_answers = {t.branch: r.answer_text for t, r in zip(sorted_tasks, all_responses)}
+
+            if plan and plan.output_type == "analisis_comparativo" and len(all_responses) >= 2:
+                agent_resp = await self._coordinator.synthesize_comparative(
+                    all_responses, plan, trace_id
+                )
+            else:
+                agent_resp = self._coordinator.synthesize(all_responses, plan, trace_id)
+
+        # ── Judge (deep only) ────────────────────────────────────────────────
+        judge_verdict_dict: dict[str, Any] | None = None
+        if depth == "deep" and plan:
+            yield SseEvent("progress", {"step": "judging", "message": "Revisando coherencia jurídica…", "pct": 80})
+            verdict = self._judge.judge([agent_resp], plan.definition_of_done, iteration=1)
+            judge_verdict_dict = {
+                "verdict": verdict.verdict,
+                "scores": verdict.scores,
+                "gaps": verdict.gaps,
+                "iteration": verdict.iteration,
+            }
+
+        # ── Verification ─────────────────────────────────────────────────────
+        cite_count = len(assembled.citation_mapping)
+        yield SseEvent("progress", {
+            "step": "verifying",
+            "message": f"Verificando {cite_count} citas…",
+            "pct": 92,
+        })
+        verification = await self._verify(trace_id, agent_resp, assembled)
+        agent_resp.verification = verification
+
+        # ── Final response ───────────────────────────────────────────────────
+        final_resp = self._build_response(
+            trace_id=trace_id,
+            final=agent_resp,
+            decision=decision,
+            depth_used=depth,
+            planner_output=plan,
+            judge_verdict=judge_verdict_dict,
+            branch_answers=branch_answers,
+        )
+        log.info("orchestrator_v2_streaming_complete", depth=depth, trace_id=trace_id)
+        yield SseEvent("result", final_resp.model_dump())
+        yield SseEvent("done", {})
 
     # ── Shallow path ────────────────────────────────────────────────────────
 

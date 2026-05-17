@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import time
 from enum import Enum
-from typing import Any
+from typing import Any, AsyncIterator
 
 import anthropic
 import structlog
@@ -166,6 +166,7 @@ class AnthropicClientWrapper:
         max_retries: int = 3,
     ) -> None:
         self._client = anthropic.Anthropic(api_key=api_key, timeout=timeout)
+        self._async_client = anthropic.AsyncAnthropic(api_key=api_key, timeout=timeout)
         self._max_retries = max_retries
         self._circuit = _CircuitBreaker()
 
@@ -204,6 +205,25 @@ class AnthropicClientWrapper:
             raise
         _lf_generation_end(gen, result=result)
         return result
+
+    async def messages_stream(self, **kwargs: Any) -> AsyncIterator[str]:
+        """Stream token deltas via the Anthropic streaming API.
+
+        Plain async generator — iterate with `async for token in client.messages_stream(...)`.
+        No retry on stream — fail-fast if the connection drops mid-stream.
+        Circuit breaker is checked at entry; no Langfuse tracing (tokens
+        arrive incrementally; caller may wrap with its own trace span).
+        """
+        if self._circuit.is_open():
+            raise RuntimeError("Anthropic circuit breaker is OPEN — refusing request")
+        try:
+            async with self._async_client.messages.stream(**kwargs) as stream:
+                async for text in stream.text_stream:
+                    yield text
+            self._circuit.record_success()
+        except Exception:
+            self._circuit.record_failure()
+            raise
 
     @property
     def circuit_state(self) -> str:

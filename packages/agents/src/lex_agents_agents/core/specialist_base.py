@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import time
 from abc import abstractmethod
-from typing import ClassVar
+from typing import AsyncIterator, ClassVar
 
 import structlog
 from lex_agents_rag.assembler import AssembledContext
@@ -146,3 +146,24 @@ class BaseSpecialist(BaseAgent):
                 ),
                 query_rewritten=query,
             )
+
+    async def _invoke_streaming(
+        self,
+        query: str,
+        assembled: AssembledContext,
+        trace_id: str,
+    ) -> AsyncIterator[str]:
+        """Yield token deltas for the specialist LLM call.
+
+        Shares prompt construction with `_invoke()` but calls the async
+        streaming client. No retry — caller must handle reconnection.
+        Returns a plain async generator; caller iterates with `async for`.
+        """
+        user_content = f"{assembled.context_text}\n\n---\n\nConsulta: {query}"
+        async for token in self._client.messages_stream(
+            model=MODEL_OPUS,
+            max_tokens=self._cfg.max_tokens,
+            system=self._cfg.body,
+            messages=[{"role": "user", "content": user_content}],
+        ):
+            yield token
