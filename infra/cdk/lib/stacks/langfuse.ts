@@ -419,11 +419,14 @@ export class LangfuseStack extends cdk.Stack {
       condition: ecs.ContainerDependencyCondition.SUCCESS,
     });
 
-    // X-Ray sidecar
+    // X-Ray sidecar — :3.x is NOT a valid Docker tag (it's a wildcard string).
+    // ECR Public rejects it with "manifest not found", which fails the whole task
+    // pull (ECS won't start ANY container if any image in the task is unpullable).
+    // Use :latest, which the X-Ray team keeps pinned to the current 3.x release.
     langfuseTaskDef.addContainer("xray-daemon", {
       containerName: "xray-daemon",
       image: ecs.ContainerImage.fromRegistry(
-        "public.ecr.aws/xray-daemon/aws-xray-daemon:3.x",
+        "public.ecr.aws/xray-daemon/aws-xray-daemon:latest",
       ),
       logging,
       portMappings: [{ containerPort: 2000, protocol: ecs.Protocol.UDP }],
