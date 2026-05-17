@@ -10,8 +10,9 @@ from __future__ import annotations
 import asyncio
 import time
 import uuid
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
-from typing import Any, AsyncGenerator, Literal
+from typing import Any, Literal
 
 import structlog
 from lex_agents_rag.assembler import ContextAssembler
@@ -221,7 +222,7 @@ class OrchestratorV2:
             primary_resp.answer_text = streamed_text or primary_resp.answer_text
 
             secondary_responses: list[AgentResponse] = await asyncio.gather(*secondary_futures)
-            all_responses = [primary_resp] + list(secondary_responses)
+            all_responses = [primary_resp, *list(secondary_responses)]
 
             branch_answers = {t.branch: r.answer_text for t, r in zip(sorted_tasks, all_responses)}
 
@@ -230,6 +231,7 @@ class OrchestratorV2:
                     all_responses, plan, trace_id
                 )
             else:
+                assert plan is not None  # guaranteed: sub_tasks came from plan.sub_tasks
                 agent_resp = self._coordinator.synthesize(all_responses, plan, trace_id)
 
         # ── Judge (deep only) ────────────────────────────────────────────────

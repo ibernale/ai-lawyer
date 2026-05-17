@@ -101,25 +101,25 @@ class ConsultationStore:
             for stmt in (_MIGRATE_ADD_DEPTH, _MIGRATE_ADD_BRANCH):
                 try:
                     await db.execute(stmt)
-                except Exception:
-                    pass  # column already exists
+                except Exception as exc:
+                    logger.debug("migration_column_already_exists", stmt=stmt, exc=str(exc))
             await db.commit()
         logger.info("consultation_store_initialized", db_path=self._db_path)
 
-    async def save(self, record: ConsultationRecord) -> None:
+    async def save(self, record: ConsultationRecord, *, tenant_id: str = "default") -> None:
         if is_postgres():
-            await self._pg_save(record)
+            await self._pg_save(record, tenant_id=tenant_id)
         else:
             await self._sqlite_save(record)
 
-    async def get(self, trace_id: str) -> ConsultationRecord | None:
+    async def get(self, trace_id: str, *, tenant_id: str = "default") -> ConsultationRecord | None:
         if is_postgres():
-            return await self._pg_get(trace_id)
+            return await self._pg_get(trace_id, tenant_id=tenant_id)
         return await self._sqlite_get(trace_id)
 
-    async def list_recent(self, limit: int = 20) -> list[ConsultationRecord]:
+    async def list_recent(self, limit: int = 20, *, tenant_id: str = "default") -> list[ConsultationRecord]:
         if is_postgres():
-            return await self._pg_list_recent(limit)
+            return await self._pg_list_recent(limit, tenant_id=tenant_id)
         return await self._sqlite_list_recent(limit)
 
     async def search(
@@ -132,17 +132,19 @@ class ConsultationStore:
         until: str | None = None,
         limit: int = 20,
         offset: int = 0,
+        *,
+        tenant_id: str = "default",
     ) -> list[ConsultationRecord]:
         if is_postgres():
-            return await self._pg_search(q, depth, branch, status, since, until, limit, offset)
+            return await self._pg_search(q, depth, branch, status, since, until, limit, offset, tenant_id=tenant_id)
         return await self._sqlite_search(q, depth, branch, status, since, until, limit, offset)
 
     # ------------------------------------------------------------------
     # PostgreSQL (asyncpg)
     # ------------------------------------------------------------------
 
-    async def _pg_save(self, record: ConsultationRecord) -> None:
-        async with pg_conn() as conn:
+    async def _pg_save(self, record: ConsultationRecord, *, tenant_id: str = "default") -> None:
+        async with pg_conn(tenant_id) as conn:
             await conn.execute(
                 """
                 INSERT INTO consultations
@@ -174,17 +176,17 @@ class ConsultationStore:
                 record.depth_used,
                 record.branch,
             )
-        logger.debug("consultation_saved_pg", trace_id=record.trace_id)
+        logger.debug("consultation_saved_pg", trace_id=record.trace_id, tenant_id=tenant_id)
 
-    async def _pg_get(self, trace_id: str) -> ConsultationRecord | None:
-        async with pg_conn() as conn:
+    async def _pg_get(self, trace_id: str, *, tenant_id: str = "default") -> ConsultationRecord | None:
+        async with pg_conn(tenant_id) as conn:
             row = await conn.fetchrow(
                 "SELECT * FROM consultations WHERE trace_id = $1", trace_id
             )
         return _pg_row_to_record(row) if row else None
 
-    async def _pg_list_recent(self, limit: int) -> list[ConsultationRecord]:
-        async with pg_conn() as conn:
+    async def _pg_list_recent(self, limit: int, *, tenant_id: str = "default") -> list[ConsultationRecord]:
+        async with pg_conn(tenant_id) as conn:
             rows = await conn.fetch(
                 "SELECT * FROM consultations ORDER BY created_at DESC LIMIT $1", limit
             )
@@ -200,6 +202,8 @@ class ConsultationStore:
         until: str | None,
         limit: int,
         offset: int,
+        *,
+        tenant_id: str = "default",
     ) -> list[ConsultationRecord]:
         clauses: list[str] = []
         params: list[Any] = []
@@ -232,8 +236,8 @@ class ConsultationStore:
 
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
         params += [limit, offset]
-        sql = f"SELECT * FROM consultations {where} ORDER BY created_at DESC LIMIT ${idx} OFFSET ${idx + 1}"
-        async with pg_conn() as conn:
+        sql = f"SELECT * FROM consultations {where} ORDER BY created_at DESC LIMIT ${idx} OFFSET ${idx + 1}"  # noqa: S608
+        async with pg_conn(tenant_id) as conn:
             rows = await conn.fetch(sql, *params)
         return [_pg_row_to_record(r) for r in rows]
 
@@ -319,7 +323,7 @@ class ConsultationStore:
             params.append(until)
 
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
-        sql = f"SELECT * FROM consultations {where} ORDER BY created_at DESC LIMIT ? OFFSET ?"
+        sql = f"SELECT * FROM consultations {where} ORDER BY created_at DESC LIMIT ? OFFSET ?"  # noqa: S608
         params += [limit, offset]
 
         async with aiosqlite.connect(self._db_path) as db:

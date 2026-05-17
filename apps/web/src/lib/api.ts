@@ -395,9 +395,10 @@ export function consultQueryStream(
 
   (async () => {
     try {
-      const token = typeof window !== "undefined"
-        ? localStorage.getItem("auth_token")
-        : null;
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("auth_token")
+          : null;
 
       const res = await fetch(`${API_BASE}/api/v1/consult/stream`, {
         method: "POST",
@@ -498,7 +499,8 @@ export async function listConsultations(
 ): Promise<ConsultationSummary[]> {
   const params = new URLSearchParams();
   if (filters.limit !== undefined) params.set("limit", String(filters.limit));
-  if (filters.offset !== undefined) params.set("offset", String(filters.offset));
+  if (filters.offset !== undefined)
+    params.set("offset", String(filters.offset));
   if (filters.q) params.set("q", filters.q);
   if (filters.depth) params.set("depth", filters.depth);
   if (filters.branch) params.set("branch", filters.branch);

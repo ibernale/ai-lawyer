@@ -142,3 +142,4 @@ infra/cdk/node_modules/
 *.tmp
 *.orig
 .benchmarks/
+package-lock.json

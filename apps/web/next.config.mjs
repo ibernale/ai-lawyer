@@ -1,5 +1,14 @@
 /** @type {import('next').NextConfig} */
 
+import { fileURLToPath } from "url";
+import path from "path";
+
+// Resolve the monorepo root relative to this config file so Turbopack uses
+// the worktree root instead of the parent repo when multiple pnpm-workspace.yaml
+// files are present on the filesystem.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(__dirname, "../..");
+
 // ALB routing handles API path dispatch (no Next.js rewrites needed):
 //   /health, /version        → FastAPI (ALB priority 15)
 //   /auth/*                  → FastAPI (ALB priority 20)
@@ -14,6 +23,10 @@ const API_UPSTREAM =
 const nextConfig = {
     output: "standalone",
     typedRoutes: true,
+
+    turbopack: {
+        root: repoRoot,
+    },
 
     // In production the ALB routes /api/v1/*, /health, /version, /auth/* to
     // FastAPI before the request reaches Next.js — rewrites never fire there.

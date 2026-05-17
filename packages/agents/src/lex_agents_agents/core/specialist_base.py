@@ -5,7 +5,8 @@ from __future__ import annotations
 import asyncio
 import time
 from abc import abstractmethod
-from typing import AsyncIterator, ClassVar
+from collections.abc import AsyncIterator
+from typing import ClassVar
 
 import structlog
 from lex_agents_rag.assembler import AssembledContext

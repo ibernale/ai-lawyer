@@ -174,6 +174,8 @@ async def _persist(
     trace_id: str,
     query: str,
     resp: ConsultResponse,
+    *,
+    tenant_id: str = "default",
 ) -> None:
     try:
         verification_json: str | None = None
@@ -201,7 +203,7 @@ async def _persist(
             depth_used=resp.depth_used,
             branch=resp.routing.get("branch") if resp.routing else None,
         )
-        await store.save(record)
+        await store.save(record, tenant_id=tenant_id)
     except Exception:
         logger.exception("consultation_persist_failed", trace_id=trace_id)
 
@@ -287,17 +289,17 @@ async def consult(
         branch=resp_with_cid.routing.get("branch", "unknown"),
         cost_usd=float(resp_with_cid.metadata.get("cost_estimate_usd") or 0.0),
     )
-    background_tasks.add_task(_persist, store, resp_with_cid.trace_id, body.query, resp_with_cid)
+    background_tasks.add_task(_persist, store, resp_with_cid.trace_id, body.query, resp_with_cid, tenant_id=current_user.tenant_id)
     return resp_with_cid
 
 
 @router.get("/{trace_id}", response_model=ConsultResponse)
 async def get_consultation(
     trace_id: str,
-    _user: CurrentUser = Depends(require_auth),
+    current_user: CurrentUser = Depends(require_auth),
     store: ConsultationStore = Depends(get_store),
 ) -> ConsultResponse:
-    record = await store.get(trace_id)
+    record = await store.get(trace_id, tenant_id=current_user.tenant_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Consultation {trace_id!r} not found")
 
@@ -315,7 +317,7 @@ async def list_consultations(
     status: str | None = None,
     since: str | None = None,
     until: str | None = None,
-    _user: CurrentUser = Depends(require_auth),
+    current_user: CurrentUser = Depends(require_auth),
     store: ConsultationStore = Depends(get_store),
 ) -> list[dict[str, Any]]:
     has_filters = any(p is not None for p in (q, depth, branch, status, since, until))
@@ -323,9 +325,10 @@ async def list_consultations(
         records = await store.search(
             q=q, depth=depth, branch=branch, status=status,
             since=since, until=until, limit=limit, offset=offset,
+            tenant_id=current_user.tenant_id,
         )
     else:
-        records = await store.list_recent(limit=limit)
+        records = await store.list_recent(limit=limit, tenant_id=current_user.tenant_id)
     return [
         {
             "trace_id": r.trace_id,

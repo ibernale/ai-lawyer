@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import json
+from collections.abc import AsyncGenerator
 from functools import lru_cache
-from typing import Any, AsyncGenerator
+from typing import Any
 
 import anthropic as _anthropic
 import structlog
@@ -24,11 +25,10 @@ from lex_agents_rag.reranker import RerankerConfig, make_reranker
 from lex_agents_rag.retriever import HybridRetriever
 from lex_agents_shared.anthropic_client import AnthropicClientWrapper
 from lex_agents_verifier.pipeline import VerifierPipeline
-from pydantic import BaseModel, Field, field_validator
 from qdrant_client import QdrantClient
 
 from lex_agents_api.auth import CurrentUser, require_auth
-from lex_agents_api.db import ConsultationRecord, ConsultationStore
+from lex_agents_api.db import ConsultationStore
 from lex_agents_api.middleware import get_correlation_id
 from lex_agents_api.settings import Settings, get_settings
 
@@ -140,6 +140,8 @@ async def _persist_stream(
     trace_id: str,
     query: str,
     resp: ConsultResponse,
+    *,
+    tenant_id: str = "default",
 ) -> None:
     try:
         verification_json: str | None = None
@@ -154,6 +156,7 @@ async def _persist_stream(
         lat = resp.metadata.get("latency_ms")
         cost = resp.metadata.get("cost_estimate_usd")
         from datetime import UTC, datetime
+
         from lex_agents_api.db import ConsultationRecord
         record = ConsultationRecord(
             trace_id=trace_id,
@@ -168,7 +171,7 @@ async def _persist_stream(
             depth_used=resp.depth_used,
             branch=resp.routing.get("branch") if resp.routing else None,
         )
-        await store.save(record)
+        await store.save(record, tenant_id=tenant_id)
     except Exception:
         logger.exception("stream_consultation_persist_failed", trace_id=trace_id)
 
@@ -198,8 +201,8 @@ async def consult_stream(
             raise HTTPException(503, detail={"code": "SYSTEM_KILLED", "reason": reason})
     except HTTPException:
         raise
-    except Exception:
-        pass
+    except Exception as exc:  # kill-switch unavailable — degrade gracefully
+        logger.debug("kill_switch_check_failed", exc=str(exc))
 
     query: str = body.get("query", "")
     if not isinstance(query, str) or len(query.strip()) < 10:
@@ -227,8 +230,8 @@ async def consult_stream(
                 if event.event == "result":
                     try:
                         final_resp = ConsultResponse.model_validate(event.data)
-                    except Exception:
-                        pass
+                    except Exception as exc:  # malformed result — skip persistence
+                        logger.warning("stream_result_parse_failed", exc=str(exc))
         except Exception as exc:
             logger.exception("stream_pipeline_error")
             yield _sse_encode(SseEvent("error", {"message": str(exc)}))
@@ -236,7 +239,10 @@ async def consult_stream(
             return
         if final_resp is not None:
             trace_id = correlation_id or final_resp.trace_id
-            background_tasks.add_task(_persist_stream, store, trace_id, query, final_resp)
+            background_tasks.add_task(
+                _persist_stream, store, trace_id, query, final_resp,
+                tenant_id=current_user.tenant_id,
+            )
 
     return StreamingResponse(
         _generate(),
