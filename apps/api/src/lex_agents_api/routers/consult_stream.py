@@ -219,13 +219,19 @@ async def consult_stream(
 
     async def _generate() -> AsyncGenerator[str, None]:
         final_resp: ConsultResponse | None = None
-        async for event in orchestrator.run_streaming(req):
-            yield _sse_encode(event)
-            if event.event == "result":
-                try:
-                    final_resp = ConsultResponse.model_validate(event.data)
-                except Exception:
-                    pass
+        try:
+            async for event in orchestrator.run_streaming(req):
+                yield _sse_encode(event)
+                if event.event == "result":
+                    try:
+                        final_resp = ConsultResponse.model_validate(event.data)
+                    except Exception:
+                        pass
+        except Exception as exc:
+            logger.exception("stream_pipeline_error")
+            yield _sse_encode(SseEvent("error", {"message": str(exc)}))
+            yield _sse_encode(SseEvent("done", {}))
+            return
         if final_resp is not None:
             trace_id = correlation_id or final_resp.trace_id
             background_tasks.add_task(_persist_stream, store, trace_id, query, final_resp)
