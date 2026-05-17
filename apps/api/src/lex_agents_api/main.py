@@ -35,6 +35,7 @@ from lex_agents_api.routers import health as health_router
 from lex_agents_api.routers import rag as rag_router
 from lex_agents_api.routers.audit_trail import router as audit_trail_router
 from lex_agents_api.routers.consult_stream import router as consult_stream_router
+from lex_agents_api.routers.documents import router as documents_router
 from lex_agents_api.routers.federation import router as federation_router
 from lex_agents_api.routers.governance import router as governance_router
 from lex_agents_api.routers.notifications import router as notifications_router
@@ -50,11 +51,15 @@ logger: structlog.BoundLogger = structlog.get_logger(__name__)
 # Content-size guard
 # ---------------------------------------------------------------------------
 
-_MAX_BODY_BYTES = 64 * 1024  # 64 KB
+_MAX_BODY_BYTES = 64 * 1024  # 64 KB (JSON endpoints)
 
 
 class ContentSizeMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        # Document uploads are multipart — size enforced at the endpoint, not here.
+        content_type = request.headers.get("content-type", "")
+        if "multipart/form-data" in content_type:
+            return await call_next(request)
         cl = request.headers.get("content-length")
         if cl and int(cl) > _MAX_BODY_BYTES:
             return JSONResponse(
@@ -251,6 +256,7 @@ def create_app() -> FastAPI:
     app.include_router(rag_router.router)     # /api/v1/rag/* — auth required
     app.include_router(consult_router.router)  # /api/v1/consult/* — auth required
     app.include_router(consult_stream_router)  # /api/v1/consult/stream — SSE
+    app.include_router(documents_router)        # /api/v1/documents — per-tenant uploads
     app.include_router(export_router.router)   # /api/v1/consult/{id}/export, /feedback
     app.include_router(feedback_router.router) # /api/v1/feedback
     app.include_router(audit_router.router)    # /api/v1/audit
