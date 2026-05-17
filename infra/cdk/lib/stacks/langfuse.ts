@@ -319,12 +319,20 @@ export class LangfuseStack extends cdk.Stack {
       command: [
         "sh",
         "-c",
-        // Full psql connection check — verifies SSL, authentication, and that
-        // the langfuse database exists (defaultDatabaseName creates it on Aurora
-        // init, but RDS can take a few extra seconds to commit it).
-        "until psql \"postgresql://$DB_USER:$DB_PASS@$AURORA_HOST:5432/langfuse?sslmode=require\" -c 'SELECT 1' -q 2>/dev/null; do " +
-          "echo 'aurora-wait: not ready, sleeping 5s'; sleep 5; " +
-          "done; echo 'aurora-wait: langfuse DB accepting authenticated connections'",
+        // VERBOSE: surface env-var presence + every psql failure so we can
+        // diagnose why aurora-wait loops indefinitely.  Do NOT redirect stderr
+        // to /dev/null — psql's error line is the only signal that explains
+        // whether the loop is stuck on DNS, auth, SSL, or empty secrets.
+        'echo "aurora-wait: starting. AURORA_HOST=${AURORA_HOST:-MISSING} ' +
+          'DB_USER=${DB_USER:-MISSING} DB_PASS_LEN=${#DB_PASS}"; ' +
+          "ATTEMPT=0; " +
+          "until psql \"postgresql://$DB_USER:$DB_PASS@$AURORA_HOST:5432/langfuse?sslmode=require\" -c 'SELECT 1' >/dev/null 2>/tmp/psql.err; do " +
+          "ATTEMPT=$((ATTEMPT+1)); " +
+          "if [ $((ATTEMPT % 6)) -eq 1 ]; then " + // print every 30s (6×5s)
+          'echo "aurora-wait: attempt $ATTEMPT failed:"; cat /tmp/psql.err; ' +
+          "fi; " +
+          "sleep 5; " +
+          "done; echo 'aurora-wait: success — langfuse DB accepting authenticated connections'",
       ],
       environment: {
         AURORA_HOST: langfuseAuroraCluster.clusterEndpoint.hostname,
