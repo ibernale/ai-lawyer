@@ -319,20 +319,22 @@ export class LangfuseStack extends cdk.Stack {
       command: [
         "sh",
         "-c",
-        // Bounded loop (8 min) + verbose psql errors.  Failure exits non-zero
-        // so the task stops and ECS reports the circuit breaker promptly —
-        // an infinite loop here previously left CloudFormation stuck in
-        // CREATE_IN_PROGRESS for 45+ minutes.  Print psql's actual stderr on
-        // every failure so we can finally see WHY the connection fails.
+        // Bounded loop with explicit per-attempt timeout.  Without
+        // PGCONNECT_TIMEOUT each psql attempt blocks ~60s on TCP timeout when
+        // Aurora is unreachable — the old "96 attempts × 5s" bound was a lie
+        // (real wall-clock was 96 × ~65s ≈ 104 min, leaving CDK stuck for 2h).
+        // Now each attempt is hard-capped at 5s by libpq, so 60 × ~10s ≈ 10 min
+        // is the true upper bound.  Verbose psql stderr on every failure.
         'echo "aurora-wait: starting. AURORA_HOST=${AURORA_HOST:-MISSING} ' +
           'DB_USER=${DB_USER:-MISSING} DB_PASS_LEN=${#DB_PASS}"; ' +
-          "ATTEMPT=0; MAX=96; " + // 96 × 5s = 8 min
+          "export PGCONNECT_TIMEOUT=5; " +
+          "ATTEMPT=0; MAX=60; " +
           "while [ $ATTEMPT -lt $MAX ]; do " +
           "ATTEMPT=$((ATTEMPT+1)); " +
           "if psql \"postgresql://$DB_USER:$DB_PASS@$AURORA_HOST:5432/langfuse?sslmode=require\" -c 'SELECT 1' >/dev/null 2>/tmp/psql.err; then " +
           'echo "aurora-wait: success on attempt $ATTEMPT"; exit 0; ' +
           "fi; " +
-          "if [ $((ATTEMPT % 6)) -eq 1 ]; then " +
+          "if [ $((ATTEMPT % 3)) -eq 1 ]; then " +
           'echo "aurora-wait: attempt $ATTEMPT/$MAX failed:"; cat /tmp/psql.err; ' +
           "fi; " +
           "sleep 5; " +
