@@ -121,7 +121,16 @@ export class LangfuseStack extends cdk.Stack {
       {
         description: `Langfuse ${envName} Aurora subnet group`,
         vpc,
-        vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
+        // PRIVATE_WITH_EGRESS (not PRIVATE_ISOLATED) — the spoke VPC attaches a
+        // custom NACL to isolated subnets that only allows ingress from a stale
+        // hardcoded CIDR list ("privateAppSubnets" in environments.ts) which
+        // does NOT match the CIDRs CDK actually auto-assigns to PRIVATE_WITH_EGRESS
+        // subnets.  Result: any packet from ECS in PRIVATE_WITH_EGRESS (real
+        // CIDR 10.10.3-5.x) to Aurora in PRIVATE_ISOLATED is silently dropped
+        // by the final DENY ALL NACL rule → TCP timeout (run 25991317030).
+        // Placing Aurora in PRIVATE_WITH_EGRESS sidesteps the broken NACL.
+        // No public exposure: Aurora SG still blocks all non-ECS ingress.
+        vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
         removalPolicy: cdk.RemovalPolicy.DESTROY,
       },
     );
@@ -146,7 +155,16 @@ export class LangfuseStack extends cdk.Stack {
         vpc,
         subnetGroup: langfuseSubnetGroup,
         securityGroups: [sgLangfuseAurora],
-        vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
+        // PRIVATE_WITH_EGRESS (not PRIVATE_ISOLATED) — the spoke VPC attaches a
+        // custom NACL to isolated subnets that only allows ingress from a stale
+        // hardcoded CIDR list ("privateAppSubnets" in environments.ts) which
+        // does NOT match the CIDRs CDK actually auto-assigns to PRIVATE_WITH_EGRESS
+        // subnets.  Result: any packet from ECS in PRIVATE_WITH_EGRESS (real
+        // CIDR 10.10.3-5.x) to Aurora in PRIVATE_ISOLATED is silently dropped
+        // by the final DENY ALL NACL rule → TCP timeout (run 25991317030).
+        // Placing Aurora in PRIVATE_WITH_EGRESS sidesteps the broken NACL.
+        // No public exposure: Aurora SG still blocks all non-ECS ingress.
+        vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
         storageEncrypted: true,
         // AWS managed key — no KMS stack cross-dep
         credentials: rds.Credentials.fromGeneratedSecret("langfuse", {
