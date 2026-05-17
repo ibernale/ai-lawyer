@@ -3,6 +3,13 @@ import "./globals.css";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { CaveatFooterNote } from "@/components/CaveatBanner";
 
+// Force dynamic rendering on every request so the CSP middleware can inject
+// a fresh nonce into <script> tags.  Without this, Next.js prerenders+caches
+// the HTML (x-nextjs-cache: HIT, s-maxage=31536000) and the cached body has
+// scripts whose nonces no longer match the per-request CSP header — browsers
+// then block every script and the page hydrates blank.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "lex-agents — Consulta jurídica asistida",
   description:
