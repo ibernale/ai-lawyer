@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import type { Route } from "next";
 import { listConsultations } from "@/lib/api";
 import type { ConsultationSummary } from "@/lib/api";
 import { ErrorBanner } from "@/components/ui/error-banner";
@@ -132,7 +133,7 @@ function HistoricoInner() {
     if (depth) params.set("depth", depth);
     if (status) params.set("status", status);
     const qs = params.toString();
-    router.replace(`/historico${qs ? `?${qs}` : ""}`);
+    router.replace(`/historico${qs ? `?${qs}` : ""}` as Route);
   }
 
   function handleSearchChange(value: string) {

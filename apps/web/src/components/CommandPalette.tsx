@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { Route } from "next";
 
 type PaletteItem = {
   href: string;
@@ -105,7 +106,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   }, [activeIdx]);
 
   function navigate(href: string) {
-    router.push(href);
+    router.push(href as Route);
     onClose();
   }
 
