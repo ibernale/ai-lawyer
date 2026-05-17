@@ -100,6 +100,10 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_WORKLOADS_DEV_ACCOUNT_ID }}:role/github-deploy-dev
           aws-region: ${{ env.AWS_REGION }}
+          # Default is 3600s (1h).  Aurora SNAPSHOT-delete + fresh stack create
+          # routinely exceeds 1h; without this the token expires mid-deploy.
+          # IAM role's maxSessionDuration is 4h — match it here.
+          role-duration-seconds: 14400
 
       - name: Login to ECR
         id: ecr-login
@@ -192,6 +196,10 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_WORKLOADS_DEV_ACCOUNT_ID }}:role/github-deploy-dev
           aws-region: ${{ env.AWS_REGION }}
+          # Default is 3600s (1h).  Aurora SNAPSHOT-delete + fresh stack create
+          # routinely exceeds 1h; without this the token expires mid-deploy.
+          # IAM role's maxSessionDuration is 4h — match it here.
+          role-duration-seconds: 14400
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
