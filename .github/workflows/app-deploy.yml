@@ -230,6 +230,27 @@ jobs:
             --context imageDigestApi=${{ needs.build-and-push.outputs.api-image }} \
             --context imageDigestWeb=${{ needs.build-and-push.outputs.web-image }}
 
+      - name: Clean up CREATE_FAILED Langfuse stack (if any)
+        # CDK with --rollback=false leaves the stack in CREATE_FAILED on circuit-breaker
+        # failure.  CDK refuses to redeploy a CREATE_FAILED stack non-interactively
+        # when the change requires resource replacement.  Delete it first so the next
+        # deploy is a clean CREATE.
+        run: |
+          for STACK in LexAgents-Dev-Langfuse LexAgents-Dev-App; do
+            STATUS=$(aws cloudformation describe-stacks \
+              --stack-name "$STACK" \
+              --region "$AWS_REGION" \
+              --query 'Stacks[0].StackStatus' \
+              --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+            echo "$STACK: $STATUS"
+            if [ "$STATUS" = "CREATE_FAILED" ] || [ "$STATUS" = "ROLLBACK_COMPLETE" ] || [ "$STATUS" = "ROLLBACK_FAILED" ]; then
+              echo "Deleting stuck $STACK ($STATUS) so the next CDK deploy can recreate it..."
+              aws cloudformation delete-stack --stack-name "$STACK" --region "$AWS_REGION"
+              aws cloudformation wait stack-delete-complete --stack-name "$STACK" --region "$AWS_REGION"
+              echo "Delete complete for $STACK"
+            fi
+          done
+
       - name: CDK deploy AppServicesStack
         id: cdk-deploy
         working-directory: infra/cdk
