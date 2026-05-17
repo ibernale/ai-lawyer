@@ -34,9 +34,14 @@ CREATE TABLE IF NOT EXISTS consultations (
     prompt_versions TEXT,
     models TEXT,
     latency_ms INTEGER,
-    cost_estimate_usd REAL
+    cost_estimate_usd REAL,
+    depth_used TEXT,
+    branch TEXT
 );
 """
+
+_MIGRATE_ADD_DEPTH = "ALTER TABLE consultations ADD COLUMN depth_used TEXT"
+_MIGRATE_ADD_BRANCH = "ALTER TABLE consultations ADD COLUMN branch TEXT"
 
 _CREATE_FEEDBACK_TABLE = """
 CREATE TABLE IF NOT EXISTS user_feedback (
@@ -63,6 +68,8 @@ class ConsultationRecord(BaseModel):
     models: list[str] | None = None
     latency_ms: int | None = None
     cost_estimate_usd: float | None = None
+    depth_used: str | None = None
+    branch: str | None = None
 
 
 class FeedbackRecord(BaseModel):
@@ -90,6 +97,12 @@ class ConsultationStore:
         Path(self._db_path).parent.mkdir(parents=True, exist_ok=True)
         async with aiosqlite.connect(self._db_path) as db:
             await db.execute(_CREATE_TABLE)
+            # Migrate existing databases that lack the new columns.
+            for stmt in (_MIGRATE_ADD_DEPTH, _MIGRATE_ADD_BRANCH):
+                try:
+                    await db.execute(stmt)
+                except Exception:
+                    pass  # column already exists
             await db.commit()
         logger.info("consultation_store_initialized", db_path=self._db_path)
 
@@ -109,6 +122,21 @@ class ConsultationStore:
             return await self._pg_list_recent(limit)
         return await self._sqlite_list_recent(limit)
 
+    async def search(
+        self,
+        q: str | None = None,
+        depth: str | None = None,
+        branch: str | None = None,
+        status: str | None = None,
+        since: str | None = None,
+        until: str | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> list[ConsultationRecord]:
+        if is_postgres():
+            return await self._pg_search(q, depth, branch, status, since, until, limit, offset)
+        return await self._sqlite_search(q, depth, branch, status, since, until, limit, offset)
+
     # ------------------------------------------------------------------
     # PostgreSQL (asyncpg)
     # ------------------------------------------------------------------
@@ -119,8 +147,9 @@ class ConsultationStore:
                 """
                 INSERT INTO consultations
                     (trace_id, created_at, query, response_json, verification_json,
-                     prompt_versions, models, latency_ms, cost_estimate_usd)
-                VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9)
+                     prompt_versions, models, latency_ms, cost_estimate_usd,
+                     depth_used, branch)
+                VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9, $10, $11)
                 ON CONFLICT (trace_id) DO UPDATE
                     SET created_at         = EXCLUDED.created_at,
                         query              = EXCLUDED.query,
@@ -129,7 +158,9 @@ class ConsultationStore:
                         prompt_versions    = EXCLUDED.prompt_versions,
                         models             = EXCLUDED.models,
                         latency_ms         = EXCLUDED.latency_ms,
-                        cost_estimate_usd  = EXCLUDED.cost_estimate_usd
+                        cost_estimate_usd  = EXCLUDED.cost_estimate_usd,
+                        depth_used         = EXCLUDED.depth_used,
+                        branch             = EXCLUDED.branch
                 """,
                 record.trace_id,
                 record.created_at,
@@ -140,6 +171,8 @@ class ConsultationStore:
                 json.dumps(record.models) if record.models else None,
                 record.latency_ms,
                 record.cost_estimate_usd,
+                record.depth_used,
+                record.branch,
             )
         logger.debug("consultation_saved_pg", trace_id=record.trace_id)
 
@@ -157,6 +190,53 @@ class ConsultationStore:
             )
         return [_pg_row_to_record(r) for r in rows]
 
+    async def _pg_search(
+        self,
+        q: str | None,
+        depth: str | None,
+        branch: str | None,
+        status: str | None,
+        since: str | None,
+        until: str | None,
+        limit: int,
+        offset: int,
+    ) -> list[ConsultationRecord]:
+        clauses: list[str] = []
+        params: list[Any] = []
+        idx = 1
+
+        if q:
+            clauses.append(f"query ILIKE ${idx}")
+            params.append(f"%{q}%")
+            idx += 1
+        if depth:
+            clauses.append(f"depth_used = ${idx}")
+            params.append(depth)
+            idx += 1
+        if branch:
+            clauses.append(f"branch = ${idx}")
+            params.append(branch)
+            idx += 1
+        if status:
+            clauses.append(f"verification_json::jsonb->>'status' = ${idx}")
+            params.append(status)
+            idx += 1
+        if since:
+            clauses.append(f"created_at >= ${idx}")
+            params.append(since)
+            idx += 1
+        if until:
+            clauses.append(f"created_at <= ${idx}")
+            params.append(until)
+            idx += 1
+
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        params += [limit, offset]
+        sql = f"SELECT * FROM consultations {where} ORDER BY created_at DESC LIMIT ${idx} OFFSET ${idx + 1}"
+        async with pg_conn() as conn:
+            rows = await conn.fetch(sql, *params)
+        return [_pg_row_to_record(r) for r in rows]
+
     # ------------------------------------------------------------------
     # SQLite (aiosqlite) — local dev
     # ------------------------------------------------------------------
@@ -167,8 +247,9 @@ class ConsultationStore:
             await db.execute(
                 """INSERT OR REPLACE INTO consultations
                    (trace_id, created_at, query, response_json, verification_json,
-                    prompt_versions, models, latency_ms, cost_estimate_usd)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    prompt_versions, models, latency_ms, cost_estimate_usd,
+                    depth_used, branch)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     record.trace_id,
                     record.created_at.isoformat(),
@@ -179,6 +260,8 @@ class ConsultationStore:
                     json.dumps(record.models) if record.models else None,
                     record.latency_ms,
                     record.cost_estimate_usd,
+                    record.depth_used,
+                    record.branch,
                 ),
             )
             await db.commit()
@@ -203,6 +286,52 @@ class ConsultationStore:
             ) as cursor:
                 rows = await cursor.fetchall()
         return [_sqlite_row_to_record(r) for r in rows]
+
+    async def _sqlite_search(
+        self,
+        q: str | None,
+        depth: str | None,
+        branch: str | None,
+        status: str | None,
+        since: str | None,
+        until: str | None,
+        limit: int,
+        offset: int,
+    ) -> list[ConsultationRecord]:
+        import aiosqlite
+        clauses: list[str] = []
+        params: list[Any] = []
+
+        if q:
+            clauses.append("query LIKE ?")
+            params.append(f"%{q}%")
+        if depth:
+            clauses.append("depth_used = ?")
+            params.append(depth)
+        if branch:
+            clauses.append("branch = ?")
+            params.append(branch)
+        if since:
+            clauses.append("created_at >= ?")
+            params.append(since)
+        if until:
+            clauses.append("created_at <= ?")
+            params.append(until)
+
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        sql = f"SELECT * FROM consultations {where} ORDER BY created_at DESC LIMIT ? OFFSET ?"
+        params += [limit, offset]
+
+        async with aiosqlite.connect(self._db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(sql, params) as cursor:
+                rows = await cursor.fetchall()
+
+        results = [_sqlite_row_to_record(r) for r in rows]
+        # status filter applied in Python — verification_json is stored as a JSON string
+        if status:
+            results = [r for r in results if _extract_verification_status(r.verification_json) == status]
+        return results
 
 
 # ---------------------------------------------------------------------------
@@ -326,6 +455,16 @@ class FeedbackStore:
 # Row converters
 # ---------------------------------------------------------------------------
 
+def _extract_verification_status(verification_json: str | None) -> str:
+    if not verification_json:
+        return "pending"
+    try:
+        data: dict[str, object] = json.loads(verification_json)
+        return str(data.get("status", "unknown"))
+    except Exception:
+        return "unknown"
+
+
 def _pg_row_to_record(row: Any) -> ConsultationRecord:
     pv = row["prompt_versions"]
     mds = row["models"]
@@ -339,6 +478,8 @@ def _pg_row_to_record(row: Any) -> ConsultationRecord:
         models=list(mds) if mds is not None else None,
         latency_ms=row["latency_ms"],
         cost_estimate_usd=float(row["cost_estimate_usd"]) if row["cost_estimate_usd"] is not None else None,
+        depth_used=row["depth_used"],
+        branch=row["branch"],
     )
 
 
@@ -363,4 +504,6 @@ def _sqlite_row_to_record(row: Any) -> ConsultationRecord:
         models=json.loads(row["models"]) if row["models"] else None,
         latency_ms=row["latency_ms"],
         cost_estimate_usd=row["cost_estimate_usd"],
+        depth_used=row["depth_used"],
+        branch=row["branch"],
     )

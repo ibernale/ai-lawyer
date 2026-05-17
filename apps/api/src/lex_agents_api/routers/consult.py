@@ -198,6 +198,8 @@ async def _persist(
             models=models,
             latency_ms=int(lat) if lat is not None else None,
             cost_estimate_usd=float(cost) if cost is not None else None,
+            depth_used=resp.depth_used,
+            branch=resp.routing.get("branch") if resp.routing else None,
         )
         await store.save(record)
     except Exception:
@@ -306,10 +308,24 @@ async def get_consultation(
 @router.get("", response_model=list[dict[str, Any]])
 async def list_consultations(
     limit: int = 20,
+    offset: int = 0,
+    q: str | None = None,
+    depth: str | None = None,
+    branch: str | None = None,
+    status: str | None = None,
+    since: str | None = None,
+    until: str | None = None,
     _user: CurrentUser = Depends(require_auth),
     store: ConsultationStore = Depends(get_store),
 ) -> list[dict[str, Any]]:
-    records = await store.list_recent(limit=limit)
+    has_filters = any(p is not None for p in (q, depth, branch, status, since, until))
+    if has_filters or offset:
+        records = await store.search(
+            q=q, depth=depth, branch=branch, status=status,
+            since=since, until=until, limit=limit, offset=offset,
+        )
+    else:
+        records = await store.list_recent(limit=limit)
     return [
         {
             "trace_id": r.trace_id,
@@ -317,6 +333,8 @@ async def list_consultations(
             "query": r.query[:80],
             "latency_ms": r.latency_ms,
             "verification_status": _extract_status(r.verification_json),
+            "depth_used": r.depth_used,
+            "branch": r.branch,
         }
         for r in records
     ]

@@ -325,6 +325,19 @@ export type ConsultationSummary = {
   query: string;
   latency_ms: number | null;
   verification_status: string;
+  depth_used: string | null;
+  branch: string | null;
+};
+
+export type ConsultationFilter = {
+  q?: string;
+  depth?: string;
+  branch?: string;
+  status?: string;
+  since?: string;
+  until?: string;
+  limit?: number;
+  offset?: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -481,9 +494,20 @@ export async function getConsultation(
 }
 
 export async function listConsultations(
-  limit = 20,
+  filters: ConsultationFilter = {},
 ): Promise<ConsultationSummary[]> {
-  return apiFetch<ConsultationSummary[]>(`/api/v1/consult?limit=${limit}`);
+  const params = new URLSearchParams();
+  if (filters.limit !== undefined) params.set("limit", String(filters.limit));
+  if (filters.offset !== undefined) params.set("offset", String(filters.offset));
+  if (filters.q) params.set("q", filters.q);
+  if (filters.depth) params.set("depth", filters.depth);
+  if (filters.branch) params.set("branch", filters.branch);
+  if (filters.status) params.set("status", filters.status);
+  if (filters.since) params.set("since", filters.since);
+  if (filters.until) params.set("until", filters.until);
+  if (!params.has("limit")) params.set("limit", "50");
+  const qs = params.toString();
+  return apiFetch<ConsultationSummary[]>(`/api/v1/consult?${qs}`);
 }
 
 export function getComparativeExportUrl(traceId: string): string {
