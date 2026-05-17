@@ -419,21 +419,11 @@ export class LangfuseStack extends cdk.Stack {
       condition: ecs.ContainerDependencyCondition.SUCCESS,
     });
 
-    // X-Ray sidecar — :3.x is NOT a valid Docker tag (it's a wildcard string).
-    // ECR Public rejects it with "manifest not found", which fails the whole task
-    // pull (ECS won't start ANY container if any image in the task is unpullable).
-    // Use :latest, which the X-Ray team keeps pinned to the current 3.x release.
-    langfuseTaskDef.addContainer("xray-daemon", {
-      containerName: "xray-daemon",
-      image: ecs.ContainerImage.fromRegistry(
-        "public.ecr.aws/xray-daemon/aws-xray-daemon:latest",
-      ),
-      logging,
-      portMappings: [{ containerPort: 2000, protocol: ecs.Protocol.UDP }],
-      essential: false,
-      cpu: 32,
-      memoryReservationMiB: 64,
-    });
+    // X-Ray sidecar removed: the original public.ecr.aws/xray-daemon/* path does
+    // not exist (correct namespace is public.ecr.aws/xray/aws-xray-daemon, but the
+    // sidecar is not required for Langfuse to function — Langfuse traces stay
+    // internal to the app).  Add it back via a separate Dockerfile-based image
+    // pin if observability calls for it later.
 
     // ── ECS Service ───────────────────────────────────────────────────────────
     const langfuseService = new ecs.FargateService(this, "LangfuseWebService", {

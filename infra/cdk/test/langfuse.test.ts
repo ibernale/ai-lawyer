@@ -141,7 +141,7 @@ describe("LangfuseStack — ECS", () => {
     });
   });
 
-  test("Task definition has X-Ray sidecar container", () => {
+  test("Task definition has no X-Ray sidecar (removed — wrong ECR path)", () => {
     const taskDefs = template.findResources("AWS::ECS::TaskDefinition");
     const langfuseTaskDef = Object.values(taskDefs).find((td: any) => {
       const containers = td.Properties.ContainerDefinitions ?? [];
@@ -155,7 +155,7 @@ describe("LangfuseStack — ECS", () => {
       (c: any) =>
         typeof c.Image === "string" && c.Image.includes("xray-daemon"),
     );
-    expect(xrayContainer).toBeDefined();
+    expect(xrayContainer).toBeUndefined();
   });
 
   test("aurora-wait init container exists in task definition", () => {
