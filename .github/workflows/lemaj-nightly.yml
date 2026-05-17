@@ -81,7 +81,7 @@ jobs:
 
       - name: Upload lemaj-report artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lemaj-report
           path: |
@@ -91,7 +91,7 @@ jobs:
 
       - name: Upload lemaj-verdicts artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lemaj-verdicts
           path: evals/reports/lemaj-${{ github.run_id }}/lemaj/lemaj_verdicts.jsonl
