@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import "./globals.css";
 import { AppSidebar } from "@/components/AppSidebar";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
@@ -10,18 +11,28 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "lex-agents — Consulta jurídica asistida",
-  description: "Plataforma multi-agente de consulta jurídica especializada (uso interno)",
+  description:
+    "Plataforma multi-agente de consulta jurídica especializada (uso interno)",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="es">
       <body className="antialiased">
         <div className="flex min-h-screen flex-col">
           {/* Top header */}
           <header className="border-b border-border bg-brand-800 px-6 py-3 flex items-center gap-3 shrink-0">
-            <a href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-              <span className="text-xl" aria-hidden>⚖</span>
+            <Link
+              href="/"
+              className="flex items-center gap-3 hover:opacity-90 transition-opacity"
+            >
+              <span className="text-xl" aria-hidden>
+                ⚖
+              </span>
               <div>
                 <span className="text-base font-semibold leading-tight text-white block">
                   lex-agents
@@ -30,14 +41,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   Consulta jurídica asistida
                 </span>
               </div>
-            </a>
+            </Link>
           </header>
 
           <div className="flex flex-1 min-h-0">
             <AppSidebar />
-            <main className="flex-1 overflow-auto">
-              {children}
-            </main>
+            <main className="flex-1 overflow-auto">{children}</main>
           </div>
 
           <CaveatFooterNote />
