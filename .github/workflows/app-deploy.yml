@@ -234,8 +234,13 @@ jobs:
         id: cdk-deploy
         working-directory: infra/cdk
         run: |
+          # --rollback=false keeps the stack in CREATE_FAILED (not ROLLBACK_COMPLETE)
+          # so the diagnostic step below can read container logs and ECS stop reasons
+          # while resources are still alive.  On the next run CDK detects CREATE_FAILED
+          # and auto-deletes before recreating (same recovery path as ROLLBACK_COMPLETE).
           npx cdk deploy LexAgents-Dev-App \
             --require-approval never \
+            --rollback=false \
             --context imageDigestApi=${{ needs.build-and-push.outputs.api-image }} \
             --context imageDigestWeb=${{ needs.build-and-push.outputs.web-image }} \
             --outputs-file /tmp/cdk-outputs.json
@@ -245,9 +250,31 @@ jobs:
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
         run: |
-          echo "=== CDK deploy failed — fetching Langfuse container logs for diagnosis ==="
+          echo "=== CDK deploy failed — diagnosing Langfuse ECS tasks ==="
+
+          # 1. ECS stopped tasks (available while stack is in CREATE_FAILED)
+          echo "--- ECS stopped tasks in langfuse-dev cluster ---"
+          TASK_ARNS=$(aws ecs list-tasks \
+            --cluster langfuse-dev \
+            --desired-status STOPPED \
+            --region "$AWS_REGION" \
+            --query 'taskArns' \
+            --output text 2>/dev/null || echo "")
+          if [ -z "$TASK_ARNS" ] || [ "$TASK_ARNS" = "None" ]; then
+            echo "No stopped tasks found in langfuse-dev cluster (cluster may not exist yet)"
+          else
+            echo "Stopped tasks: $TASK_ARNS"
+            aws ecs describe-tasks \
+              --cluster langfuse-dev \
+              --tasks $TASK_ARNS \
+              --region "$AWS_REGION" \
+              --query 'tasks[*].{taskArn:taskArn,lastStatus:lastStatus,stoppedReason:stoppedReason,containers:containers[*].{name:name,exitCode:exitCode,reason:reason}}' \
+              --output json 2>/dev/null || echo "Could not describe tasks"
+          fi
+
+          # 2. CloudWatch container logs (intact because --rollback=false left resources alive)
+          echo "--- CloudWatch logs: /lex-agents/dev/langfuse-web ---"
           LOG_GROUP="/lex-agents/dev/langfuse-web"
-          # Get the most recent log stream
           STREAM=$(aws logs describe-log-streams \
             --log-group-name "$LOG_GROUP" \
             --order-by LastEventTime \
@@ -257,14 +284,14 @@ jobs:
             --query 'logStreams[0].logStreamName' \
             --output text 2>/dev/null || echo "NONE")
           if [ "$STREAM" = "NONE" ] || [ -z "$STREAM" ]; then
-            echo "No log streams found in $LOG_GROUP (container may not have started at all)"
+            echo "No log streams found in $LOG_GROUP — containers did not start"
           else
-            echo "=== Log stream: $STREAM ==="
+            echo "Log stream: $STREAM"
             aws logs get-log-events \
               --log-group-name "$LOG_GROUP" \
               --log-stream-name "$STREAM" \
               --start-from-head \
-              --limit 200 \
+              --limit 300 \
               --region "$AWS_REGION" \
               --query 'events[*].[timestamp,message]' \
               --output text 2>/dev/null || echo "Could not retrieve log events"

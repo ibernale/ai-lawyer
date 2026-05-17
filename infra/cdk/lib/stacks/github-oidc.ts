@@ -121,8 +121,9 @@ export class GithubOidcStack extends cdk.Stack {
       }),
     );
 
-    // CloudWatch Logs read — lets CI fetch container logs for deploy diagnostics
-    // after a circuit-breaker failure without needing a human to log into AWS.
+    // CloudWatch Logs read + ECS task inspection — lets CI fetch container
+    // logs and stopped-task stop reasons for deploy diagnostics after a
+    // circuit-breaker failure without needing a human to log into AWS.
     this.deployRole.addToPolicy(
       new iam.PolicyStatement({
         sid: "CloudWatchLogsDiagnostics",
@@ -132,6 +133,14 @@ export class GithubOidcStack extends cdk.Stack {
           "logs:GetLogEvents",
           "logs:FilterLogEvents",
         ],
+        resources: ["*"],
+      }),
+    );
+
+    this.deployRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "EcsTaskDiagnostics",
+        actions: ["ecs:ListTasks", "ecs:DescribeTasks"],
         resources: ["*"],
       }),
     );
