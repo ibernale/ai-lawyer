@@ -43,11 +43,13 @@ class UserConfig(BaseModel):
     username: str
     password_hash: str
     role: str = "analyst"
+    tenant_id: str = "default"
 
 
 class CurrentUser(BaseModel):
     username: str
     role: str
+    tenant_id: str = "default"
     session_id: str | None = None
 
 
@@ -92,12 +94,14 @@ def _create_token(
     role: str,
     settings: Settings,
     *,
+    tenant_id: str = "default",
     session_id: str | None = None,
 ) -> str:
     now = datetime.now(UTC)
     payload: dict[str, Any] = {
         "sub": username,
         "role": role,
+        "tid": tenant_id,
         "iat": now,
         "exp": now + timedelta(minutes=settings.jwt_expire_minutes),
     }
@@ -137,7 +141,7 @@ async def require_auth(
 ) -> CurrentUser:
     """Validate Bearer JWT token. Raises 401 if missing, invalid, or revoked."""
     if not settings.auth_enabled:
-        return CurrentUser(username="anonymous", role="analyst")
+        return CurrentUser(username="anonymous", role="analyst", tenant_id="default")
 
     if credentials is None:
         raise HTTPException(
@@ -150,6 +154,7 @@ async def require_auth(
         payload = _verify_token(credentials.credentials, settings)
         username: str = payload.get("sub", "")
         role: str = payload.get("role", "analyst")
+        tenant_id: str = payload.get("tid", "default")
         session_id: str | None = payload.get("sid")
         if not username:
             raise ValueError("missing sub claim")
@@ -171,7 +176,7 @@ async def require_auth(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-    return CurrentUser(username=username, role=role, session_id=session_id)
+    return CurrentUser(username=username, role=role, tenant_id=tenant_id, session_id=session_id)
 
 
 # ---------------------------------------------------------------------------
@@ -212,8 +217,8 @@ def issue_token(username: str, password: str, settings: Settings) -> TokenRespon
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = _create_token(user.username, user.role, settings)
-    logger.info("auth_login_success", username=username, role=user.role)
+    token = _create_token(user.username, user.role, settings, tenant_id=user.tenant_id)
+    logger.info("auth_login_success", username=username, role=user.role, tenant_id=user.tenant_id)
     return TokenResponse(
         access_token=token,
         expires_in=settings.jwt_expire_minutes * 60,
@@ -253,8 +258,12 @@ async def issue_token_with_session(
                 detail="Session store unavailable, please retry",
             ) from exc
 
-    token = _create_token(user.username, user.role, settings, session_id=session_id)
-    logger.info("auth_login_success", username=username, role=user.role)
+    token = _create_token(
+        user.username, user.role, settings,
+        tenant_id=user.tenant_id,
+        session_id=session_id,
+    )
+    logger.info("auth_login_success", username=username, role=user.role, tenant_id=user.tenant_id)
     return TokenResponse(
         access_token=token,
         expires_in=settings.jwt_expire_minutes * 60,

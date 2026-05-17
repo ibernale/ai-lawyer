@@ -140,6 +140,8 @@ async def _persist_stream(
     trace_id: str,
     query: str,
     resp: ConsultResponse,
+    *,
+    tenant_id: str = "default",
 ) -> None:
     try:
         verification_json: str | None = None
@@ -169,7 +171,7 @@ async def _persist_stream(
             depth_used=resp.depth_used,
             branch=resp.routing.get("branch") if resp.routing else None,
         )
-        await store.save(record)
+        await store.save(record, tenant_id=tenant_id)
     except Exception:
         logger.exception("stream_consultation_persist_failed", trace_id=trace_id)
 
@@ -237,7 +239,10 @@ async def consult_stream(
             return
         if final_resp is not None:
             trace_id = correlation_id or final_resp.trace_id
-            background_tasks.add_task(_persist_stream, store, trace_id, query, final_resp)
+            background_tasks.add_task(
+                _persist_stream, store, trace_id, query, final_resp,
+                tenant_id=current_user.tenant_id,
+            )
 
     return StreamingResponse(
         _generate(),
