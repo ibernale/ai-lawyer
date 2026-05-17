@@ -165,6 +165,8 @@ async def _persist_stream(
             models=models,
             latency_ms=int(lat) if lat is not None else None,
             cost_estimate_usd=float(cost) if cost is not None else None,
+            depth_used=resp.depth_used,
+            branch=resp.routing.get("branch") if resp.routing else None,
         )
         await store.save(record)
     except Exception:
