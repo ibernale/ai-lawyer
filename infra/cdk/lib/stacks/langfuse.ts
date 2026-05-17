@@ -319,20 +319,26 @@ export class LangfuseStack extends cdk.Stack {
       command: [
         "sh",
         "-c",
-        // VERBOSE: surface env-var presence + every psql failure so we can
-        // diagnose why aurora-wait loops indefinitely.  Do NOT redirect stderr
-        // to /dev/null — psql's error line is the only signal that explains
-        // whether the loop is stuck on DNS, auth, SSL, or empty secrets.
+        // Bounded loop (8 min) + verbose psql errors.  Failure exits non-zero
+        // so the task stops and ECS reports the circuit breaker promptly —
+        // an infinite loop here previously left CloudFormation stuck in
+        // CREATE_IN_PROGRESS for 45+ minutes.  Print psql's actual stderr on
+        // every failure so we can finally see WHY the connection fails.
         'echo "aurora-wait: starting. AURORA_HOST=${AURORA_HOST:-MISSING} ' +
           'DB_USER=${DB_USER:-MISSING} DB_PASS_LEN=${#DB_PASS}"; ' +
-          "ATTEMPT=0; " +
-          "until psql \"postgresql://$DB_USER:$DB_PASS@$AURORA_HOST:5432/langfuse?sslmode=require\" -c 'SELECT 1' >/dev/null 2>/tmp/psql.err; do " +
+          "ATTEMPT=0; MAX=96; " + // 96 × 5s = 8 min
+          "while [ $ATTEMPT -lt $MAX ]; do " +
           "ATTEMPT=$((ATTEMPT+1)); " +
-          "if [ $((ATTEMPT % 6)) -eq 1 ]; then " + // print every 30s (6×5s)
-          'echo "aurora-wait: attempt $ATTEMPT failed:"; cat /tmp/psql.err; ' +
+          "if psql \"postgresql://$DB_USER:$DB_PASS@$AURORA_HOST:5432/langfuse?sslmode=require\" -c 'SELECT 1' >/dev/null 2>/tmp/psql.err; then " +
+          'echo "aurora-wait: success on attempt $ATTEMPT"; exit 0; ' +
+          "fi; " +
+          "if [ $((ATTEMPT % 6)) -eq 1 ]; then " +
+          'echo "aurora-wait: attempt $ATTEMPT/$MAX failed:"; cat /tmp/psql.err; ' +
           "fi; " +
           "sleep 5; " +
-          "done; echo 'aurora-wait: success — langfuse DB accepting authenticated connections'",
+          "done; " +
+          'echo "aurora-wait: FAILED after $MAX attempts. Final psql error:"; ' +
+          "cat /tmp/psql.err; exit 1",
       ],
       environment: {
         AURORA_HOST: langfuseAuroraCluster.clusterEndpoint.hostname,
