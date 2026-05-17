@@ -8,9 +8,36 @@
 // Browser uses relative paths ("") so no URL is baked in the image.
 // Server-side (SSR) uses process.env.API_BASE_URL (runtime, set in ECS task def).
 
+const API_UPSTREAM =
+    process.env.API_BASE_URL ?? "http://localhost:8000";
+
 const nextConfig = {
     output: "standalone",
     typedRoutes: true,
+
+    // In production the ALB routes /api/v1/*, /health, /version, /auth/* to
+    // FastAPI before the request reaches Next.js — rewrites never fire there.
+    // In local dev (no Docker/ALB) these rewrites proxy the browser calls.
+    async rewrites() {
+        return [
+            {
+                source: "/api/v1/:path*",
+                destination: `${API_UPSTREAM}/api/v1/:path*`,
+            },
+            {
+                source: "/health",
+                destination: `${API_UPSTREAM}/health`,
+            },
+            {
+                source: "/version",
+                destination: `${API_UPSTREAM}/version`,
+            },
+            {
+                source: "/auth/:path*",
+                destination: `${API_UPSTREAM}/auth/:path*`,
+            },
+        ];
+    },
 
     async headers() {
         return [
