@@ -16,7 +16,7 @@ services:
       - RELOAD=true
       - QDRANT_URL=http://qdrant:6333
       - AUTH_ENABLED=false
-      - CORS_ALLOWED_ORIGINS=http://localhost:3000
+      - CORS_ALLOWED_ORIGINS=http://localhost:3010
       - PYTHONPATH=/app/apps/api/src:/app/packages/shared/src:/app/packages/agents/src:/app/packages/rag/src:/app/packages/verifier/src:/app/packages/ingest/src:/app/packages/audit/src:/app/packages/admin/src:/app/packages/memory/src
     command:
       [
