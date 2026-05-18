@@ -208,7 +208,7 @@ jobs:
 
       - name: Install CDK deps
         working-directory: infra/cdk
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Write CDK context (account IDs)
         working-directory: infra/cdk
