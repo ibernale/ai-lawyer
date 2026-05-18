@@ -18,7 +18,8 @@ from __future__ import annotations
 import re
 import uuid
 from datetime import UTC, datetime
-from typing import Literal
+from collections.abc import Sequence
+from typing import Literal, Protocol, runtime_checkable
 
 import aiosqlite
 import structlog
@@ -236,7 +237,8 @@ class ChangeEventStore:
 # Source protocol (minimal — avoids circular imports)
 # ---------------------------------------------------------------------------
 
-class _SourceProto:
+@runtime_checkable
+class _SourceProto(Protocol):
     """Structural type — any object with source_id and list_documents()."""
     source_id: str
 
@@ -265,7 +267,7 @@ class ChangeMonitor:
 
     def __init__(
         self,
-        sources: list[_SourceProto],
+        sources: Sequence[_SourceProto],
         store: ChangeEventStore,
     ) -> None:
         self._sources = sources

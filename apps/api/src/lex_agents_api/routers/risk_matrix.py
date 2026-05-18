@@ -77,7 +77,8 @@ async def generate_risk_matrix_xlsx(
         logger.error("risk_matrix_response_parse_error", trace_id=trace_id, error=str(exc))
         raise HTTPException(status_code=422, detail="Could not parse stored consultation") from exc
 
-    client = AnthropicClientWrapper()
+    settings = get_settings()
+    client = AnthropicClientWrapper(api_key=settings.anthropic_api_key.get_secret_value())
     gen = RiskMatrixGenerator(client)
 
     try:

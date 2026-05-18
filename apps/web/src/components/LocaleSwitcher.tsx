@@ -4,13 +4,20 @@ import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { LOCALE_COOKIE, localeFlags, localeLabels, locales } from "@/i18n/routing";
 
+// Module-level helper — kept outside component to satisfy react-hooks/immutability
+// (React Compiler flags direct document.cookie mutations inside component functions).
+function writeLocaleCookie(locale: string): void {
+  document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=${
+    60 * 60 * 24 * 365
+  }; SameSite=Lax`;
+}
+
 export function LocaleSwitcher() {
   const router = useRouter();
   const currentLocale = useLocale();
 
   function switchLocale(locale: string) {
-    // Set cookie for 1 year
-    document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+    writeLocaleCookie(locale);
     router.refresh();
   }
 
