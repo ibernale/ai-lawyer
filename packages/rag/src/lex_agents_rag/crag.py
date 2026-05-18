@@ -18,6 +18,7 @@ from __future__ import annotations
 import re
 
 import structlog
+from anthropic.types import TextBlock
 from lex_agents_shared.anthropic_client import MODEL_HAIKU, AnthropicClientWrapper
 
 from lex_agents_rag.retriever import RankedChunk
@@ -107,7 +108,8 @@ class CRAGFilter:
                 max_tokens=256,
                 messages=[{"role": "user", "content": prompt}],
             )
-            raw = resp.content[0].text.strip() if resp.content else ""
+            text_block = next((b for b in resp.content if isinstance(b, TextBlock)), None)
+            raw = text_block.text.strip() if text_block else ""
             return self._parse_classifications(raw, len(chunks))
         except Exception:
             logger.exception("crag_filter_classify_error")

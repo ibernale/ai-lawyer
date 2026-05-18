@@ -8,10 +8,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from lex_agents_ingest.docling_extractor import DoclingExtractor, get_extractor
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -37,7 +34,7 @@ def test_extract_plain_text():
 
 def test_extract_unknown_mime_defaults_to_utf8():
     extractor = DoclingExtractor()
-    data = "Contenido desconocido.".encode("utf-8")
+    data = b"Contenido desconocido."
     text, page_count = extractor.extract(data, "application/octet-stream", "file.xyz")
     assert "Contenido desconocido" in text
     assert page_count is None

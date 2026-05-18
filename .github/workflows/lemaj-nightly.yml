@@ -31,7 +31,7 @@ jobs:
       QDRANT_URL: http://localhost:6333
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Wait for Qdrant
         run: |
@@ -42,7 +42,7 @@ jobs:
           done
           curl -sf http://localhost:6333/readyz || (echo "Qdrant failed to start" && exit 1)
 
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.12"
 

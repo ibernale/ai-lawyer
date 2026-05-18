@@ -10,7 +10,6 @@ from datetime import date, datetime
 
 import httpx
 import pytest
-
 from lex_agents_ingest.canonical import CanonicalDocument
 from lex_agents_ingest.sources.bcb_brasil import BcbBrasilSource
 from lex_agents_ingest.sources.bcbs_bis import BcbsBisSource
@@ -18,7 +17,6 @@ from lex_agents_ingest.sources.bcra import BcraSource
 from lex_agents_ingest.sources.cnmc import CnmcSource
 from lex_agents_ingest.sources.federal_register import FederalRegisterSource
 from lex_agents_ingest.sources.sepblac import SepblacSource
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -48,14 +46,14 @@ _CNMC_HTML = (
     "<a href=\"/expediente/DS-013-23\">Ver expediente</a>"
     "<article>Contenido de la resolución.</article>"
     "</body></html>"
-).encode("utf-8")
+).encode()
 
 _CNMC_LISTING = (
     "<html><body>"
     "<a href=\"/expediente/DS-013-23\">Resolución DS-013-23</a>"
     "<a href=\"/expediente/DS-014-23\">Resolución DS-014-23</a>"
     "</body></html>"
-).encode("utf-8")
+).encode()
 
 
 def _make_cnmc_client() -> httpx.AsyncClient:
@@ -101,24 +99,23 @@ async def test_cnmc_parse_to_canonical():
 # ---------------------------------------------------------------------------
 
 _SEPBLAC_HTML = (
-    "<html><body>"
-    "<h1>Guia de Referencia: DDC en Entidades Financieras</h1>"
-    "<p>25/01/2024</p>"
-    "<p>Contenido de la guia de referencia SEPBLAC.</p>"
-    "</body></html>"
-).encode("utf-8")
+    b"<html><body>"
+    b"<h1>Guia de Referencia: DDC en Entidades Financieras</h1>"
+    b"<p>25/01/2024</p>"
+    b"<p>Contenido de la guia de referencia SEPBLAC.</p>"
+    b"</body></html>"
+)
 
 _SEPBLAC_LISTING = (
-    "<html><body>"
-    "<a href=\"/es/sujetos-obligados/guia-ddc-2024\">Guia DDC 2024</a>"
-    "<a href=\"/files/informe-2023.pdf\">Informe anual 2023 (PDF)</a>"
-    "</body></html>"
-).encode("utf-8")
+    b"<html><body>"
+    b"<a href=\"/es/sujetos-obligados/guia-ddc-2024\">Guia DDC 2024</a>"
+    b"<a href=\"/files/informe-2023.pdf\">Informe anual 2023 (PDF)</a>"
+    b"</body></html>"
+)
 
 
 def _make_sepblac_client() -> httpx.AsyncClient:
     routes = {
-        "https://www.sepblac.es/es/sujetos-obligados/guias-y-comunicados": (200, _SEPBLAC_LISTING, "text/html"),
         "https://www.sepblac.es/es/sujetos-obligados/guias-y-comunicados": (200, _SEPBLAC_LISTING, "text/html"),
         "https://www.sepblac.es/es/sujetos-obligados/guia-ddc-2024": (200, _SEPBLAC_HTML, "text/html"),
     }
@@ -166,19 +163,19 @@ def test_sepblac_parse_pdf_stub():
 # ---------------------------------------------------------------------------
 
 _BIS_HTML = (
-    "<html><body>"
-    "<h1>Basel III: Finalising post-crisis reforms (BCBS d424)</h1>"
-    "<p>7 December 2017</p>"
-    "<article>Full text of the standard...</article>"
-    "</body></html>"
-).encode("utf-8")
+    b"<html><body>"
+    b"<h1>Basel III: Finalising post-crisis reforms (BCBS d424)</h1>"
+    b"<p>7 December 2017</p>"
+    b"<article>Full text of the standard...</article>"
+    b"</body></html>"
+)
 
 _BIS_LISTING = (
-    "<html><body>"
-    "<a href=\"/publ/d424.htm\">Basel III d424</a>"
-    "<a href=\"/publ/d558.pdf\">Disclosure d558</a>"
-    "</body></html>"
-).encode("utf-8")
+    b"<html><body>"
+    b"<a href=\"/publ/d424.htm\">Basel III d424</a>"
+    b"<a href=\"/publ/d558.pdf\">Disclosure d558</a>"
+    b"</body></html>"
+)
 
 
 def _make_bis_client() -> httpx.AsyncClient:
@@ -265,19 +262,19 @@ async def test_federal_register_fetch_and_parse():
 # ---------------------------------------------------------------------------
 
 _BCB_HTML = (
-    "<html><body>"
-    "<h1>Circular 4.000 -- Requisitos de capital regulatorio</h1>"
-    "<p>Data: 10/06/2023</p>"
-    "<p>O Banco Central do Brasil determina...</p>"
-    "</body></html>"
-).encode("utf-8")
+    b"<html><body>"
+    b"<h1>Circular 4.000 -- Requisitos de capital regulatorio</h1>"
+    b"<p>Data: 10/06/2023</p>"
+    b"<p>O Banco Central do Brasil determina...</p>"
+    b"</body></html>"
+)
 
 _BCB_LISTING = (
-    "<html><body>"
-    "<a href=\"/normativos/circular/4000\">Circular 4000</a>"
-    "<a href=\"/normativos/resolucao/cmc/2023-001\">Resolucao CMC 2023-001</a>"
-    "</body></html>"
-).encode("utf-8")
+    b"<html><body>"
+    b"<a href=\"/normativos/circular/4000\">Circular 4000</a>"
+    b"<a href=\"/normativos/resolucao/cmc/2023-001\">Resolucao CMC 2023-001</a>"
+    b"</body></html>"
+)
 
 
 def _make_bcb_client() -> httpx.AsyncClient:
@@ -319,20 +316,20 @@ def test_bcb_brasil_parse():
 # ---------------------------------------------------------------------------
 
 _BCRA_HTML = (
-    "<html><body>"
-    "<title>Com. A 7650 - BCRA</title>"
-    "<h1>Comunicacion A 7650</h1>"
-    "<p>15/09/2023</p>"
-    "<p>El Banco Central de la Republica Argentina...</p>"
-    "</body></html>"
-).encode("utf-8")
+    b"<html><body>"
+    b"<title>Com. A 7650 - BCRA</title>"
+    b"<h1>Comunicacion A 7650</h1>"
+    b"<p>15/09/2023</p>"
+    b"<p>El Banco Central de la Republica Argentina...</p>"
+    b"</body></html>"
+)
 
 _BCRA_LISTING = (
-    "<html><body>"
-    "<a href=\"/SistemasFinancieros/norma-7650.asp\">Com. A 7650</a>"
-    "<a href=\"/SistemasFinancieros/circular-runor-1.pdf\">RUNOR 1 (PDF)</a>"
-    "</body></html>"
-).encode("utf-8")
+    b"<html><body>"
+    b"<a href=\"/SistemasFinancieros/norma-7650.asp\">Com. A 7650</a>"
+    b"<a href=\"/SistemasFinancieros/circular-runor-1.pdf\">RUNOR 1 (PDF)</a>"
+    b"</body></html>"
+)
 
 
 def _make_bcra_client() -> httpx.AsyncClient:

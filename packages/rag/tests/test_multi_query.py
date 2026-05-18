@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
-from lex_agents_rag.multi_query_retriever import MultiQueryRetriever, _RRF_K
+from anthropic.types import TextBlock
+from lex_agents_rag.multi_query_retriever import _RRF_K, MultiQueryRetriever
 from lex_agents_rag.retriever import RankedChunk, SearchFilters
-
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -26,7 +25,7 @@ def _make_chunk(chunk_id: str, rank: int, score: float = 1.0) -> RankedChunk:
 def _make_client(paraphrase_text: str = "paráfrasis 1\nparáfrasis 2") -> MagicMock:
     client = MagicMock()
     resp = MagicMock()
-    resp.content = [MagicMock(text=paraphrase_text)]
+    resp.content = [MagicMock(spec=TextBlock, text=paraphrase_text)]
     client.messages_create.return_value = resp
     return client
 
