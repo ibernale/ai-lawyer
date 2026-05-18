@@ -1,0 +1,75 @@
+name: Regulation Monitor
+
+on:
+  schedule:
+    - cron: "30 4 * * *"   # 04:30 UTC — after ingest-real (02:00 UTC)
+  workflow_dispatch:
+    inputs:
+      sources:
+        description: "Comma-separated source IDs to scan (empty = all)"
+        required: false
+        default: ""
+
+permissions: {}
+
+jobs:
+  monitor:
+    name: "Scan regulatory sources for changes"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      QDRANT_URL: http://localhost:6333
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "**/pyproject.toml"
+
+      - name: Install dependencies
+        run: uv sync --all-packages
+
+      - name: Run regulation monitor
+        env:
+          SOURCES: ${{ inputs.sources }}
+        run: |
+          uv run python scripts/run_monitor.py \
+            --db data/monitor.db \
+            --report data/monitor_report.json \
+            ${SOURCES:+--sources "$SOURCES"}
+
+      - name: Post step summary
+        if: always()
+        run: |
+          if [ -f data/monitor_report.json ]; then
+            python -c "
+          import json, sys
+          r = json.load(open('data/monitor_report.json'))
+          print('## Regulation Monitor Summary')
+          print(f'- **New events**: {r.get(\"n_new\", 0)}')
+          print(f'- **Sources scanned**: {r.get(\"n_sources\", 0)}')
+          if r.get('events'):
+              print()
+              print('### New documents detected')
+              for e in r['events'][:20]:
+                  sev = {'high': '🔴', 'medium': '🟡', 'low': '🟢'}.get(e['severity'], '⚪')
+                  print(f'- {sev} [{e[\"source_id\"]}] {e[\"document_id\"]}')
+          " >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No monitor report found." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload monitor report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitor-report-${{ github.run_id }}
+          path: data/monitor_report.json
+          retention-days: 30

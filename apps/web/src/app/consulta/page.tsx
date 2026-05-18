@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { ChangeAlertBanner } from "@/components/ChangeAlertBanner";
 import { ResponseView } from "@/components/ResponseView";
 import { StreamProgressBar } from "@/components/StreamProgressBar";
 import { ErrorBanner } from "@/components/ui/error-banner";
@@ -156,6 +157,9 @@ function ConsultaInner() {
       </div>
 
       <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-8 space-y-6">
+        {/* Regulation change alert banner (Fase 11D.2) */}
+        <ChangeAlertBanner />
+
         <header>
           <h1 className="text-2xl font-bold tracking-tight">
             Consulta jurídica
