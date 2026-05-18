@@ -36,6 +36,7 @@ from lex_agents_api.routers import rag as rag_router
 from lex_agents_api.routers.audit_trail import router as audit_trail_router
 from lex_agents_api.routers.calendar import router as calendar_router
 from lex_agents_api.routers.consult_stream import router as consult_stream_router
+from lex_agents_api.routers.contracts import router as contracts_router
 from lex_agents_api.routers.documents import router as documents_router
 from lex_agents_api.routers.federation import router as federation_router
 from lex_agents_api.routers.governance import router as governance_router
@@ -111,6 +112,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     feedback_store = FeedbackStore(settings.consultation_db_path)
     await feedback_store.init()
+
+    # Contract store (Fase 13A)
+    try:
+        from lex_agents_agents.contracts.store import ContractStore
+        contract_store = ContractStore(settings.consultation_db_path)
+        await contract_store.init()
+        logger.info("contract_store_initialized", db_path=settings.consultation_db_path)
+    except ImportError:
+        logger.warning("lex_agents_agents_contracts_not_available")
 
     audit_store = AuditStore(settings.consultation_db_path)
     await audit_store.init()
@@ -273,6 +283,7 @@ def create_app() -> FastAPI:
     app.include_router(notifications_router)   # /api/v1/admin/notifications/*
     app.include_router(federation_router)      # /api/v1/admin/federation/*
     app.include_router(sessions_router)        # /api/v1/admin/users/*/sessions, /me/sessions
+    app.include_router(contracts_router)       # /api/v1/contracts — contract analysis
 
     # Prometheus metrics — /metrics (no auth, internal scrape only)
     Instrumentator(
