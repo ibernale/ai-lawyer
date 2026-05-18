@@ -25,6 +25,10 @@ dev = [
     "respx>=0.21.0",
     "pytest-mock>=3.14.0",
 ]
+# Advanced document parsing (Fase 11C.3)
+docling = [
+    "docling>=2.0.0",
+]
 
 [build-system]
 requires = ["hatchling"]

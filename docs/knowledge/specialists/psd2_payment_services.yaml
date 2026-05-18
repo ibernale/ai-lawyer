@@ -1,0 +1,182 @@
+key_regulations:
+  - id: psd2
+    short_name: "PSD2"
+    full_name: "Directiva (UE) 2015/2366 — Segunda Directiva de Servicios de Pago"
+    jurisdiction: EU
+    type: directive
+    domains: [payment_services, open_banking, sca]
+    notes: >
+      Marco principal de servicios de pago en la UE. Transpuesta en España por
+      RD-ley 19/2018. Regula PSP, SCA, TPP (AISP/PISP), protección usuario.
+      Pendiente revisión por PSD3/PSR.
+
+  - id: psd3_proposal
+    short_name: "Propuesta PSD3"
+    full_name: "COM/2023/366 — Propuesta de Directiva de Servicios de Pago 3"
+    jurisdiction: EU
+    type: directive_proposal
+    domains: [payment_services, open_banking, eme]
+    notes: >
+      Propuesta de la Comisión de junio 2023. En tramitación legislativa.
+      Consolida PSP/EME en licencia única, mejora SCA, amplía Open Banking
+      a Open Finance. Pendiente aprobación definitiva y publicación en DOUE.
+
+  - id: psr_proposal
+    short_name: "PSR (propuesta)"
+    full_name: "COM/2023/367 — Propuesta de Reglamento de Servicios de Pago"
+    jurisdiction: EU
+    type: regulation_proposal
+    domains: [payment_services, fraud, liability]
+    notes: >
+      Complementa PSD3. Regula obligaciones de verificación IBAN, responsabilidad
+      en fraude push payment (APP), sharing de datos de fraude entre PSP.
+      Aplicación directa una vez aprobado.
+
+  - id: emd2
+    short_name: "EMD2"
+    full_name: "Directiva 2009/110/CE — Segunda Directiva de Dinero Electrónico"
+    jurisdiction: EU
+    type: directive
+    domains: [e_money, eme]
+    notes: >
+      Regula las entidades de dinero electrónico (EME) y la emisión de e-money.
+      Transpuesta por Ley 21/2011. Bajo PSD3 se consolida con el régimen PSP.
+
+  - id: rts_sca
+    short_name: "RTS SCA"
+    full_name: "Reglamento Delegado (UE) 2018/389 — RTS sobre autenticación reforzada de clientes"
+    jurisdiction: EU
+    type: delegated_regulation
+    domains: [sca, open_banking, api]
+    notes: >
+      Define los requisitos técnicos de SCA: factores (conocimiento/posesión/
+      inherencia), enlace dinámico, exenciones (bajo importe, TRA, recurrentes,
+      beneficiarios de confianza), interfaz dedicada ASPSP.
+
+  - id: rdley_19_2018
+    short_name: "RD-ley 19/2018"
+    full_name: "Real Decreto-ley 19/2018, de 23 de noviembre — Servicios de pago (transposición PSD2)"
+    jurisdiction: ES
+    type: royal_decree_law
+    domains: [payment_services, sca, tpp]
+    notes: >
+      Transposición parcial de PSD2 en España. Modifica la Ley 16/2009 de
+      servicios de pago. Supervisión atribuida al Banco de España.
+      Pendiente ley definitiva de transposición plena.
+
+  - id: ley21_2011
+    short_name: "Ley 21/2011"
+    full_name: "Ley 21/2011, de 26 de julio, de dinero electrónico"
+    jurisdiction: ES
+    type: law
+    domains: [e_money, eme]
+    notes: >
+      Transpone EMD2 en España. Regula la emisión y reembolso de dinero
+      electrónico, requisitos de capital, salvaguarda de fondos.
+
+  - id: trf_reg_2015
+    short_name: "Reglamento Transferencias 2015"
+    full_name: "Reglamento (UE) 2015/847 — Información que acompaña las transferencias de fondos"
+    jurisdiction: EU
+    type: regulation
+    domains: [wire_transfer, aml]
+    notes: >
+      Sustituido por Reglamento (UE) 2023/1113 a partir de 30/12/2024.
+      La nueva versión amplía la travel rule a criptoactivos.
+
+  - id: regl_pagos_transfronterizos
+    short_name: "Reglamento 2021/1230"
+    full_name: "Reglamento (UE) 2021/1230 — Pagos transfronterizos en la Unión"
+    jurisdiction: EU
+    type: regulation
+    domains: [payment_services, cross_border]
+    notes: >
+      Igualdad de comisiones entre pagos nacionales y transfronterizos en EUR
+      dentro del EEE. Obligación de transparencia de tipos de conversión de divisas.
+
+  - id: eba_gl_sca_2019
+    short_name: "EBA GL SCA/CSC"
+    full_name: "EBA/GL/2019/04 — Guidelines on the conditions to benefit from an exemption from contingency measures"
+    jurisdiction: EU
+    type: guideline
+    domains: [sca, open_banking, api]
+    notes: >
+      Condiciones para que el ASPSP quede exento de habilitar mecanismo
+      de contingencia (fallback). Umbral de disponibilidad 99,5% trimestral.
+
+common_caveats:
+  - id: psd3_psr_pending
+    text: >
+      PSD3 y el Reglamento PSR están en tramitación legislativa (propuesta
+      Comisión junio 2023). Los textos finales pueden diferir sustancialmente
+      de las propuestas. Cualquier análisis sobre el régimen futuro debe
+      tratarse como provisional hasta la publicación en el DOUE y los plazos
+      de transposición/aplicación.
+
+  - id: rts_eba_versioning
+    text: >
+      Los RTS y Guidelines de la EBA se actualizan con regularidad. Los umbrales
+      de exención SCA (p.ej. 30 €/500 € acumulado, TRA según tasa de fraude) y
+      los requisitos de la interfaz ASPSP deben verificarse contra la versión
+      vigente en el Registro Oficial de la EBA (https://www.eba.europa.eu/regulation-and-policy).
+
+  - id: spain_transposition_gap
+    text: >
+      La transposición española de PSD2 mediante RD-ley 19/2018 es parcial.
+      Determinadas disposiciones de PSD2 (especialmente en materia de protección
+      del usuario y régimen sancionador) pueden requerir interpretación conforme
+      al texto de la Directiva en tanto no exista ley definitiva de transposición.
+
+  - id: open_finance_scope
+    text: >
+      El ámbito del Open Finance (extensión de acceso a datos más allá de cuentas
+      de pago) está pendiente de definición final en el PSR y en el marco del
+      Reglamento de Datos Financieros (FIDA, COM/2023/360). No extrapolar
+      obligaciones PSD2/Open Banking al Open Finance sin base normativa explícita.
+
+jurisprudence:
+  - id: tjue_c_645_2020_triodos
+    citation: "STJUE de 11 de enero de 2024, C-645/22 (Triodos Bank)"
+    summary: >
+      Clarifica el alcance de la obligación de autenticación reforzada (SCA) en
+      el acceso a cuentas de pago por medios digitales. El requisito de SCA es
+      aplicable incluso cuando el usuario accede exclusivamente para consultar
+      saldo sin iniciar operación de pago.
+    domains: [sca, digital_banking]
+
+  - id: tjue_c_287_2019
+    citation: "STJUE de 2 de septiembre de 2021, C-287/19 (DenizBank)"
+    summary: >
+      Los instrumentos de pago de uso limitado (tarjetas de fidelización) pueden
+      quedar excluidos del ámbito de PSD2, pero la exclusión debe interpretarse
+      restrictivamente. La entidad emisora soporta la carga de probar que el
+      instrumento cumple las condiciones de la exclusión de red limitada.
+    domains: [exclusions, limited_network]
+
+  - id: be_res_sancion_sca_2022
+    citation: "Resolución sancionadora Banco de España — Exp. 2022/PSP/0041 (anónima)"
+    summary: >
+      Sanción a entidad por deficiencias en la implementación de SCA en pagos
+      remotos por Internet: ausencia de enlace dinámico y exenciones no
+      documentadas. Confirma que la EBA GL 2019/04 es vinculante para el
+      Banco de España en el ejercicio de su función supervisora.
+    domains: [sca, sancionador]
+
+regulatory_contacts:
+  - body: "Banco de España — Departamento de Supervisión PSP"
+    full_name: "Banco de España — Supervisión de Entidades de Pago y Dinero Electrónico"
+    jurisdiction: ES
+    url: "https://www.bde.es/bde/es/areas/supervision/entidades-supervisadas/entidades-de-pago-y-dinero-electronico/"
+    notes: "Registro y supervisión de entidades de pago y EME. Receptor de notificaciones de incidentes operativos/seguridad."
+
+  - body: "EBA"
+    full_name: "European Banking Authority — Payment Services"
+    jurisdiction: EU
+    url: "https://www.eba.europa.eu/regulation-and-policy/payment-services-and-electronic-money"
+    notes: "Emite RTS, ITS y Guidelines sobre PSD2/SCA/Open Banking. Registro de entidades de pago pasaportadas."
+
+  - body: "BCE — Oversight"
+    full_name: "Banco Central Europeo — Oversight de sistemas e instrumentos de pago"
+    jurisdiction: EU
+    url: "https://www.ecb.europa.eu/paym/pol/oversight/html/index.en.html"
+    notes: "Supervisión de sistemas de pago de importancia sistémica (SIPS) y oversigth de instrumentos de pago (incluidas tarjetas y pagos inmediatos SCT Inst)."

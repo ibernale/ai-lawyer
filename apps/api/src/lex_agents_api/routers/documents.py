@@ -3,13 +3,16 @@
 Per-tenant document collections in Qdrant: ``docs_{tenant_id}``.
 Supports PDF, DOCX, and plain-text uploads up to ``docs_max_bytes``.
 Analysis and comparison use claude-sonnet-4-6 with the full document as context.
+
+Text extraction uses DoclingExtractor (Fase 11C.3):
+- Docling>=2.0.0 when installed: layout-aware Markdown output, table extraction.
+- Fallback to pdfminer (PDF) / python-docx (DOCX) when Docling is not available.
 """
 
 from __future__ import annotations
 
 import asyncio
 import hashlib
-import io
 import re
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -18,6 +21,7 @@ from typing import Any
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from lex_agents_ingest.docling_extractor import get_extractor
 from lex_agents_ingest.embedder import BgeM3Embedder, EmbeddingResult
 from lex_agents_shared.anthropic_client import MODEL_SONNET, AnthropicClientWrapper
 from pydantic import BaseModel, Field
@@ -152,64 +156,25 @@ def _make_chunk_point_id(doc_id: str, chunk_idx: int) -> int:
 
 
 # ---------------------------------------------------------------------------
-# Text extraction
+# Text extraction — delegates to DoclingExtractor (Fase 11C.3)
 # ---------------------------------------------------------------------------
-
-
-def _extract_text_from_pdf(data: bytes) -> tuple[str, int]:
-    """Extract text from PDF bytes. Returns (text, page_count)."""
-    try:
-        from pdfminer.high_level import extract_text as _pdf_text
-        from pdfminer.pdfpage import PDFPage
-
-        text = _pdf_text(io.BytesIO(data)) or ""
-        page_count = sum(
-            1
-            for _ in PDFPage.get_pages(io.BytesIO(data), check_extractable=False)
-        )
-        return text, page_count
-    except Exception as exc:
-        logger.warning("pdf_extraction_failed", exc=str(exc))
-        raise HTTPException(
-            status_code=422,
-            detail=f"No se pudo extraer texto del PDF: {exc}",
-        ) from exc
-
-
-def _extract_text_from_docx(data: bytes) -> tuple[str, None]:
-    """Extract text from DOCX bytes."""
-    try:
-        import docx
-
-        doc = docx.Document(io.BytesIO(data))
-        text = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
-        return text, None
-    except Exception as exc:
-        logger.warning("docx_extraction_failed", exc=str(exc))
-        raise HTTPException(
-            status_code=422,
-            detail=f"No se pudo extraer texto del DOCX: {exc}",
-        ) from exc
 
 
 def _extract_text(
     data: bytes, mime_type: str, filename: str
 ) -> tuple[str, int | None]:
-    """Dispatch text extraction by MIME type / filename extension."""
-    fn_lower = filename.lower()
-    if mime_type == "application/pdf" or fn_lower.endswith(".pdf"):
-        return _extract_text_from_pdf(data)
-    if mime_type in (
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "application/msword",
-    ) or fn_lower.endswith((".docx", ".doc")):
-        return _extract_text_from_docx(data)
-    # Plain text fallback
+    """Extract text via DoclingExtractor.
+
+    Uses Docling (layout-aware, table extraction, Markdown output) when
+    installed; falls back to pdfminer/python-docx otherwise.
+    """
     try:
-        return data.decode("utf-8", errors="replace"), None
+        return get_extractor().extract(data, mime_type, filename)
     except Exception as exc:
+        logger.warning("text_extraction_failed", filename=filename, exc=str(exc))
         raise HTTPException(
-            status_code=422, detail=f"No se pudo leer el archivo: {exc}"
+            status_code=422,
+            detail=f"No se pudo extraer texto del documento: {exc}",
         ) from exc
 
 
