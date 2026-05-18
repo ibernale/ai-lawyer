@@ -395,10 +395,7 @@ export function consultQueryStream(
 
   (async () => {
     try {
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("auth_token")
-          : null;
+      const token = await getToken();
 
       const res = await fetch(`${API_BASE}/api/v1/consult/stream`, {
         method: "POST",
