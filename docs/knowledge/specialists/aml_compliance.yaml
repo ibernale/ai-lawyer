@@ -1,0 +1,188 @@
+key_regulations:
+  - id: amld6
+    short_name: "AMLD6"
+    full_name: "Directiva (UE) 2018/1673 — Sexta Directiva contra el blanqueo de capitales"
+    jurisdiction: EU
+    type: directive
+    domains: [aml, pbc, ft]
+    notes: >
+      Armoniza los delitos de blanqueo en la UE. Se complementa con el paquete
+      AML/CFT de 2024 (AMLR + AMLD6-recast + AMLA). Aplicar junto con Ley 10/2010.
+
+  - id: amlr_2024
+    short_name: "AMLR 2024"
+    full_name: "Reglamento (UE) 2024/1624 — Reglamento antiblaqueo de capitales"
+    jurisdiction: EU
+    type: regulation
+    domains: [aml, pbc, ddc]
+    notes: >
+      Aplicación directa en todos los EEMM desde 2027. Sustituye las disposiciones
+      de fondo de AMLD4/5. Define obligaciones DDC (estándar, reforzada, simplificada),
+      beneficial ownership, PEPs, países terceros de alto riesgo.
+
+  - id: amld6_recast
+    short_name: "AMLD6-recast"
+    full_name: "Directiva (UE) 2024/1640 — Refundición sexta Directiva AML"
+    jurisdiction: EU
+    type: directive
+    domains: [aml, supervision, fiu]
+    notes: >
+      Marco institucional: unidades de inteligencia financiera (UIF), supervisores,
+      AMLA. Complementa el AMLR 2024.
+
+  - id: amla_reg
+    short_name: "AMLA"
+    full_name: "Reglamento (UE) 2024/1620 — Autoridad Antiblaqueo y Financiación del Terrorismo"
+    jurisdiction: EU
+    type: regulation
+    domains: [aml, supervision]
+    notes: >
+      Crea la AMLA (Anti-Money Laundering Authority), con sede en Frankfurt.
+      Supervisión directa de entidades de alto riesgo a partir de 2028.
+
+  - id: trf_reg
+    short_name: "Reglamento Transferencias de Fondos"
+    full_name: "Reglamento (UE) 2023/1113 — Información que acompaña las transferencias de fondos"
+    jurisdiction: EU
+    type: regulation
+    domains: [aml, wire_transfer]
+    notes: >
+      Sustituye al Reglamento 848/2015. Amplía la travel rule a criptoactivos (MiCA).
+      Obligaciones de ordenante y beneficiario. Vigente desde 30/12/2024.
+
+  - id: ley10_2010
+    short_name: "Ley 10/2010"
+    full_name: "Ley 10/2010, de 28 de abril, de prevención del blanqueo de capitales y de la financiación del terrorismo"
+    jurisdiction: ES
+    type: law
+    domains: [pbc, ft]
+    notes: >
+      Ley base española PBC/FT. Transpone AMLD4/5. Sujetos obligados, DDC,
+      DIRD, comunicación al SEPBLAC, régimen sancionador.
+      Pendiente adaptación al paquete AML 2024 de la UE.
+
+  - id: rd304_2014
+    short_name: "RD 304/2014"
+    full_name: "Real Decreto 304/2014 — Reglamento Ley 10/2010 PBC/FT"
+    jurisdiction: ES
+    type: regulation
+    domains: [pbc, ft, ddc]
+    notes: >
+      Desarrollo reglamentario de Ley 10/2010. DDC simplificada y reforzada,
+      personas con responsabilidad pública (PRP), beneficial ownership,
+      procedimientos internos de control.
+
+  - id: fatf_recommendations
+    short_name: "Recomendaciones GAFI/FATF"
+    full_name: "FATF 40 Recommendations (revisión 2023)"
+    jurisdiction: GLOBAL
+    type: soft_law
+    domains: [aml, ft, sanctions]
+    notes: >
+      Estándar internacional de referencia. No directamente vinculantes pero
+      base de toda la normativa UE/ES. Evalúa riesgo país y jurisdicciones
+      no cooperativas (listas GAFI: black list / grey list).
+
+  - id: ofac_sdn
+    short_name: "Lista SDN OFAC"
+    full_name: "OFAC Specially Designated Nationals and Blocked Persons List"
+    jurisdiction: US
+    type: sanctions_list
+    domains: [sanctions]
+    notes: >
+      Lista estadounidense de máxima relevancia para entidades con actividad
+      o corresponsalía en USD. Actualización diaria. Verificar en
+      https://ofac.treasury.gov/
+
+  - id: eu_consolidated_sanctions
+    short_name: "Lista consolidada UE"
+    full_name: "Reglamento (CE) 2580/2001 y ss. — Listas consolidadas de sanciones UE"
+    jurisdiction: EU
+    type: sanctions_list
+    domains: [sanctions]
+    notes: >
+      Sanciones autónomas UE y sanciones ONU implementadas en la UE.
+      Fuente: https://data.europa.eu/data/datasets/consolidated-list-of-persons-groups-and-entities-subject-to-eu-financial-sanctions
+
+common_caveats:
+  - id: sanctions_list_freshness
+    text: >
+      Las listas de sanciones (OFAC SDN, lista consolidada UE, listas ONU) se
+      actualizan con frecuencia. Cualquier screening debe realizarse contra las
+      listas más recientes disponibles en los portales oficiales. El análisis
+      presentado se basa en los fragmentos indexados y puede no reflejar
+      designaciones posteriores a la fecha de indexación.
+
+  - id: aml_package_transposition
+    text: >
+      El paquete AML de 2024 (AMLR + AMLD6-recast + AMLA) está en período
+      transitorio. El AMLR 2024 será de aplicación directa a partir del
+      10/07/2027. Hasta esa fecha, la Ley 10/2010 y el RD 304/2014 siguen
+      siendo la normativa vigente en España. Las disposiciones del paquete
+      pueden diferir de las normas nacionales actuales; verificar el estado
+      de transposición.
+
+  - id: pep_definition
+    text: >
+      La definición de PEP (persona políticamente expuesta) y el período de
+      desclasificación (12 meses tras el cese en la función) son cuestiones
+      que requieren valoración caso a caso. Consultar la lista de funciones
+      del Anexo III AMLD4 / art. 14 Ley 10/2010 y las guías EBA/SEPBLAC.
+
+  - id: sepblac_reporting
+    text: >
+      Cualquier comunicación de operación sospechosa (COS) o comunicación
+      sistemática al SEPBLAC debe realizarse a través de los canales
+      oficiales habilitados. Consultar al DIRD/CISO/DPO antes de
+      efectuar la comunicación.
+
+  - id: aml_no_tipping_off
+    text: >
+      Prohibición de tipping off: una vez iniciada la comunicación al
+      SEPBLAC, no se debe alertar al cliente ni a terceros de la existencia
+      de la comunicación (art. 24 Ley 10/2010). Este análisis es
+      estrictamente confidencial.
+
+jurisprudence:
+  - id: ts_sala3_pbc_2021
+    citation: "STS (Sala 3ª) de 15 de junio de 2021 — Rec. 3412/2019"
+    summary: >
+      Confirma la extensión de las obligaciones de DDC reforzada a operaciones
+      con países terceros equivalentes. Define el estándar de diligencia exigible
+      a las entidades financieras en la identificación del titular real.
+    domains: [ddc, beneficial_ownership]
+
+  - id: tjue_c_305_2020
+    citation: "STJUE de 22 de noviembre de 2022, C-37/20 y C-601/20"
+    summary: >
+      Invalida el acceso público irrestricto a los registros de titularidad real
+      nacionales (contra AMLD5). Los EEMM deben demostrar interés legítimo para
+      el acceso. Implicaciones en el modelo de acceso al registro español.
+    domains: [beneficial_ownership, registro_titularidad_real]
+
+  - id: an_sanciones_sepblac_2022
+    citation: "SAN (Sala Contencioso-Adm.) de 14 de marzo de 2022 — Rec. 743/2019"
+    summary: >
+      Confirma sanción a entidad financiera por deficiencias en el sistema de
+      monitorización transaccional. Establece el estándar mínimo de los umbrales
+      y reglas de alertas en los sistemas AML de las entidades.
+    domains: [monitoreo_transaccional, sancionador]
+
+regulatory_contacts:
+  - body: "SEPBLAC"
+    full_name: "Servicio Ejecutivo de la Comisión de Prevención del Blanqueo de Capitales e Infracciones Monetarias"
+    jurisdiction: ES
+    url: "https://www.sepblac.es"
+    notes: "Receptor de comunicaciones de operaciones sospechosas (COS) y notificaciones de operaciones con billetes de alta denominación."
+
+  - body: "AMLA"
+    full_name: "Anti-Money Laundering Authority (UE)"
+    jurisdiction: EU
+    url: "https://www.amla.europa.eu"
+    notes: "Operativa a partir de 2025. Supervisión directa de entidades de alto riesgo desde 2028."
+
+  - body: "OFAC"
+    full_name: "Office of Foreign Assets Control (US Treasury)"
+    jurisdiction: US
+    url: "https://ofac.treasury.gov"
+    notes: "Gestión lista SDN y programas de sanciones de EE.UU. Relevante para corresponsalía bancaria en USD."

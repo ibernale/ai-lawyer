@@ -17,7 +17,7 @@ class RawDocument(BaseModel):
     source: str
     source_id: str
     raw_url: str
-    content_type: Literal["xml", "html", "pdf"]
+    content_type: Literal["xml", "html", "pdf", "json"]
     raw_bytes: bytes
     fetched_at: datetime = Field(default_factory=datetime.utcnow)
     checksum: str = ""
@@ -39,9 +39,11 @@ class HierarchyNode(BaseModel):
     level: Literal[
         "libro", "titulo", "capitulo", "seccion",
         "articulo", "apartado", "considerando", "anexo",
+        "organismo",
     ]
-    number: str
+    number: str = ""
     title: str = ""
+    label: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -50,7 +52,7 @@ class HierarchyNode(BaseModel):
 
 class CanonicalDocument(BaseModel):
     id: str = ""
-    jurisdiction: Literal["ES", "EU", "GB"] = "EU"
+    jurisdiction: Literal["ES", "EU", "GB", "US", "GLOBAL", "BR", "AR"] = "EU"
     source: Literal[
         "boe",
         "eurlex",
@@ -61,17 +63,30 @@ class CanonicalDocument(BaseModel):
         "esma",
         "legislation_uk",
         "fca",
+        # 11C.1 new sources
+        "cnmc",
+        "sepblac",
+        "bcbs_bis",
+        "federal_register",
+        "bcb_brasil",
+        "bcra",
     ]
     source_id: str
     type: Literal[
         "regulation", "directive", "ley", "real_decreto", "circular",
         "resolution", "guideline", "opinion", "qa", "other",
+        # 11C.1 extended types
+        "resolucion", "resolucao", "normativo", "comunicacion", "comunicado",
+        "rule", "proposed_rule", "standard", "consultive_document", "working_paper",
+        "report", "guia", "instruccion", "memoria", "documento",
+        "nota_tecnica", "texto_ordenado",
     ] = "other"
     title: str = ""
     publication_date: date = Field(default_factory=date.today)
     entry_into_force: date | None = None
     status: Literal[
-        "vigente", "derogado", "consulta_publica", "transposicion", "unknown"
+        "vigente", "derogado", "consulta_publica", "transposicion", "unknown",
+        "final", "propuesta", "consultiva",
     ] = "unknown"
     hierarchy: list[HierarchyNode] = Field(default_factory=list)
     full_text: str = ""

@@ -27,6 +27,8 @@ _VALID_BRANCHES = {
     "mercantil_societario",
     "penal_economico",
     "administrativo",
+    "aml_compliance",
+    "psd2_payment_services",
     "fuera_de_alcance",
 }
 

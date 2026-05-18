@@ -10,11 +10,15 @@ on:
         required: false
         default: "all"
 
+permissions: {}
+
 jobs:
   ingest-real:
     name: Ingest live BOE + EUR-Lex
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
+    permissions:
+      contents: read
 
     services:
       qdrant:
@@ -23,7 +27,7 @@ jobs:
           - 6333:6333
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Wait for Qdrant
         run: |
@@ -35,7 +39,7 @@ jobs:
           curl -sf http://localhost:6333/readyz || (echo "Qdrant failed to start" && exit 1)
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
           cache-dependency-glob: "**/pyproject.toml"

@@ -4,14 +4,13 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
+from anthropic.types import TextBlock
 from lex_agents_rag.crag import (
-    CRAGFilter,
     _MIN_CHUNKS_AFTER_FILTER,
     _MIN_CHUNKS_TO_FILTER,
+    CRAGFilter,
 )
 from lex_agents_rag.retriever import RankedChunk
-
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -30,7 +29,7 @@ def _make_chunk(chunk_id: str, rank: int) -> RankedChunk:
 def _make_client(response_text: str) -> MagicMock:
     client = MagicMock()
     resp = MagicMock()
-    resp.content = [MagicMock(text=response_text)]
+    resp.content = [MagicMock(spec=TextBlock, text=response_text)]
     client.messages_create.return_value = resp
     return client
 

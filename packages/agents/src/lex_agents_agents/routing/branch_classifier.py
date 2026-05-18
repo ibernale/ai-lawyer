@@ -12,10 +12,12 @@ _REGISTRY: dict[str, type[BaseSpecialist]] = {}
 
 def _build_registry() -> dict[str, type[BaseSpecialist]]:
     from lex_agents_agents.specialists.administrativo import AdministrativoAgent
+    from lex_agents_agents.specialists.aml_compliance import AmlComplianceAgent
     from lex_agents_agents.specialists.datos_personales_rgpd import DatosPersonalesRgpdAgent
     from lex_agents_agents.specialists.laboral import LaboralAgent
     from lex_agents_agents.specialists.mercantil_societario import MercantilSocietarioAgent
     from lex_agents_agents.specialists.penal_economico import PenalEconomicoAgent
+    from lex_agents_agents.specialists.psd2_payment_services import Psd2PaymentServicesAgent
     from lex_agents_agents.specialists.regulatorio_bancario_ue_es import (
         RegulatorioBancarioEsAgent,
     )
@@ -27,6 +29,8 @@ def _build_registry() -> dict[str, type[BaseSpecialist]]:
         "mercantil_societario": MercantilSocietarioAgent,
         "penal_economico": PenalEconomicoAgent,
         "administrativo": AdministrativoAgent,
+        "aml_compliance": AmlComplianceAgent,
+        "psd2_payment_services": Psd2PaymentServicesAgent,
     }
 
 

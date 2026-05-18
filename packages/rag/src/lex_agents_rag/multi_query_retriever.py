@@ -9,6 +9,7 @@ failures degrade gracefully to single-query retrieval.
 from __future__ import annotations
 
 import structlog
+from anthropic.types import TextBlock
 from lex_agents_shared.anthropic_client import MODEL_HAIKU, AnthropicClientWrapper
 
 from lex_agents_rag.retriever import HybridRetriever, RankedChunk, SearchFilters
@@ -92,7 +93,8 @@ class MultiQueryRetriever:
                 max_tokens=512,
                 messages=[{"role": "user", "content": prompt}],
             )
-            raw = resp.content[0].text.strip() if resp.content else ""
+            text_block = next((b for b in resp.content if isinstance(b, TextBlock)), None)
+            raw = text_block.text.strip() if text_block else ""
             lines = [line.strip() for line in raw.splitlines() if line.strip()]
             paraphrases = lines[:n]
             logger.debug("multi_query_paraphrases_generated", n=len(paraphrases))
