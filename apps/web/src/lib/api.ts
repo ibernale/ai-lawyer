@@ -572,6 +572,16 @@ export async function submitAuditReview(
   });
 }
 
+export type PromoteResponse = {
+  sample_id: number;
+  trace_id: string;
+  yaml_content: string;
+  suggested_filename: string;
+};
+
+export const promoteAuditSample = (id: number): Promise<PromoteResponse> =>
+  apiFetch<PromoteResponse>(`/api/v1/audit/${id}/promote`, { method: "POST" });
+
 // ---------------------------------------------------------------------------
 // Document types
 // ---------------------------------------------------------------------------

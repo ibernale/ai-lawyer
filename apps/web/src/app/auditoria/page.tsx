@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAuditSample, listAuditSamples, submitAuditReview } from "@/lib/api";
+import {
+  getAuditSample,
+  listAuditSamples,
+  promoteAuditSample,
+  submitAuditReview,
+} from "@/lib/api";
 import type { AuditSample, AuditStatus, AuditVerdict } from "@/lib/api";
 import { ErrorBanner } from "@/components/ui/error-banner";
 
@@ -50,6 +55,7 @@ export default function AuditoriaPage() {
   const [reviewNotes, setReviewNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isPromoting, setIsPromoting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -98,6 +104,22 @@ export default function AuditoriaPage() {
       setSubmitError(e instanceof Error ? e.message : "Error");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handlePromote(id: number) {
+    setIsPromoting(true);
+    try {
+      const result = await promoteAuditSample(id);
+      const blob = new Blob([result.yaml_content], { type: "text/yaml" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = result.suggested_filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsPromoting(false);
     }
   }
 
@@ -184,6 +206,11 @@ export default function AuditoriaPage() {
                     >
                       {STATUS_LABELS[s.status]}
                     </span>
+                    {s.status === "pending" && s.review_verdict === null && (
+                      <span className="ml-1.5 rounded border border-gray-200 bg-gray-100 px-1 py-0.5 text-[9px] font-medium text-gray-500">
+                        Auto
+                      </span>
+                    )}
                   </td>
                   <td className="px-3 py-2">
                     {s.review_verdict ? (
@@ -308,6 +335,15 @@ export default function AuditoriaPage() {
               >
                 Cancelar
               </button>
+              {fullRecord?.review_verdict === "incorrecto" && (
+                <button
+                  onClick={() => handlePromote(selected.id)}
+                  disabled={isPromoting}
+                  className="px-3 py-1.5 text-xs rounded border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+                >
+                  {isPromoting ? "Descargando…" : "↑ Promover al dataset"}
+                </button>
+              )}
               <button
                 onClick={handleReview}
                 disabled={!reviewVerdict || submitting}

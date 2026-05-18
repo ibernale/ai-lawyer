@@ -102,6 +102,12 @@ class AuditStore:
             return await self._pg_list_negative(since_days)
         return await self._sqlite_list_negative(since_days)
 
+    async def find_by_trace_id(self, trace_id: str) -> AuditSampleRecord | None:
+        """Return the first audit sample matching *trace_id*, or None."""
+        if is_postgres():
+            return await self._pg_find_by_trace_id(trace_id)
+        return await self._sqlite_find_by_trace_id(trace_id)
+
     async def count_pending(self) -> int:
         if is_postgres():
             async with pg_conn() as conn:
@@ -185,6 +191,14 @@ class AuditStore:
             )
         return [_pg_row_to_record(r) for r in rows]
 
+    async def _pg_find_by_trace_id(self, trace_id: str) -> AuditSampleRecord | None:
+        async with pg_conn() as conn:
+            row = await conn.fetchrow(
+                "SELECT id, trace_id, sampled_at, reviewer, reviewed_at, verdict, notes FROM audit_samples WHERE trace_id = $1 LIMIT 1",
+                trace_id,
+            )
+        return _pg_row_to_record(row) if row else None
+
     # ------------------------------------------------------------------
     # SQLite (aiosqlite)
     # ------------------------------------------------------------------
@@ -263,6 +277,16 @@ class AuditStore:
             ) as cursor:
                 rows = await cursor.fetchall()
         return [_sqlite_row_to_record(r) for r in rows]
+
+    async def _sqlite_find_by_trace_id(self, trace_id: str) -> AuditSampleRecord | None:
+        import aiosqlite
+        async with aiosqlite.connect(self._db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT * FROM audit_samples WHERE trace_id = ? LIMIT 1", (trace_id,)
+            ) as cursor:
+                row = await cursor.fetchone()
+        return _sqlite_row_to_record(row) if row else None
 
 
 # ---------------------------------------------------------------------------
