@@ -1,7 +1,7 @@
 """RiskMatrixGenerator — converts a ConsultResponse into a structured risk matrix.
 
 Uses Claude to extract regulatory obligations and classify them by risk level
-(Alto / Medio / Bajo) using a standard 3×3 likelihood × impact grid.
+(Alto / Medio / Bajo) using a standard 3x3 likelihood x impact grid.
 """
 
 from __future__ import annotations
@@ -9,15 +9,15 @@ from __future__ import annotations
 import json
 import re
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Literal
 
 import structlog
 from anthropic.types import TextBlock
+from lex_agents_shared.anthropic_client import MODEL_SONNET, AnthropicClientWrapper
 from pydantic import BaseModel, Field
 
 from lex_agents_agents.core.orchestrator_v2 import ConsultResponse
-from lex_agents_shared.anthropic_client import MODEL_SONNET, AnthropicClientWrapper
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
@@ -38,7 +38,7 @@ _RISK_GRID: dict[tuple[str, str], str] = {
 }
 
 
-class RiskLevel(str, Enum):
+class RiskLevel(StrEnum):
     ALTO = "Alto"
     MEDIO = "Medio"
     BAJO = "Bajo"
@@ -54,7 +54,7 @@ class RiskItem(BaseModel):
     obligation: str
     """Descripción concisa de la obligación normativa."""
     risk_level: RiskLevel
-    """Nivel de riesgo calculado a partir de probabilidad × impacto."""
+    """Nivel de riesgo calculado a partir de probabilidad x impacto."""
     likelihood: Literal["Alta", "Media", "Baja"]
     """Probabilidad de incumplimiento."""
     impact: Literal["Alto", "Medio", "Bajo"]

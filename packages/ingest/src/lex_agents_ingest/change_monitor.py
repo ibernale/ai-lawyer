@@ -17,8 +17,8 @@ from __future__ import annotations
 
 import re
 import uuid
-from datetime import UTC, datetime
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from typing import Literal, Protocol, runtime_checkable
 
 import aiosqlite
