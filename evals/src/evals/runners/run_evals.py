@@ -301,6 +301,18 @@ def _write_summary_md(output_dir: Path, summary: RunSummary, results: list[CaseR
             f"| {r.hallucination_rate:.2f} | {r.legal_quality_score:.3f} | {passed} | {err} |"
         )
 
+    if summary.geval_citation_grounding >= 0:
+        lines += [
+            "",
+            "## GEval Metrics",
+            "",
+            "| Metric | Score |",
+            "|--------|-------|",
+            f"| geval_citation_grounding | {summary.geval_citation_grounding:.3f} |",
+            f"| geval_coherence | {summary.geval_coherence:.3f} |",
+            f"| geval_completeness | {summary.geval_completeness:.3f} |",
+        ]
+
     if summary.errors:
         lines += ["", "## Errors", ""]
         for e in summary.errors:
@@ -353,6 +365,14 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     orchestrator = _build_orchestrator()
 
+    # Lazily import run_geval only when --geval is requested so that the
+    # regular pipeline never pays DeepEval's import cost.
+    run_geval = None
+    if getattr(args, "geval", False):
+        from evals.runners.geval_metrics import run_geval  # type: ignore[assignment]
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+
     print(f"Running {len(cases)} cases from {dataset_dir} → {output_dir}")
     results: list[CaseResult] = []
 
@@ -360,6 +380,25 @@ def cmd_run(args: argparse.Namespace) -> int:
         case_id = case.get("id", f"case-{i}")
         print(f"  [{i}/{len(cases)}] {case_id} ...", end=" ", flush=True)
         cr = asyncio.run(_run_case(orchestrator, case, weights))
+
+        if run_geval is not None and cr.error is None:
+            answer_text: str = cr.raw_response.get("answer", "")
+            query_text: str = case.get("query", "")
+            retrieval_ctx: list[str] = [
+                c.get("fragment_text", "")
+                for c in cr.raw_response.get("citations", [])
+                if c.get("fragment_text")
+            ]
+            geval_scores = run_geval(
+                answer=answer_text,
+                query=query_text,
+                retrieval_context=retrieval_ctx,
+                api_key=api_key,
+            )
+            cr.geval_citation_grounding = geval_scores.get("citation_grounding", -1.0)
+            cr.geval_coherence = geval_scores.get("coherence", -1.0)
+            cr.geval_completeness = geval_scores.get("completeness", -1.0)
+
         status = "PASS" if cr.passed else "FAIL"
         if cr.error:
             status = f"ERROR({cr.error[:30]})"
@@ -478,6 +517,12 @@ def cli() -> None:
         action="append",
         metavar="KEY=VALUE",
         help="Filter cases (e.g. --filter difficulty=hard). Repeatable.",
+    )
+    run_parser.add_argument(
+        "--geval",
+        action="store_true",
+        default=False,
+        help="Enable LLM-as-judge GEval metrics (requires ANTHROPIC_API_KEY, uses Haiku).",
     )
 
     # compare
