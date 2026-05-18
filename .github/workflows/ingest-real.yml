@@ -10,11 +10,15 @@ on:
         required: false
         default: "all"
 
+permissions: {}
+
 jobs:
   ingest-real:
     name: Ingest live BOE + EUR-Lex
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
+    permissions:
+      contents: read
 
     services:
       qdrant:
