@@ -3,6 +3,7 @@
     "asesoria": "Advisory",
     "consulta": "Consultation",
     "documentos": "Documents",
+    "contratos": "Contracts",
     "calendario": "Calendar",
     "historial": "History",
     "historico": "History",
@@ -153,6 +154,20 @@
     "hide": "Hide",
     "markRead": "Read",
     "dismissAll": "✕"
+  },
+  "contracts": {
+    "title": "Contract Analysis",
+    "subtitle": "Identify the contract type, applicable legal framework and key risks",
+    "upload_cta": "Upload a contract to start the analysis",
+    "drop_hint": "PDF or DOCX · max 20 MB",
+    "analyze_btn": "Analyse contract",
+    "new_analysis": "New analysis",
+    "analyzing": "Analysing contract…",
+    "risk_critical": "Critical risk",
+    "risk_red": "High risk",
+    "risk_yellow": "Moderate risk",
+    "risk_green": "Low risk",
+    "nav_label": "Contracts"
   },
   "months": {
     "1": "January",
