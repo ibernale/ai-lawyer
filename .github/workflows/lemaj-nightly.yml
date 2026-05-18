@@ -32,7 +32,7 @@ jobs:
       QDRANT_URL: http://localhost:6333
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Wait for Qdrant
         run: |
@@ -43,7 +43,7 @@ jobs:
           done
           curl -sf http://localhost:6333/readyz || (echo "Qdrant failed to start" && exit 1)
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.12"
 
@@ -82,7 +82,7 @@ jobs:
 
       - name: Upload lemaj-report artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lemaj-report
           path: |
@@ -92,7 +92,7 @@ jobs:
 
       - name: Upload lemaj-verdicts artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lemaj-verdicts
           path: evals/reports/lemaj-${{ github.run_id }}/lemaj/lemaj_verdicts.jsonl
