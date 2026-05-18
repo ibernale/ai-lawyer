@@ -209,10 +209,25 @@ class ConsultationStore:
         params: list[Any] = []
         idx = 1
 
+        # Full-text search via tsvector/tsquery (migration 0003).
+        # Two modes:
+        #   multi-word or explicit operators → plainto_tsquery (phrase-aware)
+        #   single word                      → to_tsquery with :* suffix for
+        #                                      prefix matching
+        tsquery_expr: str | None = None
         if q:
-            clauses.append(f"query ILIKE ${idx}")
-            params.append(f"%{q}%")
+            stripped = q.strip()
+            words = stripped.split()
+            has_operators = any(op in stripped for op in ("&", "|", ":*"))
+            if len(words) >= 2 or has_operators:
+                tsquery_expr = f"plainto_tsquery('spanish', ${idx})"
+                params.append(stripped)
+            else:
+                tsquery_expr = f"to_tsquery('spanish', ${idx} || ':*')"
+                params.append(stripped)
+            clauses.append(f"search_vector @@ {tsquery_expr}")
             idx += 1
+
         if depth:
             clauses.append(f"depth_used = ${idx}")
             params.append(depth)
@@ -235,8 +250,19 @@ class ConsultationStore:
             idx += 1
 
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+
+        # When searching, rank by relevance first then recency; otherwise by
+        # recency alone.
+        if tsquery_expr is not None:
+            order_by = f"ORDER BY ts_rank(search_vector, {tsquery_expr}) DESC, created_at DESC"
+        else:
+            order_by = "ORDER BY created_at DESC"
+
         params += [limit, offset]
-        sql = f"SELECT * FROM consultations {where} ORDER BY created_at DESC LIMIT ${idx} OFFSET ${idx + 1}"  # noqa: S608
+        sql = (
+            f"SELECT * FROM consultations {where} {order_by}"  # noqa: S608
+            f" LIMIT ${idx} OFFSET ${idx + 1}"
+        )
         async with pg_conn(tenant_id) as conn:
             rows = await conn.fetch(sql, *params)
         return [_pg_row_to_record(r) for r in rows]
