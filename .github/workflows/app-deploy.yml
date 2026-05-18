@@ -239,11 +239,15 @@ jobs:
             --context imageDigestWeb=${{ needs.build-and-push.outputs.web-image }}
 
       - name: Clean up stuck Langfuse stack (if any)
-        # CDK with --rollback=false leaves stacks in CREATE_FAILED or, when the
-        # previous CDK run got killed mid-deploy, CREATE_IN_PROGRESS.  CDK
-        # refuses to redeploy from any of these states non-interactively.
-        # delete-stack is valid from CREATE_IN_PROGRESS too — CFn transitions
-        # it to DELETE_IN_PROGRESS and rolls back the in-flight resources.
+        # CDK refuses to redeploy from several stuck CloudFormation states.
+        # Two categories:
+        #   DELETE_NEEDED — stack must be deleted so CDK can recreate it:
+        #     CREATE_FAILED, ROLLBACK_COMPLETE, ROLLBACK_FAILED,
+        #     CREATE_IN_PROGRESS, ROLLBACK_IN_PROGRESS, UPDATE_ROLLBACK_FAILED
+        #   WAIT_NEEDED — a rollback is already in flight; wait for it to reach
+        #     UPDATE_ROLLBACK_COMPLETE before proceeding (CDK can deploy from
+        #     there without deletion):
+        #     UPDATE_ROLLBACK_IN_PROGRESS
         run: |
           set +e
           for STACK in LexAgents-Dev-Langfuse LexAgents-Dev-App; do
@@ -254,6 +258,14 @@ jobs:
               --output text 2>/dev/null || echo "DOES_NOT_EXIST")
             echo "$STACK: $STATUS"
             case "$STATUS" in
+              UPDATE_ROLLBACK_IN_PROGRESS)
+                echo "$STACK is rolling back an update — waiting for UPDATE_ROLLBACK_COMPLETE..."
+                if ! aws cloudformation wait stack-rollback-complete \
+                     --stack-name "$STACK" --region "$AWS_REGION"; then
+                  echo "WARNING: wait stack-rollback-complete returned non-zero for $STACK; continuing anyway"
+                fi
+                echo "Rollback wait finished for $STACK"
+                ;;
               CREATE_FAILED|ROLLBACK_COMPLETE|ROLLBACK_FAILED|CREATE_IN_PROGRESS|ROLLBACK_IN_PROGRESS|UPDATE_ROLLBACK_FAILED)
                 echo "Deleting stuck $STACK ($STATUS) so the next CDK deploy can recreate it..."
                 aws cloudformation delete-stack --stack-name "$STACK" --region "$AWS_REGION"
