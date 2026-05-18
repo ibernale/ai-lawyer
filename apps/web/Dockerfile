@@ -35,6 +35,10 @@ RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 COPY --from=builder /app/apps/web/.next/standalone ./
 COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder /app/apps/web/public ./apps/web/public
+# next-intl messages — included in the bundle via static import map in
+# src/i18n/request.ts, but also copied here as defence-in-depth so they
+# are reachable if Next.js ever resolves them as raw file paths at runtime.
+COPY --from=builder /app/apps/web/messages ./apps/web/messages
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=60s \
   CMD ["node", "-e", "require('http').get('http://127.0.0.1:3000/',r=>process.exit(r.statusCode<400?0:1)).on('error',()=>process.exit(1))"]
 USER nextjs

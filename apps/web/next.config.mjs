@@ -27,6 +27,14 @@ const nextConfig = {
     output: "standalone",
     typedRoutes: true,
 
+    // Ensure messages JSON files are traced and included in the standalone
+    // output. The static import map in src/i18n/request.ts already makes
+    // webpack bundle them, but this is an explicit safety net so they are
+    // also available as raw files (e.g. for any runtime fs reads).
+    outputFileTracingIncludes: {
+        "/**": ["./messages/**"],
+    },
+
     turbopack: {
         root: repoRoot,
     },

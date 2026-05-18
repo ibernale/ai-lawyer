@@ -11,11 +11,17 @@ export default getRequestConfig(async () => {
     ? (raw as Locale)
     : defaultLocale;
 
+  // Static import map — webpack can analyse these at build time and includes
+  // them in the standalone bundle. A template-literal dynamic import would NOT
+  // be analysed and the JSON files would be missing from the production image.
+  const messageMap: Record<Locale, () => Promise<{ default: Record<string, Record<string, string>> }>> = {
+    es: () => import("../../messages/es.json"),
+    en: () => import("../../messages/en.json"),
+    pt: () => import("../../messages/pt.json"),
+  };
+
   return {
     locale,
-    messages: (await import(`../../messages/${locale}.json`)).default as Record<
-      string,
-      Record<string, string>
-    >,
+    messages: (await messageMap[locale]()).default,
   };
 });
