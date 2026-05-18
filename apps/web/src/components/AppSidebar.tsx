@@ -21,6 +21,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/consulta", label: "Consulta" },
       { href: "/documentos", label: "Documentos" },
+      { href: "/calendario", label: "Calendario" },
     ],
   },
   {
@@ -115,9 +116,29 @@ function IconAuditoria() {
   );
 }
 
+function IconCalendario() {
+  return (
+    <svg
+      className="w-4 h-4 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.8}
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
+    </svg>
+  );
+}
+
 const ITEM_ICONS: Record<string, React.ReactNode> = {
   Consulta: <IconConsulta />,
   Documentos: <IconDocumentos />,
+  Calendario: <IconCalendario />,
   Histórico: <IconHistorico />,
   Auditoría: <IconAuditoria />,
 };

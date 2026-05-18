@@ -65,6 +65,9 @@ class Settings(BaseSettings):
     # Regulation change monitoring (Fase 11D.2)
     monitoring_db_path: str = "data/monitor.db"
 
+    # Regulatory calendar (Fase 11D.3)
+    calendar_db_path: str = "data/calendar.db"
+
     # Database — Aurora (Fase 9.2) vs local SQLite
     # When set, all DB stores switch to asyncpg (PostgreSQL).
     # Format: postgresql+asyncpg://user:pass@host:5432/dbname
