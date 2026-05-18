@@ -174,7 +174,7 @@ def _parse_risk_assessment(text: str, trace_id: str) -> RiskAssessment:
         )
         # Attempt partial recovery
         try:
-            return _partial_risk_assessment(data if "data" in dir() else {})  # type: ignore[possibly-undefined]
+            return _partial_risk_assessment(data if "data" in dir() else {})
         except Exception:
             return _fallback_risk_assessment()
 
@@ -197,7 +197,7 @@ def _partial_risk_assessment(data: dict[str, Any]) -> RiskAssessment:
 
     return RiskAssessment(
         overall_score=score,
-        overall_rating=rating,  # type: ignore[arg-type]
+        overall_rating=rating,
         factors=factors,
     )
 

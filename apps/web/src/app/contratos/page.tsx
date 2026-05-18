@@ -190,7 +190,7 @@ export default function ContratosPage() {
   const [file, setFile] = useState<File | null>(null);
   const [fileSizeError, setFileSizeError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
-  const [stepLabel, setStepLabel] = useState(PROGRESS_STEPS[0].label);
+  const [stepLabel, setStepLabel] = useState(PROGRESS_STEPS[0]!.label);
   const [analysis, setAnalysis] = useState<ContractAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -248,7 +248,7 @@ export default function ContratosPage() {
     stopFakeProgress();
     setPageState("upload");
     setProgress(0);
-    setStepLabel(PROGRESS_STEPS[0].label);
+    setStepLabel(PROGRESS_STEPS[0]!.label);
   }, []);
 
   async function handleAnalyze() {
@@ -256,7 +256,7 @@ export default function ContratosPage() {
     setError(null);
     setPageState("analyzing");
     setProgress(0);
-    setStepLabel(PROGRESS_STEPS[0].label);
+    setStepLabel(PROGRESS_STEPS[0]!.label);
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -293,7 +293,7 @@ export default function ContratosPage() {
     setError(null);
     setFileSizeError(null);
     setProgress(0);
-    setStepLabel(PROGRESS_STEPS[0].label);
+    setStepLabel(PROGRESS_STEPS[0]!.label);
     setPageState("upload");
   }
 
@@ -316,7 +316,7 @@ export default function ContratosPage() {
             </div>
             <div className="flex items-center gap-3">
               <Link
-                href="/contratos/historico"
+                href="/historico"
                 className="rounded-md border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-muted transition-colors"
               >
                 Ver histórico

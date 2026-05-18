@@ -144,7 +144,7 @@ def _parse_metadata(text: str, trace_id: str) -> ContractMetadata:
         )
         # Attempt a partial recovery
         try:
-            return _partial_metadata(data if "data" in dir() else {})  # type: ignore[possibly-undefined]
+            return _partial_metadata(data if "data" in dir() else {})
         except Exception:
             return _fallback_metadata()
 
@@ -161,7 +161,7 @@ def _partial_metadata(data: dict[str, Any]) -> ContractMetadata:
             continue
 
     return ContractMetadata(
-        document_type=data.get("document_type", "Other"),  # type: ignore[arg-type]
+        document_type=data.get("document_type", "Other"),
         parties=parties,
         effective_date=data.get("effective_date"),
         termination_date=data.get("termination_date"),
