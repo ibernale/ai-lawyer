@@ -1,16 +1,17 @@
 /** @type {import('next').NextConfig} */
 
 import createNextIntlPlugin from "next-intl/plugin";
-import { fileURLToPath } from "url";
-import path from "path";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(__dirname, "../..");
-
-// next-intl Turbopack support requires a relative path (no absolute paths).
-// The path is resolved by Turbopack relative to turbopack.root.
-// We set turbopack.root = __dirname (apps/web) so that both webpack (which
-// resolves relative to CWD = apps/web) and Turbopack agree on the base.
+// next-intl v3.26.x writes its Turbopack alias to experimental.turbo.resolveAlias
+// (Next.js 15 API). Next.js 16 reads it from the stable turbopack.resolveAlias key.
+// Having a top-level `turbopack:` block in nextConfig causes Next.js 16 to activate
+// Turbopack for `next build`, setting process.env.TURBOPACK — which makes the plugin
+// take the broken Turbopack path instead of the working webpack path.
+//
+// Fix: remove the turbopack block so next build uses webpack (the default).
+// next-intl's webpack integration (l.context-relative path resolution) works
+// correctly without any extra configuration.
+// If Turbopack is needed for local dev, run: NEXT_TURBOPACK=1 next dev (or --turbo).
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 // ALB routing handles API path dispatch (no Next.js rewrites needed):
@@ -33,16 +34,6 @@ const nextConfig = {
     // also available as raw files (e.g. for any runtime fs reads).
     outputFileTracingIncludes: {
         "/**": ["./messages/**"],
-    },
-
-    turbopack: {
-        // Set root to apps/web (__dirname) so Turbopack does not traverse up
-        // to parent directories that may contain other pnpm-workspace.yaml
-        // files (monorepo nesting). Keeping root = apps/web also ensures that
-        // the relative path "./src/i18n/request.ts" passed to createNextIntlPlugin
-        // resolves correctly from the same base as webpack (CWD = apps/web).
-        // repoRoot is still available for other uses if needed.
-        root: __dirname,
     },
 
     // In production the ALB routes /api/v1/*, /health, /version, /auth/* to
