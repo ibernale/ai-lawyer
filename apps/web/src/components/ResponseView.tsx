@@ -627,6 +627,39 @@ export function ResponseView({
     );
   }
 
+  const [generatingMatrix, setGeneratingMatrix] = useState(false);
+
+  async function handleRiskMatrix() {
+    setGeneratingMatrix(true);
+    try {
+      const token =
+        typeof window !== "undefined"
+          ? sessionStorage.getItem("lex_agents_token")
+          : null;
+      const res = await fetch(
+        `${API_BASE}/api/v1/consult/${response.trace_id}/risk-matrix/xlsx`,
+        {
+          method: "POST",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        },
+      );
+      if (!res.ok) throw new Error(`${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `matriz_riesgos_${response.trace_id.slice(0, 8)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // Silently fail — user will see no download
+    } finally {
+      setGeneratingMatrix(false);
+    }
+  }
+
   const isComparative = !!response.comparative_output;
 
   return (
@@ -706,6 +739,14 @@ export function ResponseView({
             className="inline-flex items-center gap-1 rounded border border-input px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
           >
             ↓ Exportar Word
+          </button>
+          <button
+            onClick={handleRiskMatrix}
+            disabled={generatingMatrix}
+            className="inline-flex items-center gap-1 rounded border border-input px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors disabled:opacity-50"
+            title="Generar matriz de riesgos regulatorios en XLSX"
+          >
+            {generatingMatrix ? "Generando…" : "↓ Matriz de Riesgos"}
           </button>
           {isComparative && (
             <a
