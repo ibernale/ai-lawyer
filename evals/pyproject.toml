@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
     "pyyaml>=6.0",
     "structlog>=24.4.0",
+    "deepeval>=0.21.0",
     "lex-agents-agents",
     "lex-agents-rag",
     "lex-agents-ingest",

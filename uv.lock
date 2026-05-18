@@ -2473,6 +2473,7 @@ name = "lex-agents-evals"
 version = "0.1.0"
 source = { editable = "evals" }
 dependencies = [
+    { name = "deepeval" },
     { name = "lex-agents-agents" },
     { name = "lex-agents-ingest" },
     { name = "lex-agents-rag" },
@@ -2494,6 +2495,7 @@ notebook = [
 
 [package.metadata]
 requires-dist = [
+    { name = "deepeval", specifier = ">=0.21.0" },
     { name = "deepeval", marker = "extra == 'geval'", specifier = ">=0.21.0" },
     { name = "jupyter", marker = "extra == 'notebook'", specifier = ">=1.1.0" },
     { name = "lex-agents-agents", editable = "packages/agents" },
