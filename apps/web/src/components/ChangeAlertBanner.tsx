@@ -169,7 +169,9 @@ export function ChangeAlertBanner() {
     >
       {/* Header row */}
       <div className="flex items-center justify-between gap-3">
-        <div className={`flex items-center gap-2 font-medium ${bannerConfig.text}`}>
+        <div
+          className={`flex items-center gap-2 font-medium ${bannerConfig.text}`}
+        >
           <span>📋</span>
           <span>
             {t("changeDetected", { count: unreadCount })}

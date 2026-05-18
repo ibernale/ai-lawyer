@@ -41,7 +41,9 @@ function CitationPanel({
   return (
     <aside className="fixed right-0 top-0 z-50 h-full w-96 border-l border-border bg-background shadow-xl flex flex-col">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h3 className="font-semibold text-sm">{t("citationSource")} [REF:{citation.index}]</h3>
+        <h3 className="font-semibold text-sm">
+          {t("citationSource")} [REF:{citation.index}]
+        </h3>
         <button
           onClick={onClose}
           className="rounded p-1 hover:bg-muted text-muted-foreground text-lg leading-none"

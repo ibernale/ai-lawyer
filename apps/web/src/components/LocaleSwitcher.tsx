@@ -2,7 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
-import { LOCALE_COOKIE, localeFlags, localeLabels, locales } from "@/i18n/routing";
+import {
+  LOCALE_COOKIE,
+  localeFlags,
+  localeLabels,
+  locales,
+} from "@/i18n/routing";
 
 // Module-level helper — kept outside component to satisfy react-hooks/immutability
 // (React Compiler flags direct document.cookie mutations inside component functions).

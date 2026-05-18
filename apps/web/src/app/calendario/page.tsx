@@ -94,7 +94,9 @@ function daysUntil(iso: string): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const target = parseDate(iso);
-  return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.round(
+    (target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+  );
 }
 
 function groupByMonth(events: CalendarEvent[]): [string, CalendarEvent[]][] {
@@ -148,7 +150,10 @@ async function fetchEvents(
 function DaysBadge({ iso }: { iso: string }) {
   const t = useTranslations("calendario");
   const n = daysUntil(iso);
-  if (n < 0) return <span className="text-[10px] text-muted-foreground">{t("past")}</span>;
+  if (n < 0)
+    return (
+      <span className="text-[10px] text-muted-foreground">{t("past")}</span>
+    );
   if (n === 0)
     return (
       <span className="text-[10px] font-semibold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
@@ -158,11 +163,15 @@ function DaysBadge({ iso }: { iso: string }) {
   if (n <= 7)
     return (
       <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
-        {n}{t("daysUnit")}
+        {n}
+        {t("daysUnit")}
       </span>
     );
   return (
-    <span className="text-[10px] text-muted-foreground">{n}{t("daysUnit")}</span>
+    <span className="text-[10px] text-muted-foreground">
+      {n}
+      {t("daysUnit")}
+    </span>
   );
 }
 
@@ -228,9 +237,7 @@ function EventCard({ event }: { event: CalendarEvent }) {
           )}
         </div>
         <div className="shrink-0 text-right space-y-0.5">
-          <p className="text-xs font-medium text-foreground">
-            {dateDisplay}
-          </p>
+          <p className="text-xs font-medium text-foreground">{dateDisplay}</p>
           <DaysBadge iso={event.event_date} />
         </div>
       </div>
@@ -273,7 +280,9 @@ export default function CalendarioPage() {
     setError(null);
     fetchEvents(range, filter).then((data) => {
       if (!data) {
-        setError("No se pudo cargar el calendario. Asegúrese de estar autenticado.");
+        setError(
+          "No se pudo cargar el calendario. Asegúrese de estar autenticado.",
+        );
       } else {
         setEvents(data.events);
       }
@@ -294,9 +303,7 @@ export default function CalendarioPage() {
       <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-8 space-y-6">
         <header className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              {t("title")}
-            </h1>
+            <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {t("subtitle")}
             </p>
@@ -355,9 +362,7 @@ export default function CalendarioPage() {
 
         {!loading && !error && events.length === 0 && (
           <div className="rounded-md border border-border bg-muted/30 px-6 py-10 text-center">
-            <p className="text-sm text-muted-foreground">
-              {t("noEvents")}
-            </p>
+            <p className="text-sm text-muted-foreground">{t("noEvents")}</p>
             <p className="text-xs text-muted-foreground mt-1">
               {t("noEventsHint")}
             </p>
@@ -388,12 +393,8 @@ export default function CalendarioPage() {
         {/* Summary bar */}
         {!loading && events.length > 0 && (
           <div className="border-t border-border pt-4 text-xs text-muted-foreground flex items-center justify-between">
-            <span>
-              {t("eventsCount", { count: events.length })}
-            </span>
-            <span className="font-mono">
-              {t("footerSource")}
-            </span>
+            <span>{t("eventsCount", { count: events.length })}</span>
+            <span className="font-mono">{t("footerSource")}</span>
           </div>
         )}
       </main>

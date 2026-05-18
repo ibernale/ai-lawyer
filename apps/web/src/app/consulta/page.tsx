@@ -11,7 +11,17 @@ import { consultQueryStream, getConsultation } from "@/lib/api";
 import type { ConsultResponse } from "@/lib/api";
 
 const JURISDICTION_CODES = [
-  "ES", "EU", "UK", "BR", "MX", "US", "PL", "PT", "AR", "DE", "CH",
+  "ES",
+  "EU",
+  "UK",
+  "BR",
+  "MX",
+  "US",
+  "PL",
+  "PT",
+  "AR",
+  "DE",
+  "CH",
 ] as const;
 
 const OUTPUT_TYPE_VALUES = [
@@ -158,12 +168,8 @@ function ConsultaInner() {
         <ChangeAlertBanner />
 
         <header>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {t("title")}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("subtitle")}
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-3">
