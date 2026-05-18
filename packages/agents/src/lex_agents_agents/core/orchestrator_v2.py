@@ -16,6 +16,8 @@ from typing import Any, Literal
 
 import structlog
 from lex_agents_rag.assembler import ContextAssembler
+from lex_agents_rag.crag import CRAGFilter
+from lex_agents_rag.multi_query_retriever import MultiQueryRetriever
 from lex_agents_rag.query_rewriter import LegalQueryRewriter
 from lex_agents_rag.reranker import BaseReranker
 from lex_agents_rag.retriever import HybridRetriever, SearchFilters
@@ -83,6 +85,11 @@ class OrchestratorDeps:
     client: AnthropicClientWrapper
     verifier: Any | None = None
     rag_top_k: int = 10
+    # Optional RAG upgrades (Fase 11B.3 / 11B.4)
+    # When present, MultiQueryRetriever replaces the plain HybridRetriever call
+    # and CRAGFilter is applied after retrieval to discard irrelevant chunks.
+    multi_query_retriever: MultiQueryRetriever | None = None
+    crag_filter: CRAGFilter | None = None
 
 
 class OrchestratorV2:
@@ -476,7 +483,19 @@ class OrchestratorV2:
                 jurisdictions[0] if len(jurisdictions) == 1 else None
             )
             filters = SearchFilters(jurisdiction=single_jurisdiction)
-            chunks = self._deps.retriever.search(rewritten.expanded_query, filters)
+
+            # ── Retrieval (MultiQuery if available, else plain HybridRetriever) ─
+            if self._deps.multi_query_retriever is not None:
+                chunks = self._deps.multi_query_retriever.search(
+                    rewritten.expanded_query, filters
+                )
+            else:
+                chunks = self._deps.retriever.search(rewritten.expanded_query, filters)
+
+            # ── CRAG relevance filter (optional) ──────────────────────────────
+            if self._deps.crag_filter is not None:
+                chunks = self._deps.crag_filter.filter(rewritten.expanded_query, chunks)
+
             reranked = self._deps.reranker.rerank(
                 rewritten.expanded_query, chunks, top_k=self._deps.rag_top_k
             )

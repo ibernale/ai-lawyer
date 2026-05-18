@@ -2483,6 +2483,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+geval = [
+    { name = "deepeval" },
+]
 notebook = [
     { name = "jupyter" },
     { name = "matplotlib" },
@@ -2493,6 +2496,7 @@ notebook = [
 [package.metadata]
 requires-dist = [
     { name = "deepeval", specifier = ">=0.21.0" },
+    { name = "deepeval", marker = "extra == 'geval'", specifier = ">=0.21.0" },
     { name = "jupyter", marker = "extra == 'notebook'", specifier = ">=1.1.0" },
     { name = "lex-agents-agents", editable = "packages/agents" },
     { name = "lex-agents-ingest", editable = "packages/ingest" },
@@ -2504,7 +2508,7 @@ requires-dist = [
     { name = "seaborn", marker = "extra == 'notebook'", specifier = ">=0.13.0" },
     { name = "structlog", specifier = ">=24.4.0" },
 ]
-provides-extras = ["notebook"]
+provides-extras = ["notebook", "geval"]
 
 [[package]]
 name = "lex-agents-evals-advanced"

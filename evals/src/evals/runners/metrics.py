@@ -34,7 +34,7 @@ class CaseResult:
     passed: bool  # forbidden_claim_rate == 0 and no broken_refs
     raw_response: dict[str, Any]
     error: str | None = None
-    # GEval LLM-as-judge scores; -1.0 means the metric was not run.
+    # GEval LLM-as-judge scores (Fase 11B.2) — -1.0 = not computed / failed
     geval_citation_grounding: float = -1.0
     geval_coherence: float = -1.0
     geval_completeness: float = -1.0
@@ -63,7 +63,7 @@ class RunSummary:
     latency_p95: float
     cost_per_query: float
     errors: list[str] = field(default_factory=list)
-    # GEval aggregate scores; -1.0 means no cases ran GEval.
+    # GEval averages (Fase 11B.2) — -1.0 = not computed
     geval_citation_grounding: float = -1.0
     geval_coherence: float = -1.0
     geval_completeness: float = -1.0
@@ -257,10 +257,10 @@ def aggregate_summary(
     # Re-compute legal_quality_score after aggregation (use stored values)
     lqs_values = [r.legal_quality_score for r in ok_results]
 
-    def _geval_avg(field: str) -> float:
-        """Average of GEval scores, ignoring -1.0 (not-run sentinel)."""
-        values = [getattr(r, field) for r in ok_results if getattr(r, field) >= 0.0]
-        return _avg(values) if values else -1.0
+    def _geval_avg(values: list[float]) -> float:
+        """Average only valid scores (>= 0); return -1.0 if none."""
+        valid = [v for v in values if v >= 0.0]
+        return _avg(valid) if valid else -1.0
 
     return RunSummary(
         run_id=meta.get("run_id", ""),
@@ -284,7 +284,7 @@ def aggregate_summary(
         latency_p95=_percentile(latencies, 95),
         cost_per_query=_avg(costs),
         errors=[r.error for r in results if r.error is not None],
-        geval_citation_grounding=_geval_avg("geval_citation_grounding"),
-        geval_coherence=_geval_avg("geval_coherence"),
-        geval_completeness=_geval_avg("geval_completeness"),
+        geval_citation_grounding=_geval_avg([r.geval_citation_grounding for r in ok_results]),
+        geval_coherence=_geval_avg([r.geval_coherence for r in ok_results]),
+        geval_completeness=_geval_avg([r.geval_completeness for r in ok_results]),
     )

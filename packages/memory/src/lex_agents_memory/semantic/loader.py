@@ -20,6 +20,14 @@ _SECTION_KEYS = {
     "output-templates.yaml": "templates",
 }
 
+# Top-level keys expected inside a specialist YAML file
+_SPECIALIST_KEYS = (
+    "key_regulations",
+    "common_caveats",
+    "jurisprudence",
+    "regulatory_contacts",
+)
+
 
 class SemanticLoader:
     """Loads semantic memory from docs/knowledge/ YAMLs.
@@ -84,6 +92,47 @@ class SemanticLoader:
                 logger.exception("semantic_loader_error", file=filename)
 
         self._cache = result
+        return result
+
+    def load_specialist(self, branch: str) -> dict[str, list[SemanticEntry]]:
+        """Load the specialist YAML for *branch* from ``knowledge_dir/specialists/``.
+
+        Returns a dict keyed by section name (``key_regulations``,
+        ``common_caveats``, ``jurisprudence``, ``regulatory_contacts``).
+        Returns ``{}`` if the file does not exist (not all branches have one yet).
+        """
+        specialists_dir = self._dir / "specialists"
+        path = specialists_dir / f"{branch}.yaml"
+        if not path.exists():
+            logger.debug("semantic_loader_specialist_not_found", branch=branch, path=str(path))
+            return {}
+
+        try:
+            data: dict[str, Any] = yaml.safe_load(path.read_text()) or {}
+        except Exception:
+            logger.exception("semantic_loader_specialist_error", branch=branch)
+            return {}
+
+        result: dict[str, list[SemanticEntry]] = {}
+        for key in _SPECIALIST_KEYS:
+            entries_raw = data.get(key, [])
+            if not isinstance(entries_raw, list):
+                continue
+            result[key] = [
+                SemanticEntry(
+                    source_file=f"specialists/{branch}.yaml",
+                    section=key,
+                    content=entry,
+                )
+                for entry in entries_raw
+                if isinstance(entry, dict)
+            ]
+
+        logger.info(
+            "semantic_loader_specialist_loaded",
+            branch=branch,
+            sections={k: len(v) for k, v in result.items()},
+        )
         return result
 
     def load_for_query(

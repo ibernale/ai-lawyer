@@ -4,181 +4,168 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from lex_agents_rag.multi_query_retriever import MultiQueryRetriever, _fuse_with_rrf
+import pytest
+from lex_agents_rag.multi_query_retriever import MultiQueryRetriever, _RRF_K
 from lex_agents_rag.retriever import RankedChunk, SearchFilters
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
+# ── helpers ───────────────────────────────────────────────────────────────────
 
-def _make_chunk(chunk_id: str, score: float = 0.5, rank: int = 1) -> RankedChunk:
+def _make_chunk(chunk_id: str, rank: int, score: float = 1.0) -> RankedChunk:
     return RankedChunk(
         chunk_id=chunk_id,
         score=score,
         rank=rank,
-        metadata={"chunk_id": chunk_id},
-        text=f"Texto del chunk {chunk_id}",
+        metadata={},
+        text=f"Texto jurídico para {chunk_id}",
         context_text="",
-        source_label=f"DOC — {chunk_id}",
+        source_label="test",
     )
 
 
-def _make_anthropic_response(text: str) -> MagicMock:
-    msg = MagicMock()
-    msg.content = [MagicMock(text=text)]
-    return msg
+def _make_client(paraphrase_text: str = "paráfrasis 1\nparáfrasis 2") -> MagicMock:
+    client = MagicMock()
+    resp = MagicMock()
+    resp.content = [MagicMock(text=paraphrase_text)]
+    client.messages_create.return_value = resp
+    return client
 
 
-def _make_base_retriever(result_map: dict[str, list[RankedChunk]]) -> MagicMock:
-    """Return a mock HybridRetriever whose search() uses result_map keyed by query."""
+def _make_retriever(*result_lists: list[RankedChunk]) -> MagicMock:
     retriever = MagicMock()
-    retriever.search.side_effect = lambda q, filters=None, k_rrf=30: result_map.get(
-        q, []
-    )
+    retriever.search.side_effect = list(result_lists)
     return retriever
 
 
-# ---------------------------------------------------------------------------
-# _fuse_with_rrf (unit)
-# ---------------------------------------------------------------------------
+# ── paraphrase generation ─────────────────────────────────────────────────────
+
+def test_generate_paraphrases_success() -> None:
+    client = _make_client("versión alternativa 1\nversión alternativa 2")
+    mq = MultiQueryRetriever(MagicMock(), client, n_queries=3)
+    paraphrases = mq._generate_paraphrases("¿Qué es el ratio de capital CET1?")
+    assert len(paraphrases) == 2
+    assert "versión alternativa 1" in paraphrases
 
 
-class TestFuseWithRrf:
-    def test_deduplicates_by_chunk_id(self) -> None:
-        shared = _make_chunk("shared", score=0.9, rank=1)
-        list_a = [shared, _make_chunk("a_only", rank=2)]
-        list_b = [shared, _make_chunk("b_only", rank=2)]
-
-        fused = _fuse_with_rrf([list_a, list_b])
-        ids = [c.chunk_id for c in fused]
-
-        assert ids.count("shared") == 1
-
-    def test_shared_chunk_ranks_first(self) -> None:
-        shared = _make_chunk("shared")
-        list_a = [shared, _make_chunk("a_only")]
-        list_b = [shared, _make_chunk("b_only")]
-
-        fused = _fuse_with_rrf([list_a, list_b])
-        assert fused[0].chunk_id == "shared"
-
-    def test_rrf_scores_are_positive(self) -> None:
-        chunks = [_make_chunk(f"c{i}", rank=i + 1) for i in range(5)]
-        fused = _fuse_with_rrf([chunks])
-        assert all(c.score > 0 for c in fused)
-
-    def test_rank_reflects_position(self) -> None:
-        chunks = [_make_chunk(f"c{i}") for i in range(3)]
-        fused = _fuse_with_rrf([chunks])
-        for expected_rank, chunk in enumerate(fused, start=1):
-            assert chunk.rank == expected_rank
-
-    def test_empty_lists(self) -> None:
-        assert _fuse_with_rrf([]) == []
-        assert _fuse_with_rrf([[]]) == []
+def test_generate_paraphrases_limited_to_n_minus_1() -> None:
+    # API returns 5 lines but n_queries=3 → only 2 paraphrases
+    client = _make_client("línea1\nlínea2\nlínea3\nlínea4\nlínea5")
+    mq = MultiQueryRetriever(MagicMock(), client, n_queries=3)
+    paraphrases = mq._generate_paraphrases("consulta")
+    assert len(paraphrases) == 2
 
 
-# ---------------------------------------------------------------------------
-# MultiQueryRetriever.search
-# ---------------------------------------------------------------------------
+def test_generate_paraphrases_empty_when_n_queries_1() -> None:
+    client = _make_client("no debería llamarse")
+    mq = MultiQueryRetriever(MagicMock(), client, n_queries=1)
+    paraphrases = mq._generate_paraphrases("consulta")
+    assert paraphrases == []
+    client.messages_create.assert_not_called()
 
 
-class TestMultiQueryRetrieverSearch:
-    def _make_retriever(
-        self,
-        queries_to_results: dict[str, list[RankedChunk]],
-        paraphrase_text: str = "¿Cuáles son los requisitos de capital?\n¿Qué exige el regulador?",
-        n_queries: int = 2,
-    ) -> tuple[MultiQueryRetriever, MagicMock, MagicMock]:
-        base = _make_base_retriever(queries_to_results)
-        client = MagicMock()
-        client.messages.create.return_value = _make_anthropic_response(paraphrase_text)
-
-        mq = MultiQueryRetriever(
-            base_retriever=base,
-            anthropic_client=client,
-            n_queries=n_queries,
-        )
-        return mq, base, client
-
-    def test_search_deduplicates_cross_queries(self) -> None:
-        shared_chunk = _make_chunk("shared")
-        results = {
-            "capital CET1": [shared_chunk, _make_chunk("only_q0")],
-            "¿Cuáles son los requisitos de capital?": [
-                shared_chunk,
-                _make_chunk("only_q1"),
-            ],
-            "¿Qué exige el regulador?": [shared_chunk, _make_chunk("only_q2")],
-        }
-
-        mq, _, _ = self._make_retriever(results)
-        fused = mq.search("capital CET1", k=20)
-
-        ids = [c.chunk_id for c in fused]
-        assert ids.count("shared") == 1
-
-    def test_shared_chunk_ranked_higher(self) -> None:
-        shared_chunk = _make_chunk("shared")
-        results = {
-            "capital": [shared_chunk, _make_chunk("x")],
-            "¿Cuáles son los requisitos de capital?": [shared_chunk, _make_chunk("y")],
-            "¿Qué exige el regulador?": [_make_chunk("z")],
-        }
-
-        mq, _, _ = self._make_retriever(results)
-        fused = mq.search("capital", k=10)
-
-        assert fused[0].chunk_id == "shared"
-
-    def test_search_respects_k_limit(self) -> None:
-        results = {
-            "q": [_make_chunk(f"c{i}") for i in range(20)],
-            "¿Cuáles son los requisitos de capital?": [
-                _make_chunk(f"p{i}") for i in range(20)
-            ],
-            "¿Qué exige el regulador?": [_make_chunk(f"r{i}") for i in range(20)],
-        }
-
-        mq, _, _ = self._make_retriever(results)
-        fused = mq.search("q", k=5)
-
-        assert len(fused) <= 5
-
-    def test_filters_forwarded_to_base(self) -> None:
-        mq, base, _ = self._make_retriever({})
-        filters = SearchFilters(jurisdiction="EU")
-        mq.search("query", filters=filters, k=5)
-
-        for call in base.search.call_args_list:
-            assert call.kwargs.get("filters") == filters or (
-                len(call.args) > 1 and call.args[1] == filters
-            )
+def test_generate_paraphrases_returns_empty_on_failure() -> None:
+    client = MagicMock()
+    client.messages_create.side_effect = RuntimeError("API error")
+    mq = MultiQueryRetriever(MagicMock(), client, n_queries=3)
+    paraphrases = mq._generate_paraphrases("consulta")
+    assert paraphrases == []
 
 
-# ---------------------------------------------------------------------------
-# Fallback on Claude failure
-# ---------------------------------------------------------------------------
+def test_generate_paraphrases_skips_blank_lines() -> None:
+    client = _make_client("paráfrasis 1\n\n\nparáfrasis 2\n")
+    mq = MultiQueryRetriever(MagicMock(), client, n_queries=3)
+    paraphrases = mq._generate_paraphrases("consulta")
+    assert paraphrases == ["paráfrasis 1", "paráfrasis 2"]
 
 
-class TestMultiQueryRetrieverFallback:
-    def test_falls_back_when_claude_raises(self) -> None:
-        fallback_chunks = [_make_chunk(f"fb{i}") for i in range(5)]
-        base = MagicMock()
-        base.search.return_value = fallback_chunks
+# ── RRF fusion ────────────────────────────────────────────────────────────────
 
-        client = MagicMock()
-        client.messages.create.side_effect = RuntimeError("API error")
+def test_fuse_with_rrf_deduplicates() -> None:
+    mq = MultiQueryRetriever(MagicMock(), MagicMock())
+    c1 = _make_chunk("A", rank=1)
+    c2 = _make_chunk("B", rank=2)
+    merged = mq._fuse_with_rrf([[c1, c2], [c1, c2]], k=10)
+    ids = [c.chunk_id for c in merged]
+    assert ids.count("A") == 1
+    assert ids.count("B") == 1
 
-        mq = MultiQueryRetriever(
-            base_retriever=base,
-            anthropic_client=client,
-            n_queries=3,
-        )
-        result = mq.search("query sobre capital")
 
-        # Must not raise and must return a valid list
-        assert isinstance(result, list)
-        # Base retriever still called at least once (for the original query)
-        assert base.search.called
+def test_fuse_with_rrf_score_accumulation_drives_ranking() -> None:
+    mq = MultiQueryRetriever(MagicMock(), MagicMock())
+    c_a = _make_chunk("A", rank=1)
+    c_b = _make_chunk("B", rank=1)
+    # A appears in both lists at rank 1 → higher cumulative score
+    merged = mq._fuse_with_rrf([[c_a], [c_a, c_b]], k=10)
+    assert merged[0].chunk_id == "A"
+
+
+def test_fuse_with_rrf_respects_k() -> None:
+    mq = MultiQueryRetriever(MagicMock(), MagicMock())
+    chunks = [_make_chunk(f"C{i}", rank=i + 1) for i in range(20)]
+    merged = mq._fuse_with_rrf([chunks], k=5)
+    assert len(merged) == 5
+
+
+def test_fuse_with_rrf_assigns_sequential_ranks() -> None:
+    mq = MultiQueryRetriever(MagicMock(), MagicMock())
+    chunks = [_make_chunk("A", rank=5), _make_chunk("B", rank=3)]
+    merged = mq._fuse_with_rrf([chunks], k=10)
+    for i, chunk in enumerate(merged, start=1):
+        assert chunk.rank == i
+
+
+def test_fuse_with_rrf_empty_input_returns_empty() -> None:
+    mq = MultiQueryRetriever(MagicMock(), MagicMock())
+    assert mq._fuse_with_rrf([], k=10) == []
+
+
+def test_fuse_with_rrf_rrf_k_constant_used() -> None:
+    """Score at rank 1 should be 1 / (_RRF_K + 1)."""
+    mq = MultiQueryRetriever(MagicMock(), MagicMock())
+    chunk = _make_chunk("A", rank=1)
+    merged = mq._fuse_with_rrf([[chunk]], k=1)
+    expected_score = 1.0 / (_RRF_K + 1)
+    assert abs(merged[0].score - expected_score) < 1e-10
+
+
+# ── end-to-end search ─────────────────────────────────────────────────────────
+
+def test_search_calls_retriever_once_per_query() -> None:
+    chunk_a = _make_chunk("A", rank=1)
+    chunk_b = _make_chunk("B", rank=1)
+    retriever = _make_retriever([chunk_a], [chunk_b], [chunk_a])
+    client = _make_client("paráfrasis 1\nparáfrasis 2")
+    mq = MultiQueryRetriever(retriever, client, n_queries=3)
+    mq.search("consulta CRR III")
+    # original + 2 paraphrases = 3 retriever calls
+    assert retriever.search.call_count == 3
+
+
+def test_search_returns_fused_results() -> None:
+    chunk_a = _make_chunk("A", rank=1)
+    chunk_b = _make_chunk("B", rank=2)
+    retriever = _make_retriever([chunk_a, chunk_b])
+    client = _make_client("")  # empty → no paraphrases
+    mq = MultiQueryRetriever(retriever, client, n_queries=3)
+    results = mq.search("consulta")
+    ids = {c.chunk_id for c in results}
+    assert "A" in ids
+    assert "B" in ids
+
+
+def test_search_handles_retriever_error_gracefully() -> None:
+    retriever = MagicMock()
+    retriever.search.side_effect = RuntimeError("qdrant error")
+    mq = MultiQueryRetriever(retriever, _make_client(""), n_queries=1)
+    results = mq.search("consulta")
+    assert results == []
+
+
+def test_search_passes_filters_to_retriever() -> None:
+    chunk = _make_chunk("A", rank=1)
+    retriever = _make_retriever([chunk])
+    mq = MultiQueryRetriever(retriever, _make_client(""), n_queries=1)
+    filters = SearchFilters(jurisdiction="ES")
+    mq.search("consulta", filters=filters, k=10)
+    _, call_kwargs = retriever.search.call_args
+    assert call_kwargs.get("filters") == filters or retriever.search.call_args[0][1] == filters

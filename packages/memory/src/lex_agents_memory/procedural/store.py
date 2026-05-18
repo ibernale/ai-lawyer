@@ -42,6 +42,31 @@ WHERE active = 1
 ORDER BY id;
 """
 
+_FTS_SCHEMA_SQL = """
+CREATE VIRTUAL TABLE IF NOT EXISTS procedural_patterns_fts
+USING fts5(pattern_key, content, content='procedural_patterns', content_rowid='id');
+"""
+
+_FTS_REBUILD_SQL = "INSERT INTO procedural_patterns_fts(procedural_patterns_fts) VALUES('rebuild');"
+
+_FTS_SEARCH_SQL = """
+SELECT p.id, p.pattern_key, p.version, p.content, p.source, p.active
+FROM procedural_patterns p
+JOIN procedural_patterns_fts fts ON fts.rowid = p.id
+WHERE fts MATCH ? AND p.active = 1
+ORDER BY rank
+LIMIT 20;
+"""
+
+_LIKE_SEARCH_SQL = """
+SELECT id, pattern_key, version, content, source, active
+FROM procedural_patterns
+WHERE active = 1
+  AND (pattern_key LIKE ? OR content LIKE ?)
+ORDER BY id
+LIMIT 20;
+"""
+
 
 def _row_to_pattern(row: tuple[Any, ...]) -> ProceduralPattern:
     id_, key, version, content, source, active = row
@@ -60,10 +85,12 @@ def init_db(db_path: Path, seed_sql_path: Path | None = None) -> None:
 
     Safe to call multiple times (CREATE TABLE IF NOT EXISTS).
     Seeds only if the table is empty and seed_sql_path is provided.
+    Also creates the FTS5 index (rebuilt after seeding).
     """
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(db_path) as conn:
         conn.execute(_SCHEMA_SQL)
+        conn.execute(_FTS_SCHEMA_SQL)
         conn.commit()
 
         if seed_sql_path and seed_sql_path.exists():
@@ -76,6 +103,13 @@ def init_db(db_path: Path, seed_sql_path: Path | None = None) -> None:
                 logger.info("procedural_store_seeded", n_patterns=seeded, db=str(db_path))
             else:
                 logger.debug("procedural_store_already_seeded", n_rows=count)
+
+        # Rebuild FTS index to sync with current content
+        try:
+            conn.execute(_FTS_REBUILD_SQL)
+            conn.commit()
+        except Exception:
+            logger.warning("procedural_store_fts_rebuild_failed", db=str(db_path))
 
     logger.info("procedural_store_initialized", db=str(db_path))
 
@@ -93,4 +127,31 @@ def get_active_patterns(db_path: Path) -> list[ProceduralPattern]:
         return patterns
     except Exception:
         logger.exception("procedural_store_error", db=str(db_path))
+        return []
+
+
+def search_patterns(query: str, db_path: Path) -> list[ProceduralPattern]:
+    """Full-text search over active patterns.
+
+    Uses FTS5 when the index exists; falls back to LIKE-based search
+    for DBs created before the FTS migration.  Returns [] if the DB
+    does not exist or on any error.
+    """
+    if not db_path.exists():
+        return []
+    try:
+        with sqlite3.connect(db_path) as conn:
+            # Try FTS5 first
+            try:
+                rows = conn.execute(_FTS_SEARCH_SQL, (query,)).fetchall()
+                logger.debug("procedural_store_fts_search", query=query, n=len(rows))
+                return [_row_to_pattern(r) for r in rows]
+            except sqlite3.OperationalError:
+                # FTS table not available — fall back to LIKE
+                like_term = f"%{query}%"
+                rows = conn.execute(_LIKE_SEARCH_SQL, (like_term, like_term)).fetchall()
+                logger.debug("procedural_store_like_search", query=query, n=len(rows))
+                return [_row_to_pattern(r) for r in rows]
+    except Exception:
+        logger.exception("procedural_store_search_error", query=query)
         return []

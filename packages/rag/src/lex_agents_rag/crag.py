@@ -1,80 +1,52 @@
-"""CRAG — Corrective RAG: filtro post-retrieval de relevancia."""
+"""CRAGFilter — Contextual Relevance-Aware Grading filter (Fase 11B.3).
+
+Single batch LLM call classifies each retrieved chunk as:
+  R = Relevant   — keep
+  I = Irrelevant — discard
+  U = Uncertain  — keep (borderline; better over- than under-include)
+
+Two guard-rails prevent context starvation:
+  _MIN_CHUNKS_TO_FILTER   — skip filtering entirely when input is this small
+                            (saves an LLM call on sparse result sets).
+  _MIN_CHUNKS_AFTER_FILTER — if fewer chunks survive the filter, fall back to
+                             the top N by original rank rather than leaving the
+                             pipeline with almost no context.
+"""
 
 from __future__ import annotations
 
 import re
-from typing import Any
 
 import structlog
-from lex_agents_shared.anthropic_client import MODEL_HAIKU
+from lex_agents_shared.anthropic_client import MODEL_HAIKU, AnthropicClientWrapper
 
 from lex_agents_rag.retriever import RankedChunk
 
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
-_MIN_CHUNKS_TO_FILTER = 5   # skip CRAG entirely when ≤ this many chunks
-_MIN_CHUNKS_AFTER_FILTER = 3  # fallback if fewer than this survive
-_CHUNK_TEXT_LIMIT = 300
-
-_RELEVANCE_SYSTEM = (
-    "Eres un evaluador de relevancia jurídica. "
-    "Para cada fragmento numerado, responde SOLO con el número y una letra: "
-    "R (relevante), I (irrelevante), U (incierto). "
-    "Una por línea. Ejemplo: '1:R\\n2:I\\n3:U'"
-)
-
-# Matches lines like "1:R", "12:I", "3:U" (case-insensitive)
-_CLASSIFICATION_RE = re.compile(r"^\s*(\d+)\s*:\s*([RIUriu])\s*$")
-
-
-def _parse_classifications(raw: str) -> dict[int, str]:
-    """Parse Claude's line-by-line classification response.
-
-    Lines that don't match the expected ``N:X`` pattern are silently
-    ignored so partial responses still produce useful output.
-
-    Args:
-        raw: Raw text from the LLM response, e.g. ``"1:R\\n2:I\\n3:U"``.
-
-    Returns:
-        Mapping of 1-based index → uppercase classification letter (R/I/U).
-    """
-    result: dict[int, str] = {}
-    for line in raw.splitlines():
-        m = _CLASSIFICATION_RE.match(line)
-        if m:
-            idx = int(m.group(1))
-            label = m.group(2).upper()
-            result[idx] = label
-    return result
+_MIN_CHUNKS_TO_FILTER = 5    # skip if input ≤ this many chunks
+_MIN_CHUNKS_AFTER_FILTER = 3  # fallback threshold after filtering
 
 
 class CRAGFilter:
-    """Post-retrieval relevance filter (Corrective RAG).
+    """LLM-based relevance filter applied after initial retrieval.
 
-    Evaluates all retrieved chunks in a **single** LLM call and discards
-    those classified as irrelevant.  Falls back gracefully to the original
-    chunk list when Claude is unavailable or the filter is too aggressive.
-
-    Args:
-        anthropic_client: Synchronous ``anthropic.Anthropic`` client.
-        model: Claude model used for relevance classification (default Haiku).
-        relevance_threshold: Unused for classification-based filtering; kept
-            for API compatibility with future score-based variants.
+    Reduces noise from borderline chunks without risking context starvation.
+    All failures (LLM timeout, parse errors) degrade gracefully — the
+    original chunk list is returned unchanged so the pipeline keeps running.
     """
 
     def __init__(
         self,
-        anthropic_client: Any,
+        anthropic_client: AnthropicClientWrapper,
         model: str = MODEL_HAIKU,
-        relevance_threshold: float = 0.3,
+        relevance_threshold: float = 0.3,  # reserved for future scoring mode
     ) -> None:
         self._client = anthropic_client
         self._model = model
-        self._relevance_threshold = relevance_threshold
 
     # ------------------------------------------------------------------
-    # Public API
+    # Public
     # ------------------------------------------------------------------
 
     def filter(
@@ -83,90 +55,74 @@ class CRAGFilter:
         chunks: list[RankedChunk],
         max_to_keep: int = 20,
     ) -> list[RankedChunk]:
-        """Filter irrelevant chunks from *chunks* using a single LLM call.
-
-        Steps:
-        1. If there are ≤ 5 chunks, return them all (not worth the latency).
-        2. Ask Claude to classify each chunk as R/I/U in one batch request.
-        3. Discard chunks classified as "I".
-        4. If fewer than 5 chunks survive, return the original top-5 instead.
-        5. Return the surviving chunks (up to *max_to_keep*), preserving order.
-
-        Falls back to the original chunks if Claude raises an exception.
-
-        Args:
-            query: The user query chunks were retrieved for.
-            chunks: Ordered list of retrieved chunks (e.g. from RRF).
-            max_to_keep: Hard cap on the number of chunks returned.
-
-        Returns:
-            Filtered (and capped) list of :class:`RankedChunk`.
-        """
+        """Return filtered list; never raises — falls back gracefully on errors."""
         if len(chunks) <= _MIN_CHUNKS_TO_FILTER:
-            return chunks
-
-        classifications = self._classify_chunks(query, chunks)
-        if classifications is None:
-            # Claude failed — return originals unchanged
+            logger.debug("crag_filter_skipped", n_chunks=len(chunks))
             return chunks[:max_to_keep]
 
-        kept = [
-            chunk
-            for i, chunk in enumerate(chunks)
-            if classifications.get(i + 1, "U") != "I"
+        chunks_to_classify = chunks[:max_to_keep]
+        classifications = self._classify(query, chunks_to_classify)
+
+        if not classifications:
+            # LLM call failed — return original list unchanged
+            logger.warning("crag_filter_fallback_llm_error", n_chunks=len(chunks_to_classify))
+            return chunks_to_classify
+
+        relevant = [
+            c for c, label in zip(chunks_to_classify, classifications) if label != "I"
         ]
-
-        n_filtered = len(chunks) - len(kept)
         logger.info(
-            "crag_filter",
-            total=len(chunks),
-            kept=len(kept),
-            filtered=n_filtered,
+            "crag_filter_applied",
+            total=len(chunks_to_classify),
+            relevant=len(relevant),
+            irrelevant=len(chunks_to_classify) - len(relevant),
         )
 
-        if len(kept) < _MIN_CHUNKS_AFTER_FILTER:
-            logger.warning(
-                "crag_filter_too_aggressive",
-                kept=len(kept),
-                fallback_n=_MIN_CHUNKS_AFTER_FILTER,
-            )
-            return chunks[:_MIN_CHUNKS_AFTER_FILTER]
+        if len(relevant) < _MIN_CHUNKS_AFTER_FILTER:
+            # Too aggressive — return top N by original rank as fallback
+            logger.info("crag_filter_fallback_too_few", surviving=len(relevant))
+            return sorted(chunks_to_classify, key=lambda c: c.rank)[:_MIN_CHUNKS_AFTER_FILTER]
 
-        return kept[:max_to_keep]
+        return relevant
 
     # ------------------------------------------------------------------
-    # Internals
+    # Internal helpers
     # ------------------------------------------------------------------
 
-    def _classify_chunks(
-        self, query: str, chunks: list[RankedChunk]
-    ) -> dict[int, str] | None:
-        """Ask Claude to classify every chunk in a single batch prompt.
-
-        Args:
-            query: The user query.
-            chunks: Chunks to evaluate.
-
-        Returns:
-            Mapping of 1-based chunk index → classification letter (R/I/U),
-            or ``None`` if the API call fails.
-        """
-        chunk_lines = "\n\n".join(
-            f"[{i + 1}] {chunk.text[:_CHUNK_TEXT_LIMIT]}"
-            for i, chunk in enumerate(chunks)
+    def _classify(self, query: str, chunks: list[RankedChunk]) -> list[str]:
+        """Return R/I/U labels (one per chunk). Returns ``[]`` on any error."""
+        numbered = "\n\n".join(
+            f"{i + 1}: {chunk.text[:400]}" for i, chunk in enumerate(chunks)
         )
-        user_message = f"Query: {query}\n\n{chunk_lines}"
-
+        prompt = (
+            "Clasifica cada fragmento numerado según su relevancia para la consulta.\n"
+            "Responde ÚNICAMENTE con líneas en el formato: N: X\n"
+            "donde X es R (Relevante), I (Irrelevante) o U (Incierto).\n\n"
+            f"Consulta: {query}\n\n"
+            f"Fragmentos:\n{numbered}"
+        )
         try:
-            response = self._client.messages.create(
+            resp = self._client.messages_create(
                 model=self._model,
                 max_tokens=256,
-                temperature=0,
-                system=_RELEVANCE_SYSTEM,
-                messages=[{"role": "user", "content": user_message}],
+                messages=[{"role": "user", "content": prompt}],
             )
-            raw: str = response.content[0].text.strip()
-            return _parse_classifications(raw)
+            raw = resp.content[0].text.strip() if resp.content else ""
+            return self._parse_classifications(raw, len(chunks))
         except Exception:
-            logger.warning("crag_classification_failed", exc_info=True)
-            return None
+            logger.exception("crag_filter_classify_error")
+            return []
+
+    @staticmethod
+    def _parse_classifications(raw: str, expected: int) -> list[str]:
+        """Parse ``N: X`` lines into a label list, padded to *expected* length.
+
+        Missing entries default to ``'U'`` (uncertain = keep).
+        """
+        pattern = re.compile(r"^\s*(\d+)\s*:\s*([RIUriu])\s*$")
+        result: dict[int, str] = {}
+        for line in raw.splitlines():
+            m = pattern.match(line)
+            if m:
+                result[int(m.group(1))] = m.group(2).upper()
+        return [result.get(i + 1, "U") for i in range(expected)]
