@@ -1,0 +1,206 @@
+# Specialist knowledge: Regulatorio Bancario UE+ES
+# Loaded by SemanticLoader.load_specialist("regulatorio_bancario_ue_es")
+# Human-curated — edits require PR review.
+# Last reviewed: 2026-05-18
+
+branch: regulatorio_bancario_ue_es
+
+key_regulations:
+  - id: crr_iii
+    short_name: CRR III
+    full_name: "Reglamento (UE) 2024/1623 del Parlamento Europeo y del Consejo"
+    published: "2024-06-19"
+    entry_into_force: "2025-01-01"
+    jurisdictions: [EU]
+    notes: >
+      Implementa el marco final de Basilea IV en la UE. Introduce SA-CCR para riesgo
+      de contraparte, nuevo SA de riesgo de crédito con mayor sensibilidad al riesgo,
+      output floor del 72,5 % sobre RWA internos y revisión del marco de riesgo
+      operacional. Período transitorio para el output floor: 2025-2028.
+    caveat: >
+      Las entidades que usan modelos internos (IRB) deben vigilar el impacto del
+      output floor a partir de 2025. Confirmar siempre la fecha de aplicación
+      nacional/EBA antes de aconsejar.
+
+  - id: crd_vi
+    short_name: CRD VI
+    full_name: "Directiva (UE) 2024/1619 del Parlamento Europeo y del Consejo"
+    published: "2024-06-19"
+    entry_into_force: "2026-01-11"
+    transposition_deadline: "2026-01-10"
+    jurisdictions: [EU]
+    notes: >
+      Modifica la CRD IV/V. Introduce autorización de sucursales de entidades de
+      terceros países, nuevas exigencias de gobernanza (idoneidad, diversidad),
+      refuerzo de los poderes supervisores del BCE/ANCs y sanciones armonizadas.
+    caveat: >
+      Plazo de transposición: 10 enero 2026. Verificar el estado de transposición
+      en España (modificación de la Ley 10/2014) antes de emitir dictamen.
+
+  - id: dora
+    short_name: DORA
+    full_name: "Reglamento (UE) 2022/2554 — Digital Operational Resilience Act"
+    entry_into_force: "2025-01-17"
+    jurisdictions: [EU]
+    notes: >
+      Aplicable desde el 17 de enero de 2025. Exige gestión del riesgo TIC,
+      notificación de incidentes graves (72h al supervisor), pruebas TLPT para
+      entidades significativas y gestión de proveedores TIC terceros (incluidos CSPs).
+      RTS/ITS de nivel 2 publicados por EBA/ESMA/EIOPA.
+    caveat: >
+      Los RTS/ITS finales bajo DORA deben citarse con número de publicación exacto.
+      DORA deroga ciertos artículos de NICA (Ley 43/2010) — verificar vigencia.
+
+  - id: brrd_ii
+    short_name: BRRD II
+    full_name: "Directiva (UE) 2019/879 — Bank Recovery and Resolution Directive II"
+    jurisdictions: [EU, ES]
+    notes: >
+      Transpuesta en España mediante RDL 7/2021. Introduce MREL mejorado, bail-in
+      de pasivos subordinados, moratoria resolución y régimen de bancos de
+      importancia sistémica mundial (G-SIIs). Coordinación FROB/JUR en resolución.
+    caveat: >
+      Para cuestiones de MREL en entidades ES, verificar circulares JUR y Circular
+      FROB vigente. El MREL objetivo se fija por resolución individual del JUR.
+
+  - id: mifid_ii
+    short_name: MiFID II
+    full_name: "Directiva 2014/65/UE — Markets in Financial Instruments Directive II"
+    jurisdictions: [EU, ES]
+    notes: >
+      Marco de conducta para servicios de inversión. Exige categorización de clientes
+      (minorista/profesional/contraparte elegible), test de idoneidad/conveniencia,
+      transparencia pre/post negociación, grabación de comunicaciones y gobernanza
+      de productos. Transpuesta en España mediante Ley 6/2023 (nueva LMV).
+    caveat: >
+      La nueva LMV española (Ley 6/2023) deroga la LMV 1988. Verificar articulado
+      actualizado. Quick Fix MiFID II (Directiva 2021/338) puede modificar algunos
+      umbrales.
+
+  - id: mifir
+    short_name: MiFIR
+    full_name: "Reglamento (UE) No 600/2014"
+    jurisdictions: [EU]
+    notes: >
+      Complementa MiFID II. Regula transparencia en negociación, obligación de
+      negociación en centros regulados, reporting de operaciones a ANCVs.
+      Reglamento MiFIR Review (2024) introduce cambios en consolidación de datos
+      y obligaciones de transparencia.
+
+  - id: mica
+    short_name: MiCA
+    full_name: "Reglamento (UE) 2023/1114 — Markets in Crypto-Assets"
+    entry_into_force: "2024-12-30"
+    jurisdictions: [EU]
+    notes: >
+      Aplicable desde 30 diciembre 2024 (tokens de dinero electrónico y tokens
+      referenciados a activos desde junio 2024). Requiere autorización como CASP.
+      Supervisión ESMA/EBA para emisores significativos. Coordinación con BCE
+      para stablecoins de moneda.
+    caveat: >
+      Marco regulatorio muy reciente. Verificar RTS/ITS publicados por ESMA/EBA
+      antes de emitir dictamen. Interacción con PSD2/PSR pendiente de clarificación.
+
+  - id: crr_ii
+    short_name: CRR II
+    full_name: "Reglamento (UE) 2019/876"
+    jurisdictions: [EU]
+    notes: >
+      En vigor. Establece NSFR, ratio de apalancamiento vinculante (3 %),
+      tratamiento de exposiciones soberanas y revisión parcial del SA de crédito.
+      Base para CRR III.
+
+  - id: ley_10_2014
+    short_name: Ley 10/2014
+    full_name: "Ley 10/2014, de 26 de junio, de ordenación, supervisión y solvencia de entidades de crédito"
+    jurisdictions: [ES]
+    notes: >
+      Ley marco de supervisión bancaria española. Transpone CRD IV en España.
+      Desarrollada por RD 84/2015 y Circular BdE 2/2016. Será modificada para
+      transponer CRD VI (plazo: enero 2026).
+
+common_caveats:
+  - id: transitional_output_floor
+    applies_to: [crr_iii]
+    text: >
+      CRR III introduce un output floor del 72,5 % sobre RWA según modelos
+      internos. El período transitorio escala del 50 % (2025) al 72,5 % (2030).
+      Cualquier análisis de capital regulatorio bajo IRB debe considerar el impacto
+      del output floor en el horizonte temporal de la consulta.
+
+  - id: eba_guidelines_pending
+    text: >
+      Numerosas normas de nivel 2 (RTS/ITS, Guidelines EBA/ESMA) están en fase
+      de consulta pública o pendientes de publicación en el DOUE. Verificar
+      siempre el estado de tramitación en el registro de la EBA/ESMA antes de
+      citar como vigentes.
+
+  - id: spain_transposition_lag
+    applies_to: [crd_vi]
+    text: >
+      España históricamente presenta demoras en la transposición de directivas
+      de servicios financieros. Para directivas con plazo de transposición
+      próximo, indicar explícitamente si la normativa española equivalente
+      está vigente o pendiente.
+
+  - id: national_options_crr
+    text: >
+      El CRR permite opciones y discrecionalidades nacionales. El Banco de España
+      y el BCE (en el MUS) ejercen ciertas discrecionalidades. Verificar
+      Circular BdE aplicable cuando el análisis afecte a entidades supervisadas
+      directamente por BdE (entidades menos significativas).
+
+  - id: mica_crypto_interaction
+    applies_to: [mica]
+    text: >
+      La interacción entre MiCA y la regulación bancaria (requerimientos de capital
+      para exposiciones cripto bajo CRR III Art. 501c) está en desarrollo. No emitir
+      dictamen definitivo sin contrastar la orientación EBA/BCE más reciente.
+
+jurisprudence:
+  - id: ecj_c_176_18
+    citation: "STJUE C-176/18, 14 de noviembre de 2019"
+    topic: Supervisión bancaria — proporcionalidad en sanciones
+    summary: >
+      El TJUE confirmó que las sanciones supervisoras deben ser proporcionadas
+      considerando la situación individual de la entidad. Relevante para análisis
+      de sanciones bajo CRD IV/V.
+
+  - id: ecj_c_450_18
+    citation: "STJUE C-450/18, 22 de enero de 2020 (WA)"
+    topic: Igualdad — pensiones de entidades financieras
+    summary: >
+      Aunque de ámbito laboral, tiene implicaciones en la valoración de pasivos
+      de pensiones en el balance para efectos de capital regulatorio.
+
+  - id: ssc_banco_popular
+    citation: "STJUE C-685/20, T-552/19 y acumulados (General Court)"
+    topic: Resolución bancaria — Banco Popular — derechos accionistas/acreedores
+    summary: >
+      El Tribunal General confirmó la legalidad de la resolución del Banco Popular
+      en 2017 y el bail-in de instrumentos AT1/T2. Referencia clave para análisis
+      de bail-in y MREL bajo BRRD/SRM.
+
+  - id: bde_res_2023_01
+    citation: "Resolución BdE — Circular 1/2023 de 12 de enero"
+    topic: Requerimientos de información FINREP/COREP
+    summary: >
+      Actualiza los modelos de información supervisora FINREP y COREP en línea
+      con los ITS EBA. Relevante para consultas sobre requerimientos de reporting.
+
+regulatory_contacts:
+  - body: BCE / MUS
+    url: "https://www.bankingsupervision.europa.eu"
+    scope: Entidades significativas (SI) bajo supervisión directa BCE
+  - body: Banco de España
+    url: "https://www.bde.es"
+    scope: Entidades menos significativas (LSI) y supervisión nacional
+  - body: CNMV
+    url: "https://www.cnmv.es"
+    scope: Mercados de valores, MiFID II/MiFIR, MiCA en España
+  - body: EBA
+    url: "https://www.eba.europa.eu"
+    scope: Normas técnicas de regulación y supervisión bancaria UE
+  - body: ESMA
+    url: "https://www.esma.europa.eu"
+    scope: Normas de mercados de valores, MiFID II, MiCA

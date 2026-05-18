@@ -10,6 +10,9 @@ import structlog
 from lex_agents_memory.procedural import store
 from lex_agents_memory.types import ProceduralPattern
 
+# Re-export for convenience
+search_patterns = store.search_patterns
+
 logger: structlog.BoundLogger = structlog.get_logger(__name__)
 
 
@@ -44,6 +47,17 @@ class ProceduralLoader:
 
         self._cache = patterns
         return patterns
+
+    def search(self, query: str) -> list[ProceduralPattern]:
+        """FTS search over active patterns (does NOT use the load cache).
+
+        Delegates to :func:`store.search_patterns`.  Returns ``[]`` if no
+        ``db_path`` was provided (in-memory / test mode).
+        """
+        if self._db_path is None:
+            logger.debug("procedural_loader_search_no_db")
+            return []
+        return store.search_patterns(query, self._db_path)
 
     def _load_from_seed_in_memory(self) -> list[ProceduralPattern]:
         if not self._seed_sql_path or not self._seed_sql_path.exists():

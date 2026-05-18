@@ -301,6 +301,30 @@ def _write_summary_md(output_dir: Path, summary: RunSummary, results: list[CaseR
             f"| {r.hallucination_rate:.2f} | {r.legal_quality_score:.3f} | {passed} | {err} |"
         )
 
+    # GEval section — only shown when at least one score was computed
+    if any(
+        v >= 0.0
+        for v in (
+            summary.geval_citation_grounding,
+            summary.geval_coherence,
+            summary.geval_completeness,
+        )
+    ):
+        lines += [
+            "",
+            "## GEval (LLM-as-Judge)",
+            "",
+            "| Metric | Score |",
+            "|--------|-------|",
+        ]
+        for label, val in (
+            ("citation_grounding", summary.geval_citation_grounding),
+            ("coherence", summary.geval_coherence),
+            ("completeness", summary.geval_completeness),
+        ):
+            display = f"{val:.3f}" if val >= 0.0 else "n/a"
+            lines.append(f"| {label} | {display} |")
+
     if summary.errors:
         lines += ["", "## Errors", ""]
         for e in summary.errors:
@@ -356,10 +380,38 @@ def cmd_run(args: argparse.Namespace) -> int:
     print(f"Running {len(cases)} cases from {dataset_dir} → {output_dir}")
     results: list[CaseResult] = []
 
+    geval_enabled: bool = getattr(args, "geval", False)
+    if geval_enabled:
+        from evals.runners.geval_metrics import run_geval as _run_geval
+        _geval_api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+        print("  [GEval] LLM-as-judge metrics enabled (--geval)")
+
     for i, case in enumerate(cases, 1):
         case_id = case.get("id", f"case-{i}")
         print(f"  [{i}/{len(cases)}] {case_id} ...", end=" ", flush=True)
         cr = asyncio.run(_run_case(orchestrator, case, weights))
+
+        # ── Optional GEval enrichment ─────────────────────────────────────
+        if geval_enabled and not cr.error:
+            answer_text = cr.raw_response.get("answer", "")
+            ctx_fragments = [
+                c.get("fragment_text", "")
+                for c in cr.raw_response.get("citations", [])
+                if c.get("fragment_text")
+            ]
+            try:
+                gscores = _run_geval(
+                    answer=answer_text,
+                    query=case.get("query", ""),
+                    retrieval_context=ctx_fragments,
+                    api_key=_geval_api_key,
+                )
+                cr.geval_citation_grounding = gscores.get("citation_grounding", -1.0)
+                cr.geval_coherence = gscores.get("coherence", -1.0)
+                cr.geval_completeness = gscores.get("completeness", -1.0)
+            except Exception as _ge:
+                print(f" [GEval error: {_ge}]", end="")
+
         status = "PASS" if cr.passed else "FAIL"
         if cr.error:
             status = f"ERROR({cr.error[:30]})"
@@ -478,6 +530,15 @@ def cli() -> None:
         action="append",
         metavar="KEY=VALUE",
         help="Filter cases (e.g. --filter difficulty=hard). Repeatable.",
+    )
+    run_parser.add_argument(
+        "--geval",
+        action="store_true",
+        default=False,
+        help=(
+            "Enable LLM-as-judge GEval metrics (citation_grounding, coherence, "
+            "completeness). Adds ~1 LLM call per case. Requires deepeval installed."
+        ),
     )
 
     # compare
