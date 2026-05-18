@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any, Literal, get_args
 
 import structlog
+import yaml
 from fastapi import APIRouter, Depends, HTTPException
 from lex_agents_audit.audit_store import AuditSampleRecord, AuditStore
 from pydantic import BaseModel
@@ -95,3 +97,85 @@ async def submit_audit_review(
         reviewer=current_user,
     )
     return {"status": "reviewed", "verdict": body.verdict}
+
+
+@router.post("/{sample_id}/promote", status_code=200)
+async def promote_to_golden_dataset(
+    sample_id: int,
+    _user: CurrentUser = Depends(require_auth),
+    store: AuditStore = Depends(_get_audit_store),
+) -> dict[str, Any]:
+    """Generate a golden-dataset YAML candidate from a reviewed audit sample.
+
+    The sample must have been reviewed with verdict 'incorrecto'.
+    Returns the YAML content for the caller to download — nothing is written to disk.
+    """
+    record = await store.get(sample_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Audit sample {sample_id} not found")
+
+    if record.review_verdict != "incorrecto":
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "Only samples with review_verdict='incorrecto' can be promoted. "
+                f"Current verdict: {record.review_verdict!r}"
+            ),
+        )
+
+    # Extract fields from the stored response JSON
+    response_data: dict[str, Any] = {}
+    if record.response_json:
+        try:
+            response_data = json.loads(record.response_json)
+        except json.JSONDecodeError:
+            logger.warning("promote_invalid_response_json", sample_id=sample_id, trace_id=record.trace_id)
+
+    # Infer jurisdiction from branch or routing metadata
+    routing: dict[str, Any] = response_data.get("routing", {})
+    branch = record.branch or routing.get("branch", "")
+    jurisdiction: list[str] = ["ES"]
+    if "ue" in branch.lower() or "eu" in branch.lower():
+        jurisdiction = ["EU", "ES"]
+
+    short_id = record.trace_id[:8]
+    candidate: dict[str, Any] = {
+        "id": f"FEEDBACK-{short_id}",
+        "jurisdiction": jurisdiction,
+        "branch": branch,
+        "difficulty": "medium",
+        "expert_reviewed": False,
+        "source": "feedback_loop",
+        "query": record.query,
+        "expected": {
+            "must_mention_concepts": [],
+            "must_not_claim": [],
+            "expected_caveats": [],
+            "output_type": "dictamen",
+        },
+        "notes": (
+            "Generado desde feedback negativo. "
+            f"trace_id: {record.trace_id}. "
+            "Revisar y completar antes de merge."
+        ),
+    }
+
+    yaml_content: str = yaml.dump(
+        candidate,
+        allow_unicode=True,
+        default_flow_style=False,
+        sort_keys=False,
+    )
+
+    logger.info(
+        "audit_sample_promoted",
+        sample_id=sample_id,
+        trace_id=record.trace_id,
+    )
+
+    return {
+        "sample_id": sample_id,
+        "trace_id": record.trace_id,
+        "yaml_content": yaml_content,
+        "suggested_filename": f"FEEDBACK-{short_id}.yaml",
+    }
