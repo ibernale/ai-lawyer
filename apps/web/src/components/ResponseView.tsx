@@ -4,6 +4,7 @@ import type React from "react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useTranslations } from "next-intl";
 import type {
   CitationMapping,
   ConsultResponse,
@@ -29,6 +30,7 @@ function CitationPanel({
   citation: CitationMapping;
   onClose: () => void;
 }) {
+  const t = useTranslations("response");
   const boeUrl = citation.source_id.startsWith("BOE-")
     ? `https://boe.es/buscar/doc.php?id=${citation.source_id}`
     : null;
@@ -39,7 +41,7 @@ function CitationPanel({
   return (
     <aside className="fixed right-0 top-0 z-50 h-full w-96 border-l border-border bg-background shadow-xl flex flex-col">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h3 className="font-semibold text-sm">Fuente [REF:{citation.index}]</h3>
+        <h3 className="font-semibold text-sm">{t("citationSource")} [REF:{citation.index}]</h3>
         <button
           onClick={onClose}
           className="rounded p-1 hover:bg-muted text-muted-foreground text-lg leading-none"
@@ -51,13 +53,13 @@ function CitationPanel({
       <div className="flex-1 overflow-y-auto p-4 space-y-3 text-sm">
         <div>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
-            Jerarquía
+            {t("citationHierarchy")}
           </p>
           <p className="text-foreground">{citation.hierarchy_path}</p>
         </div>
         <div>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
-            Norma
+            {t("citationNorm")}
           </p>
           <p className="font-mono text-xs text-foreground">
             {citation.source_id}
@@ -65,7 +67,7 @@ function CitationPanel({
         </div>
         <div>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
-            Fragmento
+            {t("citationFragment")}
           </p>
           <blockquote className="border-l-2 border-primary pl-3 text-xs leading-relaxed text-muted-foreground italic">
             {citation.fragment_text}
@@ -74,7 +76,7 @@ function CitationPanel({
         {(boeUrl ?? eurlexUrl) && (
           <div>
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
-              Fuente externa
+              {t("citationExternal")}
             </p>
             <a
               href={(boeUrl ?? eurlexUrl) as string}
@@ -82,7 +84,7 @@ function CitationPanel({
               rel="noopener noreferrer"
               className="text-xs text-primary underline hover:no-underline"
             >
-              Abrir en {boeUrl ? "BOE.es" : "EUR-Lex"} ↗
+              {boeUrl ? t("openInBoe") : t("openInEurlex")}
             </a>
           </div>
         )}
@@ -96,6 +98,7 @@ function CitationPanel({
 // ---------------------------------------------------------------------------
 
 function VerificationBanner({ report }: { report: VerificationReport }) {
+  const t = useTranslations("response");
   const [expanded, setExpanded] = useState(false);
 
   const config = {
@@ -103,19 +106,19 @@ function VerificationBanner({ report }: { report: VerificationReport }) {
       bg: "bg-green-50 border-green-200",
       text: "text-green-800",
       icon: "✓",
-      message: "Citas verificadas",
+      message: t("verifiedCitations"),
     },
     amber: {
       bg: "bg-amber-50 border-amber-200",
       text: "text-amber-800",
       icon: "⚠",
-      message: "Verificación parcial — revisar lagunas",
+      message: t("partialVerification"),
     },
     red: {
       bg: "bg-red-50 border-red-200",
       text: "text-red-800",
       icon: "✗",
-      message: "Citas con errores detectados — no publicar sin revisión",
+      message: t("citationErrors"),
     },
   }[report.status];
 
@@ -133,7 +136,7 @@ function VerificationBanner({ report }: { report: VerificationReport }) {
             onClick={() => setExpanded(!expanded)}
             className={`text-xs underline ${config.text}`}
           >
-            {expanded ? "Ocultar detalles" : "Ver detalles"}
+            {expanded ? t("hideDetails") : t("viewDetails")}
           </button>
         )}
       </div>
@@ -141,7 +144,7 @@ function VerificationBanner({ report }: { report: VerificationReport }) {
         <div className={`mt-3 space-y-2 text-xs ${config.text}`}>
           {report.broken_refs.length > 0 && (
             <div>
-              <p className="font-semibold">Referencias rotas:</p>
+              <p className="font-semibold">{t("brokenRefs")}</p>
               <ul className="mt-1 list-disc list-inside">
                 {report.broken_refs.map((ref) => (
                   <li key={ref}>
@@ -153,7 +156,7 @@ function VerificationBanner({ report }: { report: VerificationReport }) {
           )}
           {report.uncited_claims.length > 0 && (
             <div>
-              <p className="font-semibold">Lagunas declaradas (sin cita):</p>
+              <p className="font-semibold">{t("uncitedClaims")}</p>
               <ul className="mt-1 list-disc list-inside space-y-1">
                 {report.uncited_claims.map((claim, i) => (
                   <li key={i}>{claim}</li>
@@ -260,6 +263,7 @@ function FeedbackModal({
   answerExcerpt: string;
   onClose: () => void;
 }) {
+  const t = useTranslations("response");
   const [issueType, setIssueType] = useState("error_factual");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -296,7 +300,7 @@ function FeedbackModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-background rounded-lg shadow-xl border border-border w-full max-w-md p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-sm">Reportar problema</h2>
+          <h2 className="font-semibold text-sm">{t("feedbackTitle")}</h2>
           <button
             onClick={onClose}
             className="text-muted-foreground hover:text-foreground text-lg"
@@ -306,14 +310,14 @@ function FeedbackModal({
         </div>
         {done ? (
           <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-3">
-            Gracias. Feedback guardado (Trace:{" "}
+            {t("feedbackSuccess")} (Trace:{" "}
             <span className="font-mono">{traceId.slice(0, 8)}</span>).
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground block mb-1">
-                Tipo de problema
+                {t("feedbackIssueType")}
               </label>
               <select
                 value={issueType}
@@ -329,13 +333,13 @@ function FeedbackModal({
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground block mb-1">
-                Descripción
+                {t("feedbackDescription")}
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
-                placeholder="Describa el problema observado…"
+                placeholder={t("feedbackPlaceholder")}
                 className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm resize-none"
                 required
               />
@@ -347,14 +351,14 @@ function FeedbackModal({
                 onClick={onClose}
                 className="px-3 py-1.5 text-sm rounded border border-input hover:bg-muted"
               >
-                Cancelar
+                {t("feedbackCancel")}
               </button>
               <button
                 type="submit"
                 disabled={submitting || !description.trim()}
                 className="px-3 py-1.5 text-sm rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
-                {submitting ? "Enviando…" : "Enviar"}
+                {submitting ? t("feedbackSubmitting") : t("feedbackSubmit")}
               </button>
             </div>
           </form>
@@ -402,6 +406,7 @@ function BranchDetectionBanner({
 }
 
 function RazonamientoPanel({ response }: { response: ConsultResponse }) {
+  const t = useTranslations("response");
   const [open, setOpen] = useState(false);
   const hasData = response.planner_output || response.judge_verdict;
   if (!hasData) return null;
@@ -419,9 +424,9 @@ function RazonamientoPanel({ response }: { response: ConsultResponse }) {
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between px-4 py-3 text-xs font-medium text-blue-800 hover:bg-blue-50 transition-colors"
       >
-        <span>🧠 Razonamiento del sistema</span>
+        <span>{t("reasoningPanel")}</span>
         <span className="text-muted-foreground">
-          {open ? "▲ Ocultar" : "▼ Ver"}
+          {open ? t("hideReasoning") : t("viewReasoning")}
         </span>
       </button>
 
@@ -609,6 +614,7 @@ export function ResponseView({
   response: ConsultResponse;
   selectedJurisdictions?: string[];
 }) {
+  const t = useTranslations("response");
   const [activeCitation, setActiveCitation] = useState<CitationMapping | null>(
     null,
   );
@@ -712,7 +718,7 @@ export function ResponseView({
       {uncitedClaims.length > 0 && (
         <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
           <p className="text-xs font-semibold text-amber-800 mb-2">
-            Lagunas declaradas (afirmaciones sin cita verificable):
+            {t("uncitedClaimsSection")}
           </p>
           <ul className="list-disc list-inside space-y-1 text-xs text-amber-700">
             {uncitedClaims.map((claim, i) => (
@@ -732,13 +738,13 @@ export function ResponseView({
             onClick={() => setMetaExpanded(!metaExpanded)}
             className="text-xs text-muted-foreground underline hover:text-foreground"
           >
-            {metaExpanded ? "Ocultar metadatos" : "Metadatos técnicos"}
+            {metaExpanded ? t("hideMetadata") : t("metadata")}
           </button>
           <button
             onClick={handleExport}
             className="inline-flex items-center gap-1 rounded border border-input px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
           >
-            ↓ Exportar Word
+            {t("exportWord")}
           </button>
           <button
             onClick={handleRiskMatrix}
@@ -746,7 +752,7 @@ export function ResponseView({
             className="inline-flex items-center gap-1 rounded border border-input px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors disabled:opacity-50"
             title="Generar matriz de riesgos regulatorios en XLSX"
           >
-            {generatingMatrix ? "Generando…" : "↓ Matriz de Riesgos"}
+            {generatingMatrix ? t("generatingMatrix") : t("riskMatrix")}
           </button>
           {isComparative && (
             <a
@@ -755,14 +761,14 @@ export function ResponseView({
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 rounded border border-input px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
             >
-              ↓ Exportar XLSX
+              {t("exportXlsx")}
             </a>
           )}
           <button
             onClick={() => setShowFeedback(true)}
             className="inline-flex items-center gap-1 rounded border border-input px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
           >
-            ⚑ Reportar problema
+            {t("reportIssue")}
           </button>
         </div>
       </div>
@@ -774,23 +780,23 @@ export function ResponseView({
       {metaExpanded && (
         <div className="rounded-md border border-border bg-muted/30 px-4 py-3 text-xs space-y-1 font-mono">
           <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-            <span className="text-muted-foreground">Trace ID</span>
+            <span className="text-muted-foreground">{t("traceId")}</span>
             <span>{response.trace_id}</span>
-            <span className="text-muted-foreground">Modelo</span>
+            <span className="text-muted-foreground">{t("model")}</span>
             <span>{String(meta.model ?? "—")}</span>
-            <span className="text-muted-foreground">Prompt version</span>
+            <span className="text-muted-foreground">{t("promptVersion")}</span>
             <span>{String(meta.prompt_version ?? "—")}</span>
-            <span className="text-muted-foreground">Latencia</span>
+            <span className="text-muted-foreground">{t("latency")}</span>
             <span>
               {meta.latency_ms != null ? `${String(meta.latency_ms)} ms` : "—"}
             </span>
-            <span className="text-muted-foreground">Coste estimado</span>
+            <span className="text-muted-foreground">{t("costEstimate")}</span>
             <span>
               {meta.cost_estimate_usd != null
                 ? `$${(meta.cost_estimate_usd as number).toFixed(4)}`
                 : "—"}
             </span>
-            <span className="text-muted-foreground">Consulta reescrita</span>
+            <span className="text-muted-foreground">{t("rewrittenQuery")}</span>
             <span className="truncate">{response.query_rewritten || "—"}</span>
           </div>
         </div>

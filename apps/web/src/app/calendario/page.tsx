@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 const API_BASE =
   typeof window === "undefined"
@@ -33,45 +34,39 @@ type CalendarResponse = {
 type int = number;
 
 // ---------------------------------------------------------------------------
-// Constants
+// Constants (locale-independent)
 // ---------------------------------------------------------------------------
 
-const DEADLINE_TYPE_CONFIG: Record<
+const DEADLINE_TYPE_COLORS: Record<
   string,
-  { label: string; color: string; bg: string; border: string }
+  { color: string; bg: string; border: string }
 > = {
   consultation: {
-    label: "Consulta",
     color: "text-blue-800",
     bg: "bg-blue-50",
     border: "border-blue-200",
   },
   application: {
-    label: "Aplicación",
     color: "text-red-800",
     bg: "bg-red-50",
     border: "border-red-200",
   },
   reporting: {
-    label: "Reporting",
     color: "text-amber-800",
     bg: "bg-amber-50",
     border: "border-amber-200",
   },
   review: {
-    label: "Revisión",
     color: "text-purple-800",
     bg: "bg-purple-50",
     border: "border-purple-200",
   },
   publication: {
-    label: "Publicación",
     color: "text-green-800",
     bg: "bg-green-50",
     border: "border-green-200",
   },
   other: {
-    label: "Otro",
     color: "text-gray-700",
     bg: "bg-gray-50",
     border: "border-gray-200",
@@ -85,11 +80,6 @@ const SOURCE_LABELS: Record<string, string> = {
   esma: "ESMA",
 };
 
-const MONTHS_ES = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
-];
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -98,11 +88,6 @@ function parseDate(iso: string): Date {
   // event_date is "YYYY-MM-DD" — parse as local date to avoid UTC offset
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(y!, m! - 1, d!);
-}
-
-function formatDate(iso: string): string {
-  const d = parseDate(iso);
-  return `${d.getDate()} ${MONTHS_ES[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 function daysUntil(iso: string): number {
@@ -122,11 +107,6 @@ function groupByMonth(events: CalendarEvent[]): [string, CalendarEvent[]][] {
     groups.set(key, existing);
   }
   return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
-}
-
-function monthLabel(key: string): string {
-  const [y, m] = key.split("-").map(Number);
-  return `${MONTHS_ES[m! - 1]} ${y}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -166,28 +146,40 @@ async function fetchEvents(
 // ---------------------------------------------------------------------------
 
 function DaysBadge({ iso }: { iso: string }) {
+  const t = useTranslations("calendario");
   const n = daysUntil(iso);
-  if (n < 0) return <span className="text-[10px] text-muted-foreground">Pasado</span>;
+  if (n < 0) return <span className="text-[10px] text-muted-foreground">{t("past")}</span>;
   if (n === 0)
     return (
       <span className="text-[10px] font-semibold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
-        Hoy
+        {t("today")}
       </span>
     );
   if (n <= 7)
     return (
       <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
-        {n}d
+        {n}{t("daysUnit")}
       </span>
     );
   return (
-    <span className="text-[10px] text-muted-foreground">{n}d</span>
+    <span className="text-[10px] text-muted-foreground">{n}{t("daysUnit")}</span>
   );
 }
 
 function EventCard({ event }: { event: CalendarEvent }) {
+  const t = useTranslations("calendario");
+  const locale = useLocale();
   const cfg =
-    DEADLINE_TYPE_CONFIG[event.deadline_type] ?? DEADLINE_TYPE_CONFIG["other"]!;
+    DEADLINE_TYPE_COLORS[event.deadline_type] ?? DEADLINE_TYPE_COLORS["other"]!;
+
+  const typeKey = `type${event.deadline_type.charAt(0).toUpperCase()}${event.deadline_type.slice(1)}`;
+  const typeLabel = t(typeKey);
+
+  const dateDisplay = parseDate(event.event_date).toLocaleDateString(locale, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <div
@@ -199,7 +191,7 @@ function EventCard({ event }: { event: CalendarEvent }) {
             <span
               className={`text-[10px] font-medium uppercase tracking-wide rounded px-1.5 py-0.5 ${cfg.color} ${cfg.bg} border ${cfg.border}`}
             >
-              {cfg.label}
+              {typeLabel}
             </span>
             <span className="text-[10px] text-muted-foreground">
               {SOURCE_LABELS[event.source_id] ?? event.source_id}
@@ -237,7 +229,7 @@ function EventCard({ event }: { event: CalendarEvent }) {
         </div>
         <div className="shrink-0 text-right space-y-0.5">
           <p className="text-xs font-medium text-foreground">
-            {formatDate(event.event_date)}
+            {dateDisplay}
           </p>
           <DaysBadge iso={event.event_date} />
         </div>
@@ -250,29 +242,31 @@ function EventCard({ event }: { event: CalendarEvent }) {
 // Main page
 // ---------------------------------------------------------------------------
 
-const FILTER_OPTIONS = [
-  { value: "", label: "Todos" },
-  { value: "consultation", label: "Consultas" },
-  { value: "application", label: "Aplicación" },
-  { value: "reporting", label: "Reporting" },
-  { value: "review", label: "Revisión" },
-  { value: "publication", label: "Publicación" },
-];
-
-const RANGE_OPTIONS = [
-  { value: 30, label: "Próximos 30 días" },
-  { value: 90, label: "Próximos 90 días" },
-  { value: 180, label: "Próximos 6 meses" },
-  { value: 365, label: "Próximo año" },
-  { value: 0, label: "Todos los eventos" },
-];
-
 export default function CalendarioPage() {
+  const t = useTranslations("calendario");
+  const locale = useLocale();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [range, setRange] = useState(90);
   const [filter, setFilter] = useState("");
+
+  const FILTER_OPTIONS = [
+    { value: "", label: t("filterAll") },
+    { value: "consultation", label: t("filterConsultation") },
+    { value: "application", label: t("filterApplication") },
+    { value: "reporting", label: t("filterReporting") },
+    { value: "review", label: t("filterReview") },
+    { value: "publication", label: t("filterPublication") },
+  ];
+
+  const RANGE_OPTIONS = [
+    { value: 30, label: t("range30") },
+    { value: 90, label: t("range90") },
+    { value: 180, label: t("range180") },
+    { value: 365, label: t("range365") },
+    { value: 0, label: t("rangeAll") },
+  ];
 
   useEffect(() => {
     setLoading(true);
@@ -289,16 +283,22 @@ export default function CalendarioPage() {
 
   const grouped = groupByMonth(events);
 
+  function monthLabel(key: string): string {
+    const [y, m] = key.split("-").map(Number);
+    const d = new Date(y!, m! - 1, 1);
+    return d.toLocaleDateString(locale, { month: "long", year: "numeric" });
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-8 space-y-6">
         <header className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
-              Calendario Regulatorio
+              {t("title")}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Plazos de consulta, fechas de aplicación y hitos de publicación
+              {t("subtitle")}
             </p>
           </div>
 
@@ -342,7 +342,7 @@ export default function CalendarioPage() {
         {loading && (
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-muted-foreground animate-pulse">
-              Cargando calendario…
+              {t("loading")}
             </p>
           </div>
         )}
@@ -356,12 +356,10 @@ export default function CalendarioPage() {
         {!loading && !error && events.length === 0 && (
           <div className="rounded-md border border-border bg-muted/30 px-6 py-10 text-center">
             <p className="text-sm text-muted-foreground">
-              No hay eventos en el período seleccionado.
+              {t("noEvents")}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              El calendario se sincroniza automáticamente cada noche. Un
-              administrador puede forzar una sincronización desde la consola de
-              operaciones.
+              {t("noEventsHint")}
             </p>
           </div>
         )}
@@ -374,7 +372,7 @@ export default function CalendarioPage() {
                 <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
                   {monthLabel(monthKey)}
                   <span className="ml-2 normal-case font-normal">
-                    ({monthEvents.length} evento{monthEvents.length !== 1 ? "s" : ""})
+                    ({t("monthEvents", { count: monthEvents.length })})
                   </span>
                 </h2>
                 <div className="space-y-2">
@@ -391,11 +389,10 @@ export default function CalendarioPage() {
         {!loading && events.length > 0 && (
           <div className="border-t border-border pt-4 text-xs text-muted-foreground flex items-center justify-between">
             <span>
-              {events.length} evento{events.length !== 1 ? "s" : ""} encontrado
-              {events.length !== 1 ? "s" : ""}
+              {t("eventsCount", { count: events.length })}
             </span>
             <span className="font-mono">
-              Fuente: EBA Calendar · Sincronización: nightly 04:30 UTC
+              {t("footerSource")}
             </span>
           </div>
         )}

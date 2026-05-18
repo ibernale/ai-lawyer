@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 const API_BASE =
   typeof window === "undefined"
@@ -124,6 +125,7 @@ async function markEventRead(eventId: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export function ChangeAlertBanner() {
+  const t = useTranslations("monitoring");
   const [events, setEvents] = useState<ChangeEvent[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [expanded, setExpanded] = useState(false);
@@ -170,12 +172,10 @@ export function ChangeAlertBanner() {
         <div className={`flex items-center gap-2 font-medium ${bannerConfig.text}`}>
           <span>📋</span>
           <span>
-            {unreadCount === 1
-              ? "1 cambio normativo detectado"
-              : `${unreadCount} cambios normativos detectados`}
+            {t("changeDetected", { count: unreadCount })}
             {highCount > 0 && (
               <span className="ml-2 inline-flex items-center rounded bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-700">
-                {highCount} alta prioridad
+                {t("highPriority", { count: highCount })}
               </span>
             )}
           </span>
@@ -185,14 +185,14 @@ export function ChangeAlertBanner() {
             onClick={() => setExpanded(!expanded)}
             className={`text-xs underline ${bannerConfig.text}`}
           >
-            {expanded ? "Ocultar" : "Ver detalles"}
+            {expanded ? t("hide") : t("viewDetails")}
           </button>
           <button
             onClick={handleDismissAll}
             className={`text-xs ${bannerConfig.text} hover:opacity-70`}
             title="Marcar todo como leído"
           >
-            ✕
+            {t("dismissAll")}
           </button>
         </div>
       </div>
@@ -236,7 +236,7 @@ export function ChangeAlertBanner() {
                   className={`shrink-0 text-xs underline ${bannerConfig.text}`}
                   title="Marcar como leído"
                 >
-                  Leído
+                  {t("markRead")}
                 </button>
               </li>
             );
