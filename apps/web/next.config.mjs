@@ -36,6 +36,22 @@ const nextConfig = {
         "/**": ["./messages/**"],
     },
 
+    // next-intl v3.26.x writes its Turbopack alias to experimental.turbo.resolveAlias
+    // (Next.js 15 stable API). Next.js 16 uses Turbopack as the default bundler and
+    // reads aliases from turbopack.resolveAlias (the promoted stable key). The plugin
+    // never updates the stable key, so the alias is silently missing and every SSR
+    // request crashes with "Couldn't find next-intl config file".
+    //
+    // Fix: register the alias manually at the correct key. The plugin still writes to
+    // experimental.turbo (harmlessly). Next.js 16 Turbopack resolves relative paths
+    // in resolveAlias relative to next.config.mjs (apps/web), so this resolves
+    // correctly to apps/web/src/i18n/request.ts without needing turbopack.root.
+    turbopack: {
+        resolveAlias: {
+            "next-intl/config": "./src/i18n/request.ts",
+        },
+    },
+
     // In production the ALB routes /api/v1/*, /health, /version, /auth/* to
     // FastAPI before the request reaches Next.js — rewrites never fire there.
     // In local dev (no Docker/ALB) these rewrites proxy the browser calls.
