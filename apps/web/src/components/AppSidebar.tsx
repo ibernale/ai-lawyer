@@ -111,6 +111,25 @@ function IconCalendario() {
   );
 }
 
+function IconContratos() {
+  return (
+    <svg
+      className="w-4 h-4 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.8}
+        d="M9 12h6m-6 4h6M7 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2h-2M9 3h6a1 1 0 010 2H9a1 1 0 010-2z"
+      />
+    </svg>
+  );
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -119,6 +138,7 @@ export function AppSidebar() {
   const ITEM_ICONS: Record<string, React.ReactNode> = {
     [t("consulta")]: <IconConsulta />,
     [t("documentos")]: <IconDocumentos />,
+    [t("contratos")]: <IconContratos />,
     [t("calendario")]: <IconCalendario />,
     [t("historico")]: <IconHistorico />,
     [t("auditoria")]: <IconAuditoria />,
@@ -130,6 +150,7 @@ export function AppSidebar() {
       items: [
         { href: "/consulta" as Route, label: t("consulta") },
         { href: "/documentos" as Route, label: t("documentos") },
+        { href: "/contratos" as Route, label: t("contratos") },
         { href: "/calendario" as Route, label: t("calendario") },
       ],
     },

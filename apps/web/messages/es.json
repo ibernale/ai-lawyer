@@ -3,6 +3,7 @@
     "asesoria": "Asesoría",
     "consulta": "Consulta",
     "documentos": "Documentos",
+    "contratos": "Contratos",
     "calendario": "Calendario",
     "historial": "Historial",
     "historico": "Histórico",
@@ -153,6 +154,20 @@
     "hide": "Ocultar",
     "markRead": "Leído",
     "dismissAll": "✕"
+  },
+  "contracts": {
+    "title": "Análisis de contratos",
+    "subtitle": "Identifica el tipo de contrato, el marco legal aplicable y los riesgos clave",
+    "upload_cta": "Sube un contrato para comenzar el análisis",
+    "drop_hint": "PDF o DOCX · máx. 20 MB",
+    "analyze_btn": "Analizar contrato",
+    "new_analysis": "Nuevo análisis",
+    "analyzing": "Analizando contrato…",
+    "risk_critical": "Riesgo crítico",
+    "risk_red": "Riesgo alto",
+    "risk_yellow": "Riesgo moderado",
+    "risk_green": "Riesgo bajo",
+    "nav_label": "Contratos"
   },
   "months": {
     "1": "Enero",

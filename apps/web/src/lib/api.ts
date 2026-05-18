@@ -1180,3 +1180,107 @@ export const getMySessions = () =>
 
 export const revokeOtherSessions = () =>
   apiFetch<void>("/api/v1/me/sessions/others", { method: "DELETE" });
+
+// ─── Contract Analysis Types ──────────────────────────────────────────────
+
+export type ContractParty = {
+  name: string;
+  role: string;
+};
+
+export type ContractMetadata = {
+  document_type: string;
+  parties: ContractParty[];
+  effective_date: string | null;
+  termination_date: string | null;
+  jurisdiction: string[];
+  governing_law: string;
+  applicable_framework: string[];
+  contract_language: string;
+};
+
+export type RiskFactor = {
+  category: "financial" | "legal" | "operational" | "strategic";
+  issue: string;
+  severity: "low" | "medium" | "high" | "critical";
+  confidence: number;
+  clause_refs: string[];
+  remediation: string;
+};
+
+export type RiskAssessment = {
+  overall_score: number;
+  overall_rating: "green" | "yellow" | "red" | "critical";
+  factors: RiskFactor[];
+};
+
+export type ContractAnalysis = {
+  contract_id: string;
+  trace_id: string;
+  filename: string;
+  metadata: ContractMetadata;
+  risk_assessment: RiskAssessment;
+  obligations: { nodes: unknown[]; edges: unknown[] };
+  compliance_findings: unknown[];
+  negotiation: unknown[];
+  summary: string;
+  recommendations: string[];
+  latency_ms: number | null;
+  cost_estimate_usd: number | null;
+};
+
+export type ContractAnalyzeResponse = {
+  contract_id: string;
+  trace_id: string;
+  status: string;
+  analysis: ContractAnalysis | null;
+};
+
+// ─── Contract Analysis API functions ──────────────────────────────────────
+
+export async function analyzeContract(
+  file: File,
+  signal?: AbortSignal,
+): Promise<ContractAnalyzeResponse> {
+  const token =
+    typeof window !== "undefined"
+      ? (sessionStorage.getItem(TOKEN_KEY) ?? (await getToken()))
+      : null;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/v1/contracts/analyze`, {
+    method: "POST",
+    headers,
+    body: formData,
+    signal,
+  });
+
+  if (!res.ok) {
+    const detail = await _parseErrorDetail(res);
+    throw new ApiError(
+      `HTTP_${res.status}`,
+      _statusMessage(res.status, detail),
+      res.status,
+    );
+  }
+  return res.json() as Promise<ContractAnalyzeResponse>;
+}
+
+export async function getContract(
+  contractId: string,
+): Promise<ContractAnalyzeResponse> {
+  return apiFetch<ContractAnalyzeResponse>(`/api/v1/contracts/${contractId}`);
+}
+
+export async function listContracts(
+  limit = 50,
+): Promise<ContractAnalyzeResponse[]> {
+  return apiFetch<ContractAnalyzeResponse[]>(
+    `/api/v1/contracts?limit=${limit}`,
+  );
+}
