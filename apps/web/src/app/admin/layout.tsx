@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   getSystemState,
   setKillSwitch,
   getNotificationsCount,
+  listAuditSamples,
   type KillSwitchRow,
 } from "@/lib/api";
 import { NotificationsDrawer } from "@/components/admin/NotificationsDrawer";
@@ -17,6 +18,7 @@ type NavItem = {
   href: string;
   label: string;
   placeholder?: boolean;
+  badge?: number;
 };
 
 type NavSection = {
@@ -39,6 +41,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/admin/costs", label: "Costs & FinOps" },
       { href: "/admin/audit-trail", label: "Audit Trail" },
+      { href: "/admin/review-queue", label: "Cola de revisión" },
     ],
   },
   {
@@ -200,6 +203,7 @@ export default function AdminLayout({
   const [killBusy, setKillBusy] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [pendingReviewCount, setPendingReviewCount] = useState(0);
 
   useEffect(() => {
     const r = getStoredRole();
@@ -222,6 +226,9 @@ export default function AdminLayout({
       getNotificationsCount()
         .then((data) => setUnreadCount(data.unread))
         .catch(() => {});
+      listAuditSamples("pending", 100)
+        .then((samples) => setPendingReviewCount(samples.length))
+        .catch(() => {});
     }
   }, [router]);
 
@@ -235,6 +242,20 @@ export default function AdminLayout({
     }, 30_000);
     return () => clearInterval(interval);
   }, [role]);
+
+  // Inject live badge counts into the static nav definition.
+  const navSections = useMemo(
+    () =>
+      NAV_SECTIONS.map((section) => ({
+        ...section,
+        items: section.items.map((item) =>
+          item.href === "/admin/review-queue" && pendingReviewCount > 0
+            ? { ...item, badge: pendingReviewCount }
+            : item,
+        ),
+      })),
+    [pendingReviewCount],
+  );
 
   async function handleKillSwitch(reason: string) {
     setShowKillDialog(false);
@@ -288,13 +309,13 @@ export default function AdminLayout({
           aria-label="Secciones de administración"
           className="flex-1 px-2 py-3 overflow-y-auto"
         >
-          {NAV_SECTIONS.map((section) => (
+          {navSections.map((section) => (
             <div key={section.label} className="mb-4">
               <h2 className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
                 {section.label}
               </h2>
               <div className="space-y-0.5">
-                {section.items.map(({ href, label, placeholder }) =>
+                {section.items.map(({ href, label, placeholder, badge }) =>
                   placeholder ? (
                     <div
                       key={href}
@@ -313,13 +334,18 @@ export default function AdminLayout({
                       aria-current={
                         pathname?.startsWith(href) ? "page" : undefined
                       }
-                      className={`block px-3 py-1.5 rounded text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
+                      className={`flex items-center justify-between px-3 py-1.5 rounded text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
                         pathname?.startsWith(href)
                           ? "bg-primary text-white"
                           : "text-gray-300 hover:bg-white/10 hover:text-white"
                       }`}
                     >
-                      {label}
+                      <span>{label}</span>
+                      {badge !== undefined && badge > 0 && (
+                        <span className="ml-1.5 text-[10px] font-bold bg-yellow-500 text-white px-1.5 py-0.5 rounded-full leading-none">
+                          {badge > 99 ? "99+" : badge}
+                        </span>
+                      )}
                     </Link>
                   ),
                 )}

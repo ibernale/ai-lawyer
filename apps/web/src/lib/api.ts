@@ -550,15 +550,24 @@ export type AuditSample = {
   review_verdict: AuditVerdict | null;
 };
 
+/** Extended shape returned by GET /api/v1/audit/{id} — includes raw response JSON. */
+export type AuditSampleDetail = AuditSample & {
+  response_json: string | null;
+};
+
 export async function listAuditSamples(
   status?: AuditStatus,
+  limit?: number,
 ): Promise<AuditSample[]> {
-  const qs = status ? `?status=${status}` : "";
-  return apiFetch<AuditSample[]>(`/api/v1/audit${qs}`);
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+  if (limit !== undefined) params.set("limit", String(limit));
+  const qs = params.toString();
+  return apiFetch<AuditSample[]>(`/api/v1/audit${qs ? `?${qs}` : ""}`);
 }
 
-export async function getAuditSample(id: number): Promise<AuditSample> {
-  return apiFetch<AuditSample>(`/api/v1/audit/${id}`);
+export async function getAuditSample(id: number): Promise<AuditSampleDetail> {
+  return apiFetch<AuditSampleDetail>(`/api/v1/audit/${id}`);
 }
 
 export async function submitAuditReview(
