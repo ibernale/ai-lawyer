@@ -5,17 +5,8 @@ import Link from "next/link";
 import { Upload } from "lucide-react";
 import { ContractAnalysisView } from "@/components/ContractAnalysisView";
 import { ErrorBanner } from "@/components/ui/error-banner";
-import { analyzeContract } from "@/lib/api";
+import { analyzeContractStream } from "@/lib/api";
 import type { ContractAnalysis } from "@/lib/api";
-
-// ─── Progress steps ────────────────────────────────────────────────────────
-
-const PROGRESS_STEPS: { label: string; from: number; to: number }[] = [
-  { label: "Extrayendo texto del documento…", from: 0, to: 15 },
-  { label: "Identificando tipo de contrato y partes…", from: 15, to: 40 },
-  { label: "Analizando riesgos multidimensionales…", from: 40, to: 85 },
-  { label: "Generando conclusiones…", from: 85, to: 100 },
-];
 
 const ACCEPTED_TYPES = [
   "application/pdf",
@@ -183,6 +174,8 @@ function AnalyzingState({
 
 // ─── Main page ─────────────────────────────────────────────────────────────
 
+const INITIAL_STEP_LABEL = "Iniciando análisis…";
+
 type PageState = "upload" | "analyzing" | "results";
 
 export default function ContratosPage() {
@@ -190,46 +183,12 @@ export default function ContratosPage() {
   const [file, setFile] = useState<File | null>(null);
   const [fileSizeError, setFileSizeError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
-  const [stepLabel, setStepLabel] = useState(PROGRESS_STEPS[0]!.label);
+  const [stepLabel, setStepLabel] = useState(INITIAL_STEP_LABEL);
   const [analysis, setAnalysis] = useState<ContractAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const abortRef = useRef<AbortController | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Fake progress interval — advances through steps every ~3s
-  function startFakeProgress() {
-    let stepIndex = 0;
-    let currentPct = 0;
-
-    const tick = () => {
-      const step = PROGRESS_STEPS[stepIndex];
-      if (!step) return;
-
-      setStepLabel(step.label);
-      // Move progress halfway toward the step's target each tick
-      const target = step.to;
-      currentPct = Math.min(
-        currentPct + (target - currentPct) * 0.4,
-        target - 1,
-      );
-      setProgress(currentPct);
-
-      // Advance step when close enough to its ceiling
-      if (currentPct >= step.to - 2 && stepIndex < PROGRESS_STEPS.length - 1) {
-        stepIndex++;
-      }
-    };
-
-    intervalRef.current = setInterval(tick, 2800);
-  }
-
-  function stopFakeProgress() {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }
+  // cleanup function returned by analyzeContractStream
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   function handleFileSelected(f: File) {
     if (f.size > MAX_SIZE_BYTES) {
@@ -244,47 +203,39 @@ export default function ContratosPage() {
   }
 
   const handleCancel = useCallback(() => {
-    abortRef.current?.abort();
-    stopFakeProgress();
+    cleanupRef.current?.();
+    cleanupRef.current = null;
     setPageState("upload");
     setProgress(0);
-    setStepLabel(PROGRESS_STEPS[0]!.label);
+    setStepLabel(INITIAL_STEP_LABEL);
   }, []);
 
-  async function handleAnalyze() {
+  function handleAnalyze() {
     if (!file) return;
     setError(null);
     setPageState("analyzing");
     setProgress(0);
-    setStepLabel(PROGRESS_STEPS[0]!.label);
+    setStepLabel(INITIAL_STEP_LABEL);
 
-    const controller = new AbortController();
-    abortRef.current = controller;
-    startFakeProgress();
-
-    try {
-      const result = await analyzeContract(file, controller.signal);
-      stopFakeProgress();
-      setProgress(100);
-
-      if (result.analysis) {
-        setAnalysis(result.analysis);
+    const cleanup = analyzeContractStream(file, {
+      onProgress: (step, _message, pct) => {
+        setStepLabel(step || _message || INITIAL_STEP_LABEL);
+        setProgress(pct);
+      },
+      onResult: (result) => {
+        setAnalysis(result);
+        setProgress(100);
         setPageState("results");
-      } else {
-        setError(
-          "El análisis no devolvió resultados. Inténtalo de nuevo con otro documento.",
-        );
+      },
+      onError: (msg) => {
+        setError(msg);
         setPageState("upload");
-      }
-    } catch (err) {
-      stopFakeProgress();
-      if ((err as Error).name === "AbortError") {
-        // cancelled — already reset state in handleCancel
-        return;
-      }
-      setError((err as Error).message ?? "Error desconocido");
-      setPageState("upload");
-    }
+      },
+      onDone: () => {
+        // results already set via onResult; nothing extra needed
+      },
+    });
+    cleanupRef.current = cleanup;
   }
 
   function handleReset() {
@@ -293,7 +244,7 @@ export default function ContratosPage() {
     setError(null);
     setFileSizeError(null);
     setProgress(0);
-    setStepLabel(PROGRESS_STEPS[0]!.label);
+    setStepLabel(INITIAL_STEP_LABEL);
     setPageState("upload");
   }
 

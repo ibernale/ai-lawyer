@@ -1181,7 +1181,7 @@ export const getMySessions = () =>
 export const revokeOtherSessions = () =>
   apiFetch<void>("/api/v1/me/sessions/others", { method: "DELETE" });
 
-// ─── Contract Analysis Types ──────────────────────────────────────────────
+// ─── Contract Analysis Types (13A + 13B) ─────────────────────────────────
 
 export type ContractParty = {
   name: string;
@@ -1214,14 +1214,41 @@ export type RiskAssessment = {
   factors: RiskFactor[];
 };
 
+// 13B: Obligation graph types
+export type Obligation = {
+  id: string;
+  party: string;
+  deontic_type: "obligation" | "permission" | "prohibition" | "right";
+  description: string;
+  conditions: string | null;
+  deadline: string | null;
+  exceptions: string[];
+  clause_ref: string;
+};
+
+export type ObligationEdge = {
+  from_id: string;
+  to_id: string;
+  relationship: "depends_on" | "conflicts_with" | "reinforces";
+};
+
+// 13B: Compliance finding type
+export type ComplianceFinding = {
+  regulation: string;
+  status: "compliant" | "non_compliant" | "requires_review" | "not_applicable";
+  finding: string;
+  clause_refs: string[];
+  recommendation: string | null;
+};
+
 export type ContractAnalysis = {
   contract_id: string;
   trace_id: string;
   filename: string;
   metadata: ContractMetadata;
   risk_assessment: RiskAssessment;
-  obligations: { nodes: unknown[]; edges: unknown[] };
-  compliance_findings: unknown[];
+  obligations: { nodes: Obligation[]; edges: ObligationEdge[] };
+  compliance_findings: ComplianceFinding[];
   negotiation: unknown[];
   summary: string;
   recommendations: string[];
@@ -1269,6 +1296,107 @@ export async function analyzeContract(
     );
   }
   return res.json() as Promise<ContractAnalyzeResponse>;
+}
+
+// ─── Contract streaming (13B) ─────────────────────────────────────────────
+
+export type ContractStreamHandlers = {
+  onProgress: (step: string, message: string, pct: number) => void;
+  onResult: (analysis: ContractAnalysis) => void;
+  onError: (message: string) => void;
+  onDone: () => void;
+};
+
+/**
+ * POST /api/v1/contracts/analyze/stream — SSE streaming variant.
+ * Uses fetch + ReadableStream (FormData body, same as analyzeContract).
+ * Returns a cleanup function that aborts the stream.
+ */
+export function analyzeContractStream(
+  file: File,
+  handlers: ContractStreamHandlers,
+): () => void {
+  const controller = new AbortController();
+
+  (async () => {
+    try {
+      const token = await getToken();
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(`${API_BASE}/api/v1/contracts/analyze/stream`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        handlers.onError(`Error ${res.status}: ${text || res.statusText}`);
+        return;
+      }
+
+      if (!res.body) {
+        handlers.onError("No response body");
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete SSE messages (delimited by \n\n)
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() ?? "";
+
+        for (const part of parts) {
+          const lines = part.split("\n");
+          let eventName = "message";
+          let dataStr = "";
+
+          for (const line of lines) {
+            if (line.startsWith("event: ")) {
+              eventName = line.slice(7).trim();
+            } else if (line.startsWith("data: ")) {
+              dataStr = line.slice(6).trim();
+            }
+          }
+
+          if (!dataStr) continue;
+          let payload: Record<string, unknown>;
+          try {
+            payload = JSON.parse(dataStr);
+          } catch {
+            continue;
+          }
+
+          if (eventName === "progress") {
+            handlers.onProgress(
+              String(payload["step"] ?? ""),
+              String(payload["message"] ?? ""),
+              Number(payload["pct"] ?? 0),
+            );
+          } else if (eventName === "result") {
+            handlers.onResult(payload as unknown as ContractAnalysis);
+          } else if (eventName === "done") {
+            handlers.onDone();
+          }
+        }
+      }
+    } catch (err) {
+      if ((err as Error).name === "AbortError") return;
+      handlers.onError((err as Error).message ?? "Error desconocido");
+    }
+  })();
+
+  return () => controller.abort();
 }
 
 export async function getContract(

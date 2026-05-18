@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { ContractAnalysis, RiskFactor } from "@/lib/api";
+import { ObligationGraphView } from "@/components/ObligationGraphView";
+import { CompliancePanel } from "@/components/CompliancePanel";
 
 // ─── helpers ──────────────────────────────────────────────────────────────
 
@@ -518,6 +520,16 @@ export function ContractAnalysisView({
             </ol>
           </div>
         )}
+
+        {/* 13B: Obligation graph */}
+        {analysis.obligations.nodes.length > 0 && (
+          <ObligationGraphView obligations={analysis.obligations} />
+        )}
+
+        {/* 13B: Compliance findings */}
+        {analysis.compliance_findings.length > 0 && (
+          <CompliancePanel findings={analysis.compliance_findings} />
+        )}
       </div>
 
       {/* ── Right column (1/3) ───────────────────────────────────── */}
@@ -546,16 +558,11 @@ export function ContractAnalysisView({
           )}
         </div>
 
-        {/* Coming soon cards */}
+        {/* Coming soon — only 13C remains */}
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Próximamente
           </p>
-          <ComingSoonCard title="Análisis de obligaciones" availableIn="13B" />
-          <ComingSoonCard
-            title="Verificación de cumplimiento"
-            availableIn="13B"
-          />
           <ComingSoonCard title="Suite de negociación" availableIn="13C" />
         </div>
       </div>
