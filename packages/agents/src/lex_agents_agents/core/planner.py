@@ -181,6 +181,12 @@ class LegalPlanner:
                     else json.loads(tool_block.input)
                 )
 
+                # Claude occasionally returns nested structures as JSON strings
+                # inside tool-use parameters — parse them defensively.
+                sub_tasks_raw = raw.get("sub_tasks", [])
+                if isinstance(sub_tasks_raw, str):
+                    sub_tasks_raw = json.loads(sub_tasks_raw)
+
                 sub_tasks = [
                     BranchTask(
                         id=t["id"],
@@ -190,10 +196,12 @@ class LegalPlanner:
                         query=t["query"],
                         expected_artifacts=t.get("expected_artifacts", []),
                     )
-                    for t in raw.get("sub_tasks", [])
+                    for t in sub_tasks_raw
                 ]
 
                 dod_raw = raw.get("definition_of_done", {})
+                if isinstance(dod_raw, str):
+                    dod_raw = json.loads(dod_raw)
                 dod = DefinitionOfDone(
                     must_cover_concepts=dod_raw.get("must_cover_concepts", []),
                     must_consider_jurisdictions=dod_raw.get("must_consider_jurisdictions", []),
