@@ -5,6 +5,7 @@ description = "Orchestrator, legal specialist agents, and synthesizer for lex-ag
 requires-python = ">=3.12"
 dependencies = [
     "anthropic>=0.100.0",
+    "openpyxl>=3.1.0",
     "pydantic>=2.13.0",
     "structlog>=25.5.0",
     "tenacity>=9.1.0",

@@ -1,7 +1,10 @@
 /** @type {import('next').NextConfig} */
 
+import createNextIntlPlugin from "next-intl/plugin";
 import { fileURLToPath } from "url";
 import path from "path";
+
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 // Resolve the monorepo root relative to this config file so Turbopack uses
 // the worktree root instead of the parent repo when multiple pnpm-workspace.yaml
@@ -79,4 +82,4 @@ const nextConfig = {
     },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

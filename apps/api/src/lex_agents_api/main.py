@@ -36,6 +36,9 @@ from lex_agents_api.routers import rag as rag_router
 from lex_agents_api.routers.audit_trail import router as audit_trail_router
 from lex_agents_api.routers.consult_stream import router as consult_stream_router
 from lex_agents_api.routers.documents import router as documents_router
+from lex_agents_api.routers.calendar import router as calendar_router
+from lex_agents_api.routers.monitoring import router as monitoring_router
+from lex_agents_api.routers.risk_matrix import router as risk_matrix_router
 from lex_agents_api.routers.federation import router as federation_router
 from lex_agents_api.routers.governance import router as governance_router
 from lex_agents_api.routers.notifications import router as notifications_router
@@ -256,6 +259,9 @@ def create_app() -> FastAPI:
     app.include_router(rag_router.router)     # /api/v1/rag/* — auth required
     app.include_router(consult_router.router)  # /api/v1/consult/* — auth required
     app.include_router(consult_stream_router)  # /api/v1/consult/stream — SSE
+    app.include_router(risk_matrix_router)     # /api/v1/consult/{id}/risk-matrix/xlsx
+    app.include_router(monitoring_router)      # /api/v1/monitoring/changes, /scan
+    app.include_router(calendar_router)        # /api/v1/calendar/events, /upcoming, /sync
     app.include_router(documents_router)        # /api/v1/documents — per-tenant uploads
     app.include_router(export_router.router)   # /api/v1/consult/{id}/export, /feedback
     app.include_router(feedback_router.router) # /api/v1/feedback

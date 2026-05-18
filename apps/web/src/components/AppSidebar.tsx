@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Route } from "next";
+import { useTranslations } from "next-intl";
 import { CommandPalette } from "./CommandPalette";
 
 type NavItem =
@@ -14,30 +15,6 @@ type NavSection = {
   label: string;
   items: NavItem[];
 };
-
-const NAV_SECTIONS: NavSection[] = [
-  {
-    label: "Asesoría",
-    items: [
-      { href: "/consulta", label: "Consulta" },
-      { href: "/documentos", label: "Documentos" },
-    ],
-  },
-  {
-    label: "Historial",
-    items: [
-      { href: "/historico", label: "Histórico" },
-      { href: "/auditoria", label: "Auditoría" },
-    ],
-  },
-  {
-    label: "Próximamente",
-    items: [
-      { label: "Laboral", disabled: true },
-      { label: "Contencioso", disabled: true },
-    ],
-  },
-];
 
 function IconConsulta() {
   return (
@@ -115,16 +92,62 @@ function IconAuditoria() {
   );
 }
 
-const ITEM_ICONS: Record<string, React.ReactNode> = {
-  Consulta: <IconConsulta />,
-  Documentos: <IconDocumentos />,
-  Histórico: <IconHistorico />,
-  Auditoría: <IconAuditoria />,
-};
+function IconCalendario() {
+  return (
+    <svg
+      className="w-4 h-4 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.8}
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
+    </svg>
+  );
+}
 
 export function AppSidebar() {
   const pathname = usePathname();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const t = useTranslations("nav");
+
+  const ITEM_ICONS: Record<string, React.ReactNode> = {
+    [t("consulta")]: <IconConsulta />,
+    [t("documentos")]: <IconDocumentos />,
+    [t("calendario")]: <IconCalendario />,
+    [t("historico")]: <IconHistorico />,
+    [t("auditoria")]: <IconAuditoria />,
+  };
+
+  const NAV_SECTIONS: NavSection[] = [
+    {
+      label: t("asesoria"),
+      items: [
+        { href: "/consulta" as Route, label: t("consulta") },
+        { href: "/documentos" as Route, label: t("documentos") },
+        { href: "/calendario" as Route, label: t("calendario") },
+      ],
+    },
+    {
+      label: t("historial"),
+      items: [
+        { href: "/historico" as Route, label: t("historico") },
+        { href: "/auditoria" as Route, label: t("auditoria") },
+      ],
+    },
+    {
+      label: t("proximamente"),
+      items: [
+        { label: t("laboral"), disabled: true },
+        { label: t("contencioso"), disabled: true },
+      ],
+    },
+  ];
 
   useEffect(() => {
     function handler(e: KeyboardEvent) {
@@ -155,13 +178,13 @@ export function AppSidebar() {
                     return (
                       <span
                         key={item.label}
-                        title="Próximamente"
+                        title={t("proximamente")}
                         className="flex items-center gap-2 px-3 py-2 text-sm rounded-md text-muted-foreground opacity-40 cursor-not-allowed select-none"
                       >
                         <span className="w-4 h-4 shrink-0" />
                         {item.label}
                         <span className="ml-auto text-[9px] bg-muted px-1.5 py-0.5 rounded font-medium">
-                          Pronto
+                          {t("soon")}
                         </span>
                       </span>
                     );
@@ -212,7 +235,7 @@ export function AppSidebar() {
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
-            <span className="flex-1 text-left text-xs">Buscar…</span>
+            <span className="flex-1 text-left text-xs">{t("search")}</span>
             <kbd className="text-[10px] font-mono bg-muted border border-border px-1.5 py-0.5 rounded leading-none">
               ⌘K
             </kbd>

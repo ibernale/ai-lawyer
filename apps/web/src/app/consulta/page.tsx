@@ -2,60 +2,60 @@
 
 import { Suspense, useCallback, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { ChangeAlertBanner } from "@/components/ChangeAlertBanner";
 import { ResponseView } from "@/components/ResponseView";
 import { StreamProgressBar } from "@/components/StreamProgressBar";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { consultQueryStream, getConsultation } from "@/lib/api";
 import type { ConsultResponse } from "@/lib/api";
 
-const JURISDICTIONS = [
-  { code: "ES", label: "España" },
-  { code: "EU", label: "UE" },
-  { code: "UK", label: "Reino Unido" },
-  { code: "BR", label: "Brasil" },
-  { code: "MX", label: "México" },
-  { code: "US", label: "EE.UU." },
-  { code: "PL", label: "Polonia" },
-  { code: "PT", label: "Portugal" },
-  { code: "AR", label: "Argentina" },
-  { code: "DE", label: "Alemania" },
-  { code: "CH", label: "Suiza" },
-];
+const JURISDICTION_CODES = [
+  "ES", "EU", "UK", "BR", "MX", "US", "PL", "PT", "AR", "DE", "CH",
+] as const;
 
-const OUTPUT_TYPES = [
-  { value: "dictamen", label: "Dictamen" },
-  { value: "nota", label: "Nota informativa" },
-  { value: "memo_comite", label: "Memo de comité" },
-  { value: "analisis_riesgo", label: "Análisis de riesgo" },
-];
-
-const DEPTH_OPTIONS: {
-  value: "shallow" | "standard" | "deep";
-  label: string;
-  tooltip: string;
-}[] = [
-  {
-    value: "shallow",
-    label: "Rápido",
-    tooltip:
-      "Ruta directa: router → especialista → verificación. Sin planificación. ~10s.",
-  },
-  {
-    value: "standard",
-    label: "Estándar",
-    tooltip:
-      "Planner descompone la consulta y coordina especialistas. Verificación completa. ~30s.",
-  },
-  {
-    value: "deep",
-    label: "Profundo",
-    tooltip:
-      "Planner + Maker(s) + Judge iterativo (máx. 2 iter.). Mayor calidad, más coste y tiempo. ~60s.",
-  },
-];
+const OUTPUT_TYPE_VALUES = [
+  "dictamen",
+  "nota",
+  "memo_comite",
+  "analisis_riesgo",
+] as const;
 
 function ConsultaInner() {
   const searchParams = useSearchParams();
+  const t = useTranslations("consulta");
+  const tLayout = useTranslations("layout");
+  const tJurisdictions = useTranslations("jurisdictions");
+
+  const DEPTH_OPTIONS: {
+    value: "shallow" | "standard" | "deep";
+    label: string;
+    tooltip: string;
+  }[] = [
+    {
+      value: "shallow",
+      label: t("depthShallow"),
+      tooltip: t("depthShallowTooltip"),
+    },
+    {
+      value: "standard",
+      label: t("depthStandard"),
+      tooltip: t("depthStandardTooltip"),
+    },
+    {
+      value: "deep",
+      label: t("depthDeep"),
+      tooltip: t("depthDeepTooltip"),
+    },
+  ];
+
+  const OUTPUT_TYPES = [
+    { value: "dictamen", label: t("outputDictamen") },
+    { value: "nota", label: t("outputNota") },
+    { value: "memo_comite", label: t("outputMemoComite") },
+    { value: "analisis_riesgo", label: t("outputAnalisisRiesgo") },
+  ];
+
   const [query, setQuery] = useState("");
   const [outputType, setOutputType] = useState("dictamen");
   const [depth, setDepth] = useState<"shallow" | "standard" | "deep">(
@@ -101,7 +101,7 @@ function ConsultaInner() {
     setResponse(null);
     setAnswerDraft("");
     setStreamStep("routing");
-    setStreamMessage("Iniciando consulta…");
+    setStreamMessage(t("initiating"));
     setStreamPct(0);
 
     const cancel = consultQueryStream(
@@ -142,27 +142,27 @@ function ConsultaInner() {
       {/* Permanent disclaimer banner — not dismissable */}
       <div className="sticky top-0 z-40 bg-amber-50 border-b border-amber-200 px-4 py-2">
         <p className="text-xs text-amber-800 text-center">
-          <strong>Borrador asistido por IA.</strong> Requiere validación por
-          jurista cualificado antes de cualquier uso. No constituye
-          asesoramiento legal. Sistema en fase MVP, dataset y prompts no
-          validados por experto humano.{" "}
+          <strong>{tLayout("draftNotice")}</strong> {tLayout("draftRequires")}{" "}
+          {tLayout("draftDisclaimer")}{" "}
           <a
-            href="/legal"
+            href={tLayout("legalPage")}
             className="underline font-medium hover:text-amber-900"
           >
-            Más información
+            {tLayout("moreInfo")}
           </a>
         </p>
       </div>
 
       <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-8 space-y-6">
+        {/* Regulation change alert banner (Fase 11D.2) */}
+        <ChangeAlertBanner />
+
         <header>
           <h1 className="text-2xl font-bold tracking-tight">
-            Consulta jurídica
+            {t("title")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Regulación bancaria · RGPD · Laboral · Mercantil · Penal económico ·
-            Administrativo
+            {t("subtitle")}
           </p>
         </header>
 
@@ -170,7 +170,7 @@ function ConsultaInner() {
           <textarea
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Escriba su consulta normativa…"
+            placeholder={t("placeholder")}
             rows={5}
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
             disabled={streaming}
@@ -179,7 +179,7 @@ function ConsultaInner() {
           {/* Depth selector */}
           <div className="flex items-center gap-1">
             <span className="text-sm font-medium text-muted-foreground mr-1">
-              Profundidad:
+              {t("depthLabel")}
             </span>
             {DEPTH_OPTIONS.map((opt) => (
               <button
@@ -204,25 +204,25 @@ function ConsultaInner() {
           {/* Jurisdiction multi-select chips */}
           <div className="space-y-1">
             <span className="text-sm font-medium text-muted-foreground">
-              Jurisdicciones{" "}
+              {t("jurisdictionsLabel")}{" "}
               <span className="text-xs font-normal">
-                (vacío = autodetectar)
+                {t("jurisdictionsHint")}
               </span>
               :
             </span>
             <div className="flex flex-wrap gap-1.5">
-              {JURISDICTIONS.map((j) => {
-                const active = selectedJurisdictions.includes(j.code);
+              {JURISDICTION_CODES.map((code) => {
+                const active = selectedJurisdictions.includes(code);
                 return (
                   <button
-                    key={j.code}
+                    key={code}
                     type="button"
                     disabled={streaming}
                     onClick={() =>
                       setSelectedJurisdictions((prev) =>
                         active
-                          ? prev.filter((c) => c !== j.code)
-                          : [...prev, j.code],
+                          ? prev.filter((c) => c !== code)
+                          : [...prev, code],
                       )
                     }
                     className={[
@@ -233,9 +233,9 @@ function ConsultaInner() {
                       "disabled:opacity-50 disabled:cursor-not-allowed",
                     ].join(" ")}
                   >
-                    {j.code}
+                    {code}
                     <span className="ml-1 hidden sm:inline text-[10px] opacity-70">
-                      {j.label}
+                      {tJurisdictions(code)}
                     </span>
                   </button>
                 );
@@ -259,7 +259,7 @@ function ConsultaInner() {
                 htmlFor="output-type"
                 className="text-sm font-medium whitespace-nowrap"
               >
-                Tipo de documento:
+                {t("outputTypeLabel")}
               </label>
               <select
                 id="output-type"
@@ -268,9 +268,9 @@ function ConsultaInner() {
                 disabled={streaming}
                 className="rounded-md border border-input bg-background px-2 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                {OUTPUT_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
+                {OUTPUT_TYPES.map((ot) => (
+                  <option key={ot.value} value={ot.value}>
+                    {ot.label}
                   </option>
                 ))}
               </select>
@@ -281,7 +281,7 @@ function ConsultaInner() {
               disabled={streaming || !query.trim()}
               className="ml-auto rounded-md bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Consultar
+              {t("submitButton")}
             </button>
           </div>
         </form>
