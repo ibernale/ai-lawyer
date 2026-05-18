@@ -4,17 +4,14 @@ import createNextIntlPlugin from "next-intl/plugin";
 import { fileURLToPath } from "url";
 import path from "path";
 
-// Resolve __dirname before createNextIntlPlugin so we can pass an absolute
-// path. With turbopack.root set to the monorepo root (2 levels up), Turbopack
-// resolves relative paths against that root, not against apps/web — causing
-// "Couldn't find next-intl config file" at runtime. An absolute path is
-// root-agnostic and works with both webpack and Turbopack.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 
-const withNextIntl = createNextIntlPlugin(
-    path.resolve(__dirname, "./src/i18n/request.ts"),
-);
+// next-intl Turbopack support requires a relative path (no absolute paths).
+// The path is resolved by Turbopack relative to turbopack.root.
+// We set turbopack.root = __dirname (apps/web) so that both webpack (which
+// resolves relative to CWD = apps/web) and Turbopack agree on the base.
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 // ALB routing handles API path dispatch (no Next.js rewrites needed):
 //   /health, /version        → FastAPI (ALB priority 15)
@@ -39,7 +36,13 @@ const nextConfig = {
     },
 
     turbopack: {
-        root: repoRoot,
+        // Set root to apps/web (__dirname) so Turbopack does not traverse up
+        // to parent directories that may contain other pnpm-workspace.yaml
+        // files (monorepo nesting). Keeping root = apps/web also ensures that
+        // the relative path "./src/i18n/request.ts" passed to createNextIntlPlugin
+        // resolves correctly from the same base as webpack (CWD = apps/web).
+        // repoRoot is still available for other uses if needed.
+        root: __dirname,
     },
 
     // In production the ALB routes /api/v1/*, /health, /version, /auth/* to
