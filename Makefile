@@ -77,6 +77,10 @@ eval-quick: ## Run smoke eval set (~5 cases, ~30s)
 		--dataset evals/golden_dataset_smoke \
 		--output evals/reports/smoke_$(shell date +%Y%m%dT%H%M%S)/
 
+eval-contracts: ## Validate contract golden dataset schema (--skip-api, no key required)
+	$(UV) run python evals/contract_eval.py --skip-api
+	@echo "Run 'python evals/contract_eval.py' (without --skip-api) for live API evaluation"
+
 # ─── Development ──────────────────────────────────────────────────────────────
 dev: ## Start all services in foreground (dev mode)
 	$(DOCKER) $(DC_DEV) up

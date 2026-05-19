@@ -1,0 +1,74 @@
+{
+  "id": "contract-005",
+  "filename": "laboral_sintetico_01.txt",
+  "expert_reviewed": false,
+  "contract_text": "CONTRATO DE TRABAJO DE ALTA DIRECCIÓN\n\nEntre BANCO EJEMPLO S.A. (en adelante, la «Empresa») y Dña. María López Fernández, DNI 87654321-B (en adelante, la «Directiva»).\n\nCLÁUSULA 1. OBJETO Y CARGO\nLa Empresa contrata a la Directiva para el cargo de Directora de Riesgos (Chief Risk Officer), con dependencia directa del Consejo de Administración. La relación laboral queda regulada por el Real Decreto 1382/1985 de alta dirección.\n\nCLÁUSULA 2. RETRIBUCIÓN\nLa Directiva percibirá una retribución fija anual de DOSCIENTOS CINCUENTA MIL EUROS (250.000 €) brutos, abonada en doce mensualidades. Adicionalmente, tendrá derecho a una retribución variable de hasta el 60% del salario fijo anual en función del cumplimiento de objetivos anuales aprobados por el Consejo de Administración.\n\nCLÁUSULA 3. DURACIÓN Y PERÍODO DE PREAVISO\nEl contrato se celebra por tiempo indefinido. Cualquiera de las partes podrá extinguir el contrato con un preaviso de seis (6) meses. En caso de desistimiento unilateral de la Empresa sin causa justificada, la Directiva tendrá derecho a una indemnización equivalente a dos (2) años de retribución fija.\n\nCLÁUSULA 4. EXCLUSIVIDAD Y NO COMPETENCIA\nDurante la vigencia del contrato, la Directiva se obliga a dedicación exclusiva y no podrá desempeñar actividades profesionales o mercantiles por cuenta propia o ajena. Tras la extinción del contrato, la Directiva no podrá prestar servicios para entidades competidoras durante dos (2) años en el ámbito de la gestión de riesgos bancarios en España y Portugal, a cambio de una compensación mensual del 40% del salario fijo.\n\nCLÁUSULA 5. CONFIDENCIALIDAD\nLa Directiva se compromete a guardar confidencialidad sobre toda información reservada de la Empresa durante la vigencia del contrato y por un período de cinco (5) años tras su extinción, incluyendo información sobre clientes, estrategias de riesgo y metodologías propietarias.\n\nCLÁUSULA 6. MODIFICACIÓN SUSTANCIAL\nLa Empresa podrá modificar las condiciones de trabajo por razones objetivas económicas, técnicas, organizativas o de producción, con un preaviso de quince (15) días. Si la modificación resultara perjudicial para la Directiva, ésta tendrá derecho a extinguir el contrato con derecho a indemnización.",
+  "annotations": {
+    "document_type": "EmploymentContract",
+    "parties": [
+      { "name": "BANCO EJEMPLO S.A.", "role": "employer" },
+      { "name": "Dña. María López Fernández", "role": "employee" }
+    ],
+    "jurisdiction": ["ES"],
+    "governing_law": "Derecho español",
+    "applicable_framework": ["CódigoCivil", "ET", "RD1382/1985"],
+    "obligations": [
+      {
+        "id": "OBL-1",
+        "party": "BANCO EJEMPLO S.A.",
+        "deontic_type": "obligation",
+        "description": "abonar retribución fija de 250.000 euros anuales en doce mensualidades",
+        "clause_ref": "[CLAUSE:2]"
+      },
+      {
+        "id": "OBL-2",
+        "party": "BANCO EJEMPLO S.A.",
+        "deontic_type": "obligation",
+        "description": "pagar indemnización de dos años de salario por desistimiento sin causa",
+        "clause_ref": "[CLAUSE:3]"
+      },
+      {
+        "id": "PRH-1",
+        "party": "Dña. María López Fernández",
+        "deontic_type": "prohibition",
+        "description": "no prestar servicios para entidades competidoras durante dos años tras extinción",
+        "clause_ref": "[CLAUSE:4]"
+      },
+      {
+        "id": "OBL-3",
+        "party": "Dña. María López Fernández",
+        "deontic_type": "obligation",
+        "description": "guardar confidencialidad durante vigencia del contrato y cinco años tras extinción",
+        "clause_ref": "[CLAUSE:5]"
+      },
+      {
+        "id": "REP-1",
+        "party": "Dña. María López Fernández",
+        "deontic_type": "right",
+        "description": "percibir compensación del 40% del salario fijo mensual durante pacto de no competencia",
+        "clause_ref": "[CLAUSE:4]"
+      }
+    ],
+    "risk_factors": [
+      {
+        "category": "legal",
+        "severity": "high",
+        "clause_refs": ["[CLAUSE:4]"]
+      },
+      {
+        "category": "financial",
+        "severity": "medium",
+        "clause_refs": ["[CLAUSE:2]"]
+      },
+      {
+        "category": "operational",
+        "severity": "low",
+        "clause_refs": ["[CLAUSE:6]"]
+      }
+    ],
+    "compliance_findings": [
+      { "regulation": "ET Art. 41", "status": "requires_review" },
+      { "regulation": "CódigoCivil Art. 1255", "status": "requires_review" }
+    ]
+  }
+}

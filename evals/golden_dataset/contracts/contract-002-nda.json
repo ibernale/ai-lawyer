@@ -1,0 +1,67 @@
+{
+  "id": "contract-002",
+  "filename": "nda_sintetico_01.txt",
+  "expert_reviewed": false,
+  "contract_text": "ACUERDO DE CONFIDENCIALIDAD (NDA)\n\nEntre BANCO EJEMPLO S.A. (en adelante, «Parte Reveladora») y CONSULTORA TECNOLÓGICA S.L., CIF B-87654321 (en adelante, «Parte Receptora»), en relación con el proyecto de transformación digital del área de pagos (en adelante, el «Proyecto»).\n\nCLÁUSULA 1. OBJETO\nLa Parte Reveladora compartirá con la Parte Receptora información confidencial relacionada con el Proyecto, incluyendo datos técnicos, arquitectura de sistemas, datos de clientes anonimizados y estrategia de negocio. La Parte Receptora se compromete a tratar dicha información con el máximo nivel de confidencialidad.\n\nCLÁUSULA 2. OBLIGACIONES DE CONFIDENCIALIDAD\nLa Parte Receptora se obliga a: (a) no divulgar la información confidencial a terceros sin autorización escrita previa; (b) utilizar la información exclusivamente para los fines del Proyecto; (c) adoptar medidas de seguridad equivalentes a las utilizadas para proteger su propia información confidencial, con un mínimo de diligencia razonable; (d) notificar inmediatamente cualquier acceso no autorizado.\n\nCLÁUSULA 3. EXCEPCIONES\nLas obligaciones de confidencialidad no se aplicarán a la información que: (a) sea o devenga de dominio público sin incumplimiento de este acuerdo; (b) fuera conocida por la Parte Receptora antes de su divulgación; (c) sea revelada por mandato legal o judicial. En este último caso, la Parte Receptora notificará a la Parte Reveladora con la mayor antelación posible.\n\nCLÁUSULA 4. DURACIÓN\nEl presente acuerdo tendrá una vigencia de dos (2) años desde su firma. Las obligaciones de confidencialidad respecto a secretos comerciales se mantendrán vigentes indefinidamente.\n\nCLÁUSULA 5. PROTECCIÓN DE DATOS\nEn la medida en que la información compartida incluya datos de carácter personal, las partes se comprometen a cumplir con el Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD). La Parte Reveladora actúa como responsable del tratamiento y la Parte Receptora como encargada, debiendo suscribir el correspondiente acuerdo de encargado del tratamiento conforme al artículo 28 RGPD.\n\nCLÁUSULA 6. PENALIZACIÓN\nEl incumplimiento de las obligaciones de confidencialidad generará el derecho de la Parte Reveladora a exigir daños y perjuicios ilimitados, incluyendo el lucro cesante y el daño emergente. Asimismo, la Parte Receptora reconoce que el mero incumplimiento genera un daño irreparable que justifica la adopción de medidas cautelares.",
+  "annotations": {
+    "document_type": "NDA",
+    "parties": [
+      { "name": "BANCO EJEMPLO S.A.", "role": "disclosing" },
+      { "name": "CONSULTORA TECNOLÓGICA S.L.", "role": "receiving" }
+    ],
+    "jurisdiction": ["ES", "EU"],
+    "governing_law": "Derecho español",
+    "applicable_framework": ["GDPR", "LOPDGDD", "CódigoCivil"],
+    "obligations": [
+      {
+        "id": "PRH-1",
+        "party": "CONSULTORA TECNOLÓGICA S.L.",
+        "deontic_type": "prohibition",
+        "description": "no divulgar información confidencial a terceros sin autorización escrita",
+        "clause_ref": "[CLAUSE:2]"
+      },
+      {
+        "id": "OBL-1",
+        "party": "CONSULTORA TECNOLÓGICA S.L.",
+        "deontic_type": "obligation",
+        "description": "utilizar la información exclusivamente para los fines del Proyecto",
+        "clause_ref": "[CLAUSE:2]"
+      },
+      {
+        "id": "OBL-2",
+        "party": "CONSULTORA TECNOLÓGICA S.L.",
+        "deontic_type": "obligation",
+        "description": "notificar inmediatamente cualquier acceso no autorizado",
+        "clause_ref": "[CLAUSE:2]"
+      },
+      {
+        "id": "OBL-3",
+        "party": "CONSULTORA TECNOLÓGICA S.L.",
+        "deontic_type": "obligation",
+        "description": "suscribir acuerdo de encargado del tratamiento conforme RGPD Art. 28",
+        "clause_ref": "[CLAUSE:5]"
+      }
+    ],
+    "risk_factors": [
+      {
+        "category": "legal",
+        "severity": "critical",
+        "clause_refs": ["[CLAUSE:6]"]
+      },
+      {
+        "category": "legal",
+        "severity": "high",
+        "clause_refs": ["[CLAUSE:5]"]
+      },
+      {
+        "category": "operational",
+        "severity": "medium",
+        "clause_refs": ["[CLAUSE:2]"]
+      }
+    ],
+    "compliance_findings": [
+      { "regulation": "GDPR Art. 28", "status": "requires_review" },
+      { "regulation": "CódigoCivil Art. 1102", "status": "non_compliant" }
+    ]
+  }
+}

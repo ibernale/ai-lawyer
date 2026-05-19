@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from lex_agents_agents.contracts.models import ContractAnalysis
 from lex_agents_agents.contracts.orchestrator import ContractAnalysisRequest, ContractOrchestrator
 from lex_agents_agents.contracts.store import ContractStore
@@ -86,6 +87,7 @@ async def analyze_contract(
     current_user: CurrentUser = Depends(require_auth),
     orchestrator: ContractOrchestrator = Depends(get_contract_orchestrator),
     store: ContractStore = Depends(get_contract_store),
+    settings: Settings = Depends(get_settings),
 ) -> ContractAnalyzeResponse:
     """Upload and analyze a contract document.
 
@@ -199,6 +201,10 @@ async def analyze_contract(
             trace_id=trace_id,
         )
 
+    # Submit to admin review queue if risk is red or critical
+    if analysis.risk_assessment.overall_rating in ("red", "critical"):
+        await _maybe_queue_for_review(analysis, current_user.tenant_id, settings)
+
     logger.info(
         "contract_analyze_complete",
         contract_id=contract_id,
@@ -253,3 +259,177 @@ async def list_contracts(
         )
         for a in analyses
     ]
+
+
+# ---------------------------------------------------------------------------
+# Cross-contract comparison — Fase 13D
+# ---------------------------------------------------------------------------
+
+
+class ComparisonResult(BaseModel):
+    contracts: list[ContractAnalyzeResponse]
+    comparison: dict[str, Any]  # type: ignore[type-arg]
+
+
+@router.get("/compare", response_model=ComparisonResult)
+async def compare_contracts(
+    ids: list[str] = Query(..., description="2-5 contract IDs to compare"),
+    current_user: CurrentUser = Depends(require_auth),
+    store: ContractStore = Depends(get_contract_store),
+) -> ComparisonResult:
+    """Compare 2-5 previously analyzed contracts.
+
+    Returns per-contract summaries plus a portfolio-level comparison:
+    risk distribution, common compliance issues, obligation overlap,
+    and a deterministic recommendation based on the risk mix.
+    """
+    if len(ids) < 2:
+        raise HTTPException(status_code=422, detail={"code": "TOO_FEW_CONTRACTS", "message": "At least 2 contract IDs required."})
+    if len(ids) > 5:
+        raise HTTPException(status_code=422, detail={"code": "TOO_MANY_CONTRACTS", "message": "Maximum 5 contracts per comparison."})
+
+    analyses: list[ContractAnalysis] = []
+    for cid in ids:
+        a = await store.get(cid, tenant_id=current_user.tenant_id)
+        if a is None:
+            raise HTTPException(
+                status_code=404,
+                detail={"code": "CONTRACT_NOT_FOUND", "message": f"Contract {cid!r} not found."},
+            )
+        analyses.append(a)
+
+    comparison = _build_comparison(analyses)
+
+    return ComparisonResult(
+        contracts=[
+            ContractAnalyzeResponse(
+                contract_id=a.contract_id,
+                trace_id=a.trace_id,
+                status="complete",
+                analysis=a,
+            )
+            for a in analyses
+        ],
+        comparison=comparison,
+    )
+
+
+def _build_comparison(analyses: list[ContractAnalysis]) -> dict[str, Any]:  # type: ignore[type-arg]
+    # Risk distribution
+    risk_dist: dict[str, int] = {"green": 0, "yellow": 0, "red": 0, "critical": 0}
+    highest_risk_id = analyses[0].contract_id
+    highest_risk_score = 0.0
+    for a in analyses:
+        risk_dist[a.risk_assessment.overall_rating] += 1
+        if a.risk_assessment.overall_score > highest_risk_score:
+            highest_risk_score = a.risk_assessment.overall_score
+            highest_risk_id = a.contract_id
+
+    # Common compliance issues
+    from collections import defaultdict
+    regulation_map: dict[str, list[str]] = defaultdict(list)
+    for a in analyses:
+        for cf in a.compliance_findings:
+            if cf.status in ("non_compliant", "requires_review"):
+                regulation_map[cf.regulation].append(a.contract_id)
+    common_compliance = [
+        {"regulation": reg, "affected_contracts": cids, "count": len(cids)}
+        for reg, cids in regulation_map.items()
+        if len(cids) > 1
+    ]
+    common_compliance.sort(key=lambda x: x["count"], reverse=True)
+
+    # Obligation overlap (obligations with ≥2 keyword matches across contracts)
+    _sw = {"de", "del", "la", "el", "en", "a", "por", "con", "se", "su", "un", "una", "que", "y", "o", "no"}
+
+    def _kw(text: str) -> frozenset[str]:
+        return frozenset(w.strip(".,;:()[]") for w in text.lower().split() if w not in _sw and len(w) > 2)
+
+    # Build obligation keyword sets per contract
+    all_obl: list[tuple[str, str, frozenset[str]]] = []  # (contract_id, party, keywords)
+    for a in analyses:
+        for node in a.obligations.nodes:
+            all_obl.append((a.contract_id, node.party, _kw(node.description)))
+
+    # Find cross-contract obligation overlaps
+    seen: set[tuple[str, str]] = set()
+    overlaps: list[dict[str, Any]] = []  # type: ignore[type-arg]
+    for i, (cid_i, party_i, kw_i) in enumerate(all_obl):
+        for j, (cid_j, party_j, kw_j) in enumerate(all_obl):
+            if j <= i or cid_i == cid_j:
+                continue
+            if len(kw_i & kw_j) >= 3:
+                key = tuple(sorted([cid_i, cid_j]))
+                desc_key = " ".join(sorted(kw_i & kw_j)[:4])
+                pair_key = (key, desc_key)
+                if pair_key not in seen:
+                    seen.add(pair_key)
+                    overlaps.append({
+                        "description": desc_key,
+                        "parties": list({party_i, party_j}),
+                        "contract_ids": list(key),
+                    })
+
+    # Recommendation
+    n_critical = risk_dist["critical"]
+    n_red = risk_dist["red"]
+    total = len(analyses)
+    if n_critical > 0:
+        recommendation = (
+            f"Cartera de alto riesgo: {n_critical} de {total} contratos presentan riesgo crítico. "
+            "Se recomienda revisión jurídica urgente antes de cualquier firma o ejecución."
+        )
+    elif n_red >= total // 2:
+        recommendation = (
+            f"{n_red} de {total} contratos presentan riesgo elevado. "
+            "Priorizar la renegociación de las cláusulas críticas identificadas."
+        )
+    else:
+        recommendation = (
+            f"Cartera con perfil de riesgo moderado ({n_red} rojo, {risk_dist['yellow']} amarillo). "
+            "Revisar los hallazgos de compliance compartidos entre contratos."
+        )
+
+    return {
+        "risk_distribution": risk_dist,
+        "common_compliance_issues": common_compliance[:10],
+        "obligation_overlap": overlaps[:10],
+        "highest_risk": highest_risk_id,
+        "recommendation": recommendation,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Audit queue helper — Fase 13D
+# ---------------------------------------------------------------------------
+
+
+async def _maybe_queue_for_review(
+    analysis: ContractAnalysis,
+    tenant_id: str,
+    settings: Settings,
+) -> None:
+    """Silently add a high-risk contract analysis to the admin review queue."""
+    try:
+        from lex_agents_audit.audit_store import AuditSampleRecord, AuditStore
+
+        audit_store = AuditStore(db_path=settings.consultation_db_path)
+        record = AuditSampleRecord(
+            trace_id=analysis.trace_id,
+            query=f"[CONTRATO] {analysis.filename} — {analysis.metadata.document_type}",
+            response_json=analysis.model_dump_json(),
+            branch="analisis_contrato",
+            depth=analysis.risk_assessment.overall_rating,
+            sampled_at=datetime.now(UTC),
+        )
+        await audit_store.save(record)
+        logger.info(
+            "contract_queued_for_review",
+            contract_id=analysis.contract_id,
+            rating=analysis.risk_assessment.overall_rating,
+        )
+    except Exception:
+        logger.warning(
+            "contract_audit_queue_failed",
+            contract_id=analysis.contract_id,
+        )
