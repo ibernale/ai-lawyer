@@ -1,4 +1,4 @@
-"""Pydantic v2 models for contract analysis — Fase 13A."""
+"""Pydantic v2 models for contract analysis — Fase 13A/13B/13C."""
 
 from __future__ import annotations
 
@@ -94,6 +94,72 @@ class ComplianceFinding(BaseModel):
     recommendation: str | None = None
 
 
+# ---------------------------------------------------------------------------
+# Fase 13C: Negotiation models
+# ---------------------------------------------------------------------------
+
+
+class PlaybookPosition(BaseModel):
+    summary: str
+    template_language: str | None = None
+    market_prevalence: float | None = None  # 0.0-1.0
+    condition: str | None = None
+
+
+class NegotiationIssue(BaseModel):
+    clause_title: str
+    clause_ref: str  # e.g. "[CLAUSE:3]"
+    current_position: str
+    playbook_position: Literal[
+        "preferred", "acceptable", "fallback", "never_accept", "uncharted"
+    ]
+    market_percentile: float  # 0.0=favourable to us, 1.0=unfavourable
+    recommended_action: str
+    alternative_language: str | None = None
+    escalation_required: bool = False
+
+
+class NegotiationScenario(BaseModel):
+    label: str
+    risk_summary: str
+    residual_risks: list[str] = []
+    target_clauses: list[str] = []
+    expected_outcome: str | None = None
+    walk_away_conditions: list[str] = []
+
+
+class NegotiationSummary(BaseModel):
+    posture_score: float  # 0.0-1.0
+    posture_label: Literal[
+        "reject", "renegotiate", "conditionally_accept", "accept"
+    ]
+    priority_issues: list[NegotiationIssue]
+    scenarios: dict[str, NegotiationScenario]  # accept_as_is, renegotiate_priority, full_renegotiation
+    playbook_version: str = "1.0.0"
+    benchmark_sources: list[str] = []
+
+
+class ClauseAlternative(BaseModel):
+    label: Literal["favourable_to_us", "balanced", "compromise"]
+    text: str  # complete replacement clause text
+    rationale: str
+    market_prevalence: float | None = None  # 0.0-1.0
+
+
+class MandatoryLawIssue(BaseModel):
+    provision: str  # e.g. "CC Art. 1102"
+    issue: str
+    compliant_formulation: str
+
+
+class ClauseAlternatives(BaseModel):
+    clause_title: str
+    clause_ref: str
+    original_text: str
+    alternatives: list[ClauseAlternative]
+    mandatory_law_issues: list[MandatoryLawIssue] = []
+
+
 class ContractAnalysis(BaseModel):
     contract_id: str
     trace_id: str
@@ -102,9 +168,9 @@ class ContractAnalysis(BaseModel):
     risk_assessment: RiskAssessment
     obligations: ObligationGraph
     compliance_findings: list[ComplianceFinding]
-    # negotiation fields — populated in Fase 13C, optional here
-    negotiation: list[dict] = []  # type: ignore[type-arg]
-    clause_alternatives: list[dict] = []  # type: ignore[type-arg]
+    # Fase 13C: negotiation fields
+    negotiation: NegotiationSummary | None = None
+    clause_alternatives: list[ClauseAlternatives] = []
     # synthesis
     summary: str  # executive summary ≤300 words
     recommendations: list[str]  # prioritised action items

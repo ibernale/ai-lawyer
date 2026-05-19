@@ -1,0 +1,259 @@
+---
+# Playbook: Data Processing Agreement — Controller perspective
+# References: GDPR Arts. 28-36, LOPDGDD (Ley 3/2018), EDPB Guidelines, AEPD guidance
+# Version: 1.0.0
+# Jurisdiction: ES / EU
+
+contract_type: data_processing_agreement
+party_role: controller
+playbook_version: "1.0.0"
+
+clauses:
+
+  - clause_title: "Scope and Instructions"
+    applicable_contract_types:
+      - data_processing_agreement
+    party_role: controller
+    preferred_position:
+      summary: >
+        Processor processes only on documented instructions; any processing
+        outside scope requires controller's prior written consent; processor
+        must immediately notify controller of any instruction believed to
+        infringe GDPR (Art. 28.3(h)).
+      template_language: |
+        "The Processor shall process Personal Data only on documented instructions
+        from the Controller, as set out in Annex 1 to this Agreement. The Processor
+        shall immediately inform the Controller if, in its opinion, an instruction
+        infringes the GDPR or other applicable data protection law (GDPR Art. 28.3,
+        last sentence). Any processing outside the scope of the instructions shall
+        require the prior written consent of the Controller."
+      market_prevalence: 0.80
+    acceptable_positions:
+      - summary: >
+          Processor follows instructions with right to raise compliance concerns;
+          deviations require written consent.
+        condition: "Standard GDPR Art. 28 compliance."
+        market_prevalence: 0.18
+    fallback_position:
+      summary: >
+        Standard Art. 28.3 wording; processor informs controller of compliance
+        concerns without right to refuse.
+      requires_approval_from: "DPO"
+    never_accept:
+      - condition: "Processor may process data for its own purposes"
+        reason: >
+          Converts processor to controller under GDPR; processor becomes
+          independently liable and controller loses oversight and control.
+    escalation_triggers:
+      - "Processor claims right to use anonymised data for its own analytics"
+    escalation_to: "DPO and Head of Legal"
+    market_benchmark:
+      source: "GDPR Art. 28; EDPB Guidelines 07/2020"
+      typical_range: "On-instructions-only processing is mandatory under GDPR"
+      spanish_law_note: |
+        La LOPDGDD (Art. 28) complementa el RGPD en España. La AEPD ha sancionado
+        a encargados que procesaron datos fuera del encargo (GDPR Art. 28.10).
+        El encargado que determina los fines y medios pasa a ser responsable
+        conjunto o independiente.
+    red_flags:
+      - pattern: "own purposes|finalidades propias del encargado"
+        severity: critical
+        note: "Processing for own purposes — controller status shift; escalate to DPO."
+
+  - clause_title: "Sub-Processors"
+    applicable_contract_types:
+      - data_processing_agreement
+    party_role: controller
+    preferred_position:
+      summary: >
+        No sub-processors without prior specific written consent of controller;
+        sub-processors must be bound by same obligations; controller must be
+        provided a list of sub-processors before appointment; right to object.
+      template_language: |
+        "The Processor shall not engage any sub-processor to process Personal
+        Data without the prior specific written authorisation of the Controller.
+        The Processor shall notify the Controller of any intended changes
+        concerning the addition or replacement of sub-processors, giving the
+        Controller the opportunity to object to such changes within thirty (30)
+        days of such notification. Sub-processors must be bound by written
+        contractual obligations equivalent to those imposed on the Processor
+        under this Agreement (GDPR Art. 28.4)."
+      market_prevalence: 0.60
+    acceptable_positions:
+      - summary: >
+          General prior authorisation with list of approved sub-processors in
+          Annex; 30-day objection period for new additions; same obligations
+          imposed by contract.
+        condition: "Acceptable for large SaaS providers with established sub-processor lists."
+        market_prevalence: 0.35
+    fallback_position:
+      summary: >
+        General authorisation with 14-day notification and objection window;
+        controller consent deemed given if no objection.
+      requires_approval_from: "DPO"
+    never_accept:
+      - condition: "Processor may engage sub-processors in non-adequate third countries without SCCs"
+        reason: >
+          Violates GDPR Chapter V; creates transfer compliance risk and exposes
+          controller to AEPD enforcement.
+    escalation_triggers:
+      - "Processor insists on unlimited right to engage any sub-processor"
+    escalation_to: "DPO"
+    market_benchmark:
+      source: "GDPR Art. 28.2–28.4; EDPB Guidelines; AEPD guidance"
+      typical_range: "30-day notification and objection is market standard for enterprise"
+      spanish_law_note: |
+        La AEPD ha establecido en sus guías de encargo de tratamiento que la
+        autorización general con lista de sub-encargados y mecanismo de
+        notificación es conforme al RGPD Art. 28.2. La transferencia a
+        sub-encargados en terceros países requiere garantías adecuadas (SCCs).
+    red_flags:
+      - pattern: "sub-processor.*no notification|sub-encargado.*sin notificación"
+        severity: critical
+        note: "No sub-processor notification — non-compliant with GDPR Art. 28.2."
+
+  - clause_title: "Security Measures"
+    applicable_contract_types:
+      - data_processing_agreement
+    party_role: controller
+    preferred_position:
+      summary: >
+        Processor implements technical and organisational measures appropriate
+        to risk (GDPR Art. 32); measures specified in Annex 2 (encryption at
+        rest and in transit, access controls, vulnerability management,
+        penetration testing annually, ISO 27001 or equivalent); right to audit.
+      template_language: |
+        "The Processor shall implement and maintain technical and organisational
+        measures to ensure a level of security appropriate to the risk (GDPR
+        Art. 32), including as a minimum: (a) encryption of Personal Data at
+        rest (AES-256) and in transit (TLS 1.3+); (b) pseudonymisation where
+        appropriate; (c) access controls and multi-factor authentication for
+        privileged access; (d) annual third-party penetration testing with
+        remediation within 30 days of critical findings; (e) certification to
+        ISO 27001 or SOC 2 Type II. Full details are set out in Annex 2."
+      market_prevalence: 0.65
+    acceptable_positions:
+      - summary: >
+          Measures aligned to GDPR Art. 32 risk assessment; ISO 27001 or
+          equivalent; right to audit or review third-party audit reports.
+        condition: "Acceptable if Art. 32 risk assessment is documented."
+        market_prevalence: 0.30
+    fallback_position:
+      summary: >
+        Industry-standard measures per GDPR Art. 32; processor provides
+        annual security report in lieu of audit.
+      requires_approval_from: "CISO and DPO"
+    never_accept:
+      - condition: "No security measures specified or 'appropriate measures' with no annex"
+        reason: "GDPR Art. 28.3(c) requires measures to be specified in the contract."
+    escalation_triggers:
+      - "Processor refuses to provide SOC 2 or ISO 27001 certification"
+      - "Processor refuses audit right"
+    escalation_to: "CISO and DPO"
+    market_benchmark:
+      source: "GDPR Art. 32; ENISA; ISO 27001; NIST CSF"
+      typical_range: "ISO 27001/SOC 2 standard for cloud processors in financial sector"
+      spanish_law_note: |
+        El ENS (Esquema Nacional de Seguridad, RD 311/2022) es referencia para
+        entidades del sector público y sus encargados. Para entidades bancarias,
+        las Directrices EBA sobre outsourcing TIC y el Reglamento DORA establecen
+        requisitos de seguridad adicionales para proveedores críticos.
+    red_flags:
+      - pattern: "no audit.*right|sin derecho.*auditoría"
+        severity: high
+        note: "No audit right — mandatory under GDPR Art. 28.3(h)."
+
+  - clause_title: "Data Breach Notification"
+    applicable_contract_types:
+      - data_processing_agreement
+    party_role: controller
+    preferred_position:
+      summary: >
+        Processor notifies controller without undue delay and within 24 hours
+        of becoming aware of a personal data breach (Art. 33 GDPR requires
+        controller to notify authority within 72 hours); notification includes
+        initial assessment of scope, affected data, and initial remediation
+        steps; processor cooperates fully in investigation.
+      template_language: |
+        "The Processor shall notify the Controller without undue delay and in any
+        event within twenty-four (24) hours after becoming aware of a Personal
+        Data Breach (GDPR Art. 33). Such notification shall include, to the extent
+        then known: (a) a description of the nature of the breach; (b) categories
+        and approximate number of data subjects affected; (c) categories and
+        approximate number of personal data records concerned; (d) likely
+        consequences; (e) measures taken or proposed to address the breach."
+      market_prevalence: 0.55
+    acceptable_positions:
+      - summary: >
+          48-hour notification; same content requirements; further information
+          provided as available.
+        condition: "Acceptable — gives controller sufficient time for 72h GDPR filing."
+        market_prevalence: 0.35
+    fallback_position:
+      summary: >
+        72-hour notification (minimum statutory period); content per GDPR
+        Art. 33.3; phased reporting acceptable.
+      requires_approval_from: "DPO"
+    never_accept:
+      - condition: "Breach notification period > 72 hours or no notification obligation"
+        reason: >
+          Controller cannot meet GDPR Art. 33 72-hour obligation to AEPD
+          if processor takes > 72 hours to notify.
+    escalation_triggers:
+      - "Processor proposes 7-day or 'reasonable time' breach notification"
+    escalation_to: "DPO and Head of Legal"
+    market_benchmark:
+      source: "GDPR Arts. 33-34; EDPB Guidelines 01/2021; AEPD"
+      typical_range: "24–48 hour processor notification to enable controller compliance"
+      spanish_law_note: |
+        La AEPD exige notificación de brechas de seguridad dentro de las 72 horas
+        desde que el responsable tenga conocimiento (RGPD Art. 33.1). La AEPD ha
+        sancionado responsables por no notificar o por notificación tardía incluso
+        cuando el origen fue el encargado (procedimientos PS/00175/2022).
+    red_flags:
+      - pattern: "7 days.*breach|7 días.*brecha"
+        severity: critical
+        note: "7-day notification makes GDPR Art. 33 compliance impossible."
+
+  - clause_title: "Data Retention and Deletion"
+    applicable_contract_types:
+      - data_processing_agreement
+    party_role: controller
+    preferred_position:
+      summary: >
+        Processor retains data only for duration strictly necessary; deletion
+        or return within 30 days of end of services; certified deletion using
+        NIST 800-88 or equivalent; backup copies deleted within 60 days;
+        written certification of deletion provided.
+      market_prevalence: 0.65
+    acceptable_positions:
+      - summary: >
+          Return or deletion within 60 days; backups within 90 days; written
+          certification required; legal archival exception.
+        condition: "Acceptable for large-scale data processing with complex infrastructure."
+        market_prevalence: 0.28
+    fallback_position:
+      summary: >
+        Deletion within 90 days; backups within 6 months; no certification
+        but contractual warranty of deletion.
+      requires_approval_from: "DPO and CISO"
+    never_accept:
+      - condition: "Processor retains data indefinitely for 'business continuity' purposes"
+        reason: >
+          Violates GDPR Art. 5(1)(e) storage limitation principle; creates
+          ongoing liability for controller if processor suffers breach post-termination.
+    escalation_triggers:
+      - "Processor claims backups cannot be deleted selectively"
+    escalation_to: "CISO and DPO"
+    market_benchmark:
+      source: "GDPR Art. 5(1)(e); Art. 28.3(g); NIST 800-88"
+      typical_range: "30–90 days deletion; backup deletion within 90–180 days"
+      spanish_law_note: |
+        La LOPDGDD (Art. 32) y el RGPD Art. 5.1.e imponen el principio de
+        limitación del plazo de conservación. La AEPD puede sancionar al
+        responsable si el encargado conserva datos más allá del plazo
+        autorizado (RGPD Art. 83.4).
+    red_flags:
+      - pattern: "indefinite.*retention|retención.*indefinida"
+        severity: critical
+        note: "Indefinite retention — violates GDPR Art. 5(1)(e)."

@@ -4,6 +4,8 @@ import { useState } from "react";
 import type { ContractAnalysis, RiskFactor } from "@/lib/api";
 import { ObligationGraphView } from "@/components/ObligationGraphView";
 import { CompliancePanel } from "@/components/CompliancePanel";
+import { NegotiationPanel } from "@/components/NegotiationPanel";
+import { ClauseAlternativesPanel } from "@/components/ClauseAlternativesPanel";
 
 // ─── helpers ──────────────────────────────────────────────────────────────
 
@@ -190,25 +192,6 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
       <p className="text-lg font-bold text-foreground">{value}</p>
       <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
         {label}
-      </p>
-    </div>
-  );
-}
-
-// ─── Coming-soon placeholder card ─────────────────────────────────────────
-
-function ComingSoonCard({
-  title,
-  availableIn,
-}: {
-  title: string;
-  availableIn: string;
-}) {
-  return (
-    <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 opacity-60 select-none">
-      <p className="text-sm font-medium text-foreground">{title}</p>
-      <p className="text-xs text-muted-foreground mt-1">
-        Disponible en {availableIn}
       </p>
     </div>
   );
@@ -530,6 +513,24 @@ export function ContractAnalysisView({
         {analysis.compliance_findings.length > 0 && (
           <CompliancePanel findings={analysis.compliance_findings} />
         )}
+
+        {/* 13C: Negotiation */}
+        {(analysis.negotiation != null ||
+          analysis.clause_alternatives.length > 0) && (
+          <div className="space-y-6">
+            <h2 className="text-base font-semibold text-foreground">
+              Negociación
+            </h2>
+            {analysis.negotiation != null && (
+              <NegotiationPanel negotiation={analysis.negotiation} />
+            )}
+            {analysis.clause_alternatives.length > 0 && (
+              <ClauseAlternativesPanel
+                alternatives={analysis.clause_alternatives}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Right column (1/3) ───────────────────────────────────── */}
@@ -558,13 +559,20 @@ export function ContractAnalysisView({
           )}
         </div>
 
-        {/* Coming soon — only 13C remains */}
-        <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Próximamente
-          </p>
-          <ComingSoonCard title="Suite de negociación" availableIn="13C" />
-        </div>
+        {/* 13C: Negotiation posture badge in sidebar */}
+        {analysis.negotiation != null && (
+          <div className="rounded-xl border border-border bg-card p-4 text-center space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Postura negociadora
+            </p>
+            <p className="text-sm font-bold text-foreground capitalize">
+              {analysis.negotiation.posture_label.replace(/_/g, " ")}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {Math.round(analysis.negotiation.posture_score * 100)}/100
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,0 +1,254 @@
+---
+# Playbook: Data Processing Agreement — Processor perspective
+# References: GDPR Arts. 28-36, LOPDGDD (Ley 3/2018), EDPB Guidelines
+# Version: 1.0.0
+# Jurisdiction: ES / EU
+
+contract_type: data_processing_agreement
+party_role: processor
+playbook_version: "1.0.0"
+
+clauses:
+
+  - clause_title: "Scope and Instructions"
+    applicable_contract_types:
+      - data_processing_agreement
+    party_role: processor
+    preferred_position:
+      summary: >
+        Processor follows documented instructions; right to raise compliance
+        concerns in writing without unilateral refusal; instructions must be
+        reasonable and not require processing outside scope; processor not
+        liable for following lawful instructions of controller.
+      template_language: |
+        "The Processor shall process Personal Data in accordance with the
+        Controller's documented instructions as set out in Annex 1. Where the
+        Processor reasonably believes an instruction may infringe applicable
+        data protection law, it shall notify the Controller in writing. The
+        Processor shall not be required to comply with instructions that, in
+        its reasonable opinion, would require the Processor to infringe
+        applicable law, and shall not be liable for any consequences of
+        following lawful instructions of the Controller."
+      market_prevalence: 0.65
+    acceptable_positions:
+      - summary: >
+          Standard GDPR Art. 28.3 on-instructions processing; right to
+          raise concerns.
+        condition: "Standard compliant position."
+        market_prevalence: 0.30
+    fallback_position:
+      summary: >
+        On-instructions processing per Art. 28.3; processor raises concerns
+        but follows instruction unless clearly illegal.
+      requires_approval_from: "DPO and Legal Counsel"
+    never_accept:
+      - condition: "Instructions can be given verbally without written confirmation"
+        reason: "Creates evidential risk; GDPR Art. 28.3 requires documented instructions."
+    escalation_triggers:
+      - "Controller instructs processing of sensitive data outside agreed scope"
+    escalation_to: "DPO and Legal Counsel"
+    market_benchmark:
+      source: "GDPR Art. 28; EDPB Guidelines"
+      typical_range: "Written documented instructions universally required"
+      spanish_law_note: |
+        El RGPD Art. 28.3 exige que las instrucciones sean documentadas por
+        escrito. La AEPD ha señalado que la instrucción verbal no cumple este
+        requisito. El encargado puede suspender el tratamiento si la instrucción
+        vulnera claramente la normativa de protección de datos.
+    red_flags:
+      - pattern: "verbal.*instructions.*sufficient|instrucciones.*verbales.*válidas"
+        severity: high
+        note: "Verbal instructions insufficient — GDPR requires documentation."
+
+  - clause_title: "Liability and Indemnification"
+    applicable_contract_types:
+      - data_processing_agreement
+    party_role: processor
+    preferred_position:
+      summary: >
+        Processor's liability limited to losses arising from its own breach
+        of GDPR obligations; controller to indemnify processor for losses
+        arising from controller's instructions; mutual consequential loss
+        exclusion; processor liability cap at 12 months' fees.
+      template_language: |
+        "The Processor's liability to the Controller under this Agreement shall
+        be limited to direct losses arising from the Processor's breach of its
+        obligations under this Agreement or applicable data protection law.
+        The Controller shall indemnify and hold harmless the Processor against
+        any claims, losses, or damages arising from the Controller's instructions
+        or from the Controller's own breach of applicable law. Neither party
+        shall be liable for indirect or consequential losses. The Processor's
+        aggregate liability shall not exceed twelve (12) months' Fees."
+      market_prevalence: 0.40
+    acceptable_positions:
+      - summary: >
+          Processor uncapped for data breach caused by processor's fault;
+          12 months' cap for other breaches; mutual consequential exclusion
+          with data breach carve-out.
+        condition: "Acceptable in financial sector where controllers bear regulatory risk."
+        market_prevalence: 0.40
+    fallback_position:
+      summary: >
+        Uncapped processor liability for GDPR breaches; controller indemnity
+        for controller-caused losses; no consequential exclusion for
+        data subjects' claims.
+      requires_approval_from: "CFO and Legal Counsel"
+    never_accept:
+      - condition: >
+          Processor waives all rights of recourse against controller for
+          losses caused by controller's instructions
+        reason: >
+          GDPR Art. 82.3 provides processor right to be exempted from liability
+          if it proves it was not at fault; contractual waiver of this right
+          creates unlimited processor exposure.
+    escalation_triggers:
+      - "Controller demands unlimited processor liability for any regulatory fine"
+    escalation_to: "CFO and Legal Counsel"
+    market_benchmark:
+      source: "GDPR Art. 82; CC Art. 1101-1107"
+      typical_range: "Cap + controller indemnity for instructions is market standard"
+      spanish_law_note: |
+        El RGPD Art. 82 establece que el encargado queda exento de
+        responsabilidad si prueba que no le es imputable el hecho causante del
+        daño. Esta exención es de orden público y no puede excluirse
+        contractualmente en perjuicio del encargado.
+    red_flags:
+      - pattern: "processor.*waives.*recourse|encargado.*renuncia.*recurso"
+        severity: high
+        note: "Waiver of recourse against controller — may conflict with GDPR Art. 82.3."
+
+  - clause_title: "Sub-Processors"
+    applicable_contract_types:
+      - data_processing_agreement
+    party_role: processor
+    preferred_position:
+      summary: >
+        General authorisation with list of approved sub-processors in Annex;
+        30-day notification for new sub-processors; controller objection right
+        (not veto); processor remains responsible for sub-processor compliance;
+        processor-friendly: objection right cannot be exercised without
+        reasonable grounds.
+      market_prevalence: 0.45
+    acceptable_positions:
+      - summary: >
+          General authorisation with notification; objection right within
+          30 days with reasonable grounds requirement; processor liable for
+          sub-processor acts as for its own.
+        condition: "Standard and GDPR-compliant position."
+        market_prevalence: 0.45
+    fallback_position:
+      summary: >
+        Specific prior consent for each sub-processor; 60-day notification
+        window; controller veto right.
+      requires_approval_from: "Operations and Legal Counsel"
+    never_accept:
+      - condition: >
+          Controller has absolute and unconditional veto right over sub-processors
+          with no timeline
+        reason: >
+          Creates operational paralysis; processor cannot plan infrastructure
+          changes; standard is objection with reasonable grounds within a
+          fixed period.
+    escalation_triggers:
+      - "Controller demands specific prior written consent for each sub-processor change"
+    escalation_to: "Operations and Legal Counsel"
+    market_benchmark:
+      source: "GDPR Art. 28.2; EDPB Guidelines"
+      typical_range: "30-day notification with objection right is GDPR minimum"
+      spanish_law_note: |
+        La AEPD acepta la autorización general para sub-encargados siempre que
+        exista un mecanismo de notificación y objeción. El procesador sigue siendo
+        responsable ante el responsable por las actuaciones del sub-encargado
+        (RGPD Art. 28.4).
+    red_flags:
+      - pattern: "absolute veto|veto absoluto.*sub-encargado"
+        severity: high
+        note: "Absolute veto creates operational risk — request reasonable grounds requirement."
+
+  - clause_title: "Security Measures"
+    applicable_contract_types:
+      - data_processing_agreement
+    party_role: processor
+    preferred_position:
+      summary: >
+        Security measures specified in Annex; measures reviewed annually and
+        updated to reflect changes in threats; right to update measures
+        provided equivalent or higher security level maintained; audit right
+        limited to third-party audit reports or questionnaires (not on-site
+        without prior notice).
+      market_prevalence: 0.55
+    acceptable_positions:
+      - summary: >
+          Measures in Annex with annual update obligation; right to audit once
+          per year with 30 days' notice; ISMS certification in lieu of audit.
+        condition: "Standard and widely accepted."
+        market_prevalence: 0.35
+    fallback_position:
+      summary: >
+        Measures per GDPR Art. 32; quarterly security reporting; on-site
+        audit with 45 days' notice; no restrictions on frequency if breach
+        suspected.
+      requires_approval_from: "CISO"
+    never_accept:
+      - condition: "Controller has unrestricted and unannounced audit right at any time"
+        reason: >
+          Operationally disruptive and creates security risk; multi-tenant
+          processor cannot allow unannounced access to shared infrastructure.
+    escalation_triggers:
+      - "Controller demands live access to processor's production systems"
+    escalation_to: "CISO and Legal Counsel"
+    market_benchmark:
+      source: "GDPR Art. 28.3(h); ISO 27001; DORA"
+      typical_range: "Annual audit with 30-day notice; ISMS certification in lieu"
+      spanish_law_note: |
+        El RGPD Art. 28.3.h reconoce el derecho de auditoría del responsable.
+        Las Directrices EBA sobre outsourcing exigen derecho de acceso e
+        inspección para entidades bancarias, incluyendo la posibilidad de
+        inspecciones no anunciadas en casos de incidencias graves.
+    red_flags:
+      - pattern: "unrestricted audit|auditoría sin restricción"
+        severity: high
+        note: "Unrestricted audit right — add notice period and scope limitations."
+
+  - clause_title: "Data Retention and Deletion"
+    applicable_contract_types:
+      - data_processing_agreement
+    party_role: processor
+    preferred_position:
+      summary: >
+        Return or delete data within 60 days of termination; backup deletion
+        within 90 days of termination; processor may retain data for minimum
+        period required by applicable law; certified deletion only for
+        primary systems (backup media by overwrite schedule).
+      market_prevalence: 0.50
+    acceptable_positions:
+      - summary: >
+          Deletion within 30 days; backups within 60 days; written certificate
+          of deletion; legal exception for mandatory retention.
+        condition: "Acceptable if infrastructure supports selective deletion."
+        market_prevalence: 0.35
+    fallback_position:
+      summary: >
+        Deletion within 30 days; certified destruction using NIST 800-88;
+        all backups deleted within 45 days.
+      requires_approval_from: "CISO and Operations"
+    never_accept:
+      - condition: "Deletion must be instantaneous on termination"
+        reason: >
+          Technically impossible in distributed systems with replication and
+          backups; 30-day minimum is required for operational integrity.
+    escalation_triggers:
+      - "Controller demands cryptographic key destruction as deletion method"
+    escalation_to: "CISO"
+    market_benchmark:
+      source: "GDPR Art. 28.3(g); NIST 800-88; market standard"
+      typical_range: "30–60 days deletion; 60–90 days for backups"
+      spanish_law_note: |
+        La destrucción certificada debe ser efectiva e irreversible (RGPD
+        Considerando 65). La AEPD acepta la cifrado seguro de datos como
+        técnica de anonimización equivalente a la destrucción en ciertos
+        supuestos, siempre que las claves sean destruidas definitivamente.
+    red_flags:
+      - pattern: "instantaneous deletion|eliminación instantánea"
+        severity: medium
+        note: "Instantaneous deletion technically infeasible in distributed systems."

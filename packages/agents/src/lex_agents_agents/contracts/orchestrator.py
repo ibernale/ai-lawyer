@@ -1,4 +1,4 @@
-"""ContractOrchestrator — coordinates contract analysis agents — Fase 13A/13B."""
+"""ContractOrchestrator — coordinates contract analysis agents — Fase 13A/13B/13C."""
 
 from __future__ import annotations
 
@@ -11,15 +11,19 @@ from typing import TYPE_CHECKING
 import structlog
 from pydantic import BaseModel
 
+from lex_agents_agents.contracts.agents.clause_optimizer_agent import ClauseOptimizerAgent
 from lex_agents_agents.contracts.agents.compliance_agent import ComplianceAgent
 from lex_agents_agents.contracts.agents.identifier_agent import ContractIdentifierAgent
+from lex_agents_agents.contracts.agents.negotiation_advisor_agent import NegotiationAdvisorAgent
 from lex_agents_agents.contracts.agents.obligation_tracker_agent import ObligationTrackerAgent
 from lex_agents_agents.contracts.agents.risk_analyst_agent import RiskAnalystAgent
 from lex_agents_agents.contracts.chunker import ContractChunker
 from lex_agents_agents.contracts.models import (
+    ClauseAlternatives,
     ComplianceFinding,
     ContractAnalysis,
     ContractMetadata,
+    NegotiationSummary,
     ObligationGraph,
     RiskAssessment,
 )
@@ -47,7 +51,7 @@ class ContractOrchestrator:
 
     Wave 0: ContractIdentifierAgent (sequential — metadata needed by all).
     Wave 1: RiskAnalystAgent + ObligationTrackerAgent + ComplianceAgent (parallel).
-    Wave 2 (13C): NegotiationAdvisorAgent.
+    Wave 2 (13C): NegotiationAdvisorAgent → ClauseOptimizerAgent (sequential).
     ContractSynthesizerAgent (always last).
     """
 
@@ -58,6 +62,8 @@ class ContractOrchestrator:
         self._risk_analyst = RiskAnalystAgent(client)
         self._obligation_tracker = ObligationTrackerAgent(client)
         self._compliance_agent = ComplianceAgent(client)
+        self._negotiation_advisor = NegotiationAdvisorAgent(client)
+        self._clause_optimizer = ClauseOptimizerAgent(client)
 
     async def run(self, req: ContractAnalysisRequest) -> ContractAnalysis:
         """Execute all analysis waves and return a fully populated ContractAnalysis."""
@@ -96,6 +102,21 @@ class ContractOrchestrator:
             num_compliance_findings=len(compliance_findings),
         )
 
+        # Wave 2: negotiation (sequential — uses Wave 1 outputs as context)
+        negotiation: NegotiationSummary = await self._negotiation_advisor.advise(
+            chunks, metadata, risk, req.trace_id
+        )
+        clause_alternatives: list[ClauseAlternatives] = await self._clause_optimizer.optimize(
+            chunks, negotiation.priority_issues, metadata, req.trace_id
+        )
+        logger.info(
+            "contract_wave2_complete",
+            contract_id=req.contract_id,
+            posture_label=negotiation.posture_label,
+            num_priority_issues=len(negotiation.priority_issues),
+            num_clause_alternatives=len(clause_alternatives),
+        )
+
         latency_ms = int((time.monotonic() - start) * 1000)
 
         analysis = ContractAnalysis(
@@ -106,6 +127,8 @@ class ContractOrchestrator:
             risk_assessment=risk,
             obligations=obligations,
             compliance_findings=compliance_findings,
+            negotiation=negotiation,
+            clause_alternatives=clause_alternatives,
             summary=self._build_summary(metadata, risk, obligations, compliance_findings),
             recommendations=self._build_recommendations(risk, compliance_findings),
             latency_ms=latency_ms,
@@ -208,7 +231,7 @@ class ContractOrchestrator:
             for coro in asyncio.as_completed([risk_task, obligation_task, compliance_task]):
                 await coro
                 done_count += 1
-                pct = 40 + done_count * 15  # 55, 70, 85
+                pct = 40 + done_count * 14  # 54, 68, 82
                 yield SseEvent(
                     event="progress",
                     data={
@@ -230,10 +253,40 @@ class ContractOrchestrator:
             )
             return
 
+        # ── Wave 2: Negotiation ─────────────────────────────────────────────
+        yield SseEvent(
+            event="progress",
+            data={"step": "negotiation", "message": "Evaluando posición negociadora…", "pct": 88},
+        )
+
+        try:
+            negotiation: NegotiationSummary = await self._negotiation_advisor.advise(
+                chunks, metadata, risk, req.trace_id
+            )
+            clause_alternatives: list[ClauseAlternatives] = await self._clause_optimizer.optimize(
+                chunks, negotiation.priority_issues, metadata, req.trace_id
+            )
+        except Exception as exc:
+            logger.exception("contract_stream_wave2_error", contract_id=req.contract_id)
+            yield SseEvent(
+                event="error",
+                data={"message": f"Error en análisis de negociación: {exc}", "trace_id": req.trace_id},
+            )
+            return
+
+        yield SseEvent(
+            event="progress",
+            data={
+                "step": "negotiation",
+                "message": f"Postura: {negotiation.posture_label}",
+                "pct": 93,
+            },
+        )
+
         # ── Synthesis ────────────────────────────────────────────────────────
         yield SseEvent(
             event="progress",
-            data={"step": "synthesis", "message": "Sintetizando resultados…", "pct": 90},
+            data={"step": "synthesis", "message": "Sintetizando resultados…", "pct": 96},
         )
 
         latency_ms = int((time.monotonic() - start) * 1000)
@@ -245,6 +298,8 @@ class ContractOrchestrator:
             risk_assessment=risk,
             obligations=obligations,
             compliance_findings=compliance_findings,
+            negotiation=negotiation,
+            clause_alternatives=clause_alternatives,
             summary=self._build_summary(metadata, risk, obligations, compliance_findings),
             recommendations=self._build_recommendations(risk, compliance_findings),
             latency_ms=latency_ms,

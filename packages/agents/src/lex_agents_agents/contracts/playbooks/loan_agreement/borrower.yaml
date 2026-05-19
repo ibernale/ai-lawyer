@@ -1,0 +1,233 @@
+---
+# Playbook: Loan Agreement — Borrower perspective
+# References: LMA Standard Terms, Código Civil Arts. 1740-1757, CRR Reg. 575/2013
+# Version: 1.0.0
+# Jurisdiction: ES / EU (Spanish law primary)
+
+contract_type: loan_agreement
+party_role: borrower
+playbook_version: "1.0.0"
+
+clauses:
+
+  - clause_title: "Limitation of Liability"
+    applicable_contract_types:
+      - loan_agreement
+    party_role: borrower
+    preferred_position:
+      summary: >
+        Lender liability uncapped for direct losses; mutual exclusion of indirect
+        and consequential losses; lender cannot limit liability for its own fraud,
+        wilful misconduct, or gross negligence (CC Art. 1102).
+      template_language: |
+        "Neither party shall be liable for any indirect, incidental, special,
+        or consequential damages. Nothing in this Agreement shall limit the
+        liability of either party for fraud, wilful misconduct, or gross negligence.
+        The Lender's liability for direct losses arising from its breach of this
+        Agreement shall not be subject to any monetary cap."
+      market_prevalence: 0.35
+    acceptable_positions:
+      - summary: >
+          Lender liability for direct losses capped at 24 months' interest paid;
+          mutual exclusion of indirect losses preserved.
+        condition: "Acceptable where cap reflects realistic exposure."
+        market_prevalence: 0.45
+    fallback_position:
+      summary: >
+        Lender direct loss cap at 12 months' interest; CC Art. 1102 carve-out
+        for dolo (fraud/wilful misconduct) explicitly preserved in the clause text.
+      requires_approval_from: "CFO and Legal Counsel"
+    never_accept:
+      - condition: >
+          Lender liability excluded for its own gross negligence or wilful
+          misconduct (contravenes CC Art. 1102)
+        reason: >
+          Clause would be null and void under CC Art. 1102; creates false sense
+          of protection; exposes borrower to unenforceable agreement.
+    escalation_triggers:
+      - "Lender seeks zero liability for system failures causing missed drawdowns"
+    escalation_to: "CFO and Legal Counsel"
+    market_benchmark:
+      source: "LMA; CC Art. 1102"
+      typical_range: "12–24 months interest cap typical for lender direct losses"
+      spanish_law_note: |
+        CC Art. 1102 establece la nulidad de las cláusulas que exoneren al
+        deudor (o acreedor) del dolo. Esta norma es imperativa e irrenunciable.
+    red_flags:
+      - pattern: "lender.*no liability|prestamista.*sin responsabilidad"
+        severity: critical
+        note: "Blanket lender exclusion likely void under CC Art. 1102."
+
+  - clause_title: "Payment Terms and Fees"
+    applicable_contract_types:
+      - loan_agreement
+    party_role: borrower
+    preferred_position:
+      summary: >
+        No commitment fee; arrangement fee capped at 1% of facility; prepayment
+        permitted at any time without penalty; interest rate based on EURIBOR
+        with a floor of 0%.
+      template_language: |
+        "The Borrower may prepay the Facility in whole or in part at any time
+        on giving five (5) Business Days' prior notice, without premium or
+        penalty. No commitment fee shall be payable on undrawn amounts.
+        The Interest Rate shall not be less than zero per cent (0%) per annum."
+      market_prevalence: 0.30
+    acceptable_positions:
+      - summary: >
+          Commitment fee of 0.50% p.a. on undrawn; prepayment permitted with
+          30 days' notice and make-whole only if < 12 months to maturity.
+        condition: "Acceptable for facilities > EUR 20 M with tenure > 3 years."
+        market_prevalence: 0.40
+    fallback_position:
+      summary: >
+        Commitment fee ≤ 0.75% p.a.; make-whole limited to 6 months' interest
+        remaining; prepayment window without penalty in final 6 months.
+      requires_approval_from: "CFO"
+    never_accept:
+      - condition: "Make-whole calculated to final maturity regardless of prepayment date"
+        reason: >
+          Creates prohibitive refinancing cost; standard in HY but not in
+          investment-grade facilities; conflicts with financial flexibility needs.
+    escalation_triggers:
+      - "Facility includes non-call period longer than 2 years"
+      - "Break funding costs not limited to lender's actual loss"
+    escalation_to: "CFO and Treasury"
+    market_benchmark:
+      source: "LMA; ECB; Banco de España"
+      typical_range: "Commitment fee 0.25–1.00% p.a.; arrangement fee 0.50–1.50%"
+      spanish_law_note: |
+        La LCCI (Ley 5/2019) limita las comisiones por amortización anticipada
+        en préstamos hipotecarios. Para préstamos empresariales rigen los límites
+        de la Ley de Usura 1908 y los principios generales del CC Art. 1255.
+    red_flags:
+      - pattern: "make-whole.*maturity|indemnización.*vencimiento"
+        severity: high
+        note: "Full make-whole to maturity — very expensive prepayment; review."
+
+  - clause_title: "Financial Covenants"
+    applicable_contract_types:
+      - loan_agreement
+    party_role: borrower
+    preferred_position:
+      summary: >
+        Leverage ratio (Net Debt / EBITDA) ≤ 4.0x tested semi-annually;
+        Interest Cover Ratio (EBITDA / Net Interest) ≥ 3.0x; equity cure
+        rights for 2 consecutive quarters with 18-month limit; definitions
+        of EBITDA include addbacks for restructuring up to EUR 5 M p.a.
+      market_prevalence: 0.40
+    acceptable_positions:
+      - summary: >
+          Leverage ≤ 3.5x; ICR ≥ 3.5x; quarterly testing; equity cure
+          once per 12 months; restructuring addbacks ≤ EUR 2 M.
+        condition: "Acceptable if margins reflect tighter covenants."
+        market_prevalence: 0.35
+    fallback_position:
+      summary: >
+        Leverage ≤ 3.0x; ICR ≥ 4.0x; no equity cure; restructuring addbacks
+        subject to lender consent.
+      requires_approval_from: "CFO and Board"
+    never_accept:
+      - condition: "Covenant tested on a standalone (unconsolidated) entity basis"
+        reason: >
+          Creates basis mismatch with group treasury management; favourable
+          only to lender in enforcement scenarios.
+    escalation_triggers:
+      - "Covenant breach triggers automatic acceleration without cure period"
+      - "EBITDA definition excludes all addbacks"
+    escalation_to: "CFO and Board"
+    market_benchmark:
+      source: "LMA; S&P European Leveraged Finance Covenant Review"
+      typical_range: "Leverage 3.0–5.0x; ICR 2.5–4.0x depending on sector"
+      spanish_law_note: |
+        Los covenants financieros no tienen regulación específica en el CC;
+        son contractualmente válidos como condiciones resolutorias (CC Art. 1114)
+        si su incumplimiento activa el vencimiento anticipado.
+    red_flags:
+      - pattern: "incumplimiento automático|automatic default.*covenant"
+        severity: high
+        note: "Automatic default on first covenant breach — request cure period."
+
+  - clause_title: "Events of Default — Representations and Warranties"
+    applicable_contract_types:
+      - loan_agreement
+    party_role: borrower
+    preferred_position:
+      summary: >
+        Representations repeated only at signing and first drawdown; materiality
+        threshold of EUR 500,000 for representation breaches; 30-day cure period
+        for all curable defaults; MAC definition limited to material adverse
+        effect on ability to perform payment obligations.
+      market_prevalence: 0.30
+    acceptable_positions:
+      - summary: >
+          Representations repeated at each drawdown; materiality threshold
+          EUR 250,000; 15-day cure period; MAC limited to payment ability.
+        condition: "Acceptable for revolving credit facilities."
+        market_prevalence: 0.40
+    fallback_position:
+      summary: >
+        Representations repeated at each drawdown; 10-day cure period;
+        MAC as drafted by lender (accepts broad MAC if cross-default threshold
+        is raised to EUR 5 M).
+      requires_approval_from: "Legal Counsel and CFO"
+    never_accept:
+      - condition: "No cure period for any event of default including payment"
+        reason: "Industry standard requires at minimum 3–5 business day payment grace."
+      - condition: "Subjective MAC determined at lender's sole discretion"
+        reason: >
+          Creates acceleration risk on lender's unilateral view; should be
+          limited to objective financial deterioration.
+    escalation_triggers:
+      - "MAC defined to include reputational harm or regulatory investigation"
+    escalation_to: "Legal Counsel"
+    market_benchmark:
+      source: "LMA; Clifford Chance Loans Commentary 2023"
+      typical_range: "5–15 day cure for payment; 30–60 day cure for other defaults"
+      spanish_law_note: |
+        En España, el concurso de acreedores (Ley Concursal RDLeg 1/2020)
+        impone la paralysation automática de ejecuciones al declararse el
+        concurso, lo que puede hacer inoperante la aceleración contractual.
+    red_flags:
+      - pattern: "sole discretion.*material adverse|a juicio exclusivo.*cambio material"
+        severity: high
+        note: "Sole discretion MAC — request objective standard."
+
+  - clause_title: "Governing Law and Dispute Resolution"
+    applicable_contract_types:
+      - loan_agreement
+    party_role: borrower
+    preferred_position:
+      summary: >
+        Spanish law; non-exclusive jurisdiction of Madrid courts with right
+        to commence proceedings in any competent court; mandatory conciliation
+        before litigation for disputes < EUR 1 M.
+      market_prevalence: 0.45
+    acceptable_positions:
+      - summary: >
+          Spanish law; ICC or CAM arbitration for disputes > EUR 500,000;
+          courts for interim relief; expedited procedures available.
+        condition: "Acceptable where counterparty is a foreign institution."
+        market_prevalence: 0.30
+    fallback_position:
+      summary: "Spanish law; Madrid courts exclusive; borrower waives jury trial."
+      requires_approval_from: "Legal Counsel"
+    never_accept:
+      - condition: >
+          Governing law of a jurisdiction that does not recognise Spanish
+          mandatory employee and consumer protection rules
+        reason: "Could void protective provisions under Spanish mandatory law."
+    escalation_triggers:
+      - "Lender requires English law without local law opinion"
+    escalation_to: "Legal Counsel"
+    market_benchmark:
+      source: "Reg. Roma I (593/2008); Reg. Bruselas I bis (1215/2012)"
+      typical_range: "Spanish or English law for cross-border Spanish loans"
+      spanish_law_note: |
+        Las normas imperativas españolas (LOPD, AML, protección de
+        consumidores) se aplican independientemente de la ley elegida
+        (Reg. Roma I, Art. 9).
+    red_flags:
+      - pattern: "exclusive.*English courts|exclusiva.*tribunales ingleses"
+        severity: medium
+        note: "English exclusive jurisdiction may complicate Spanish enforcement."
