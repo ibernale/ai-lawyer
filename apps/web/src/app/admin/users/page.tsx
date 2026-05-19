@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   listUsers,
   createUser,
   updateUser,
   deleteUser,
+  forceRelogin,
   type UserRow,
 } from "@/lib/api";
+import InviteUserModal from "@/components/InviteUserModal";
 
 const ROLES = ["analyst", "auditor", "operator", "admin"] as const;
 type Role = (typeof ROLES)[number];
@@ -320,12 +322,14 @@ export default function UsersPage() {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<UserRow | null>(null);
   const [deleting, setDeleting] = useState<UserRow | null>(null);
+  const [showInvite, setShowInvite] = useState(false);
+  const [forceReloginUser, setForceReloginUser] = useState<string | null>(null);
   const currentUsername =
     typeof window !== "undefined"
       ? (localStorage.getItem("lex_username") ?? "")
       : "";
 
-  function load() {
+  const load = useCallback(() => {
     listUsers()
       .then((rows) =>
         setUsers(
@@ -337,11 +341,22 @@ export default function UsersPage() {
         ),
       )
       .catch(() => setError("No se pudo cargar la lista de usuarios."));
-  }
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
+
+  async function handleForceRelogin(username: string) {
+    setForceReloginUser(username);
+    try {
+      await forceRelogin(username);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al forzar re-login.");
+    } finally {
+      setForceReloginUser(null);
+    }
+  }
 
   const byRole = users
     ? (["admin", "operator", "auditor", "analyst"] as const).map((role) => ({
@@ -382,33 +397,60 @@ export default function UsersPage() {
           }}
         />
       )}
+      {showInvite && (
+        <InviteUserModal
+          onClose={() => setShowInvite(false)}
+          onSuccess={() => setShowInvite(false)}
+        />
+      )}
 
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Users</h1>
+          <h1 className="text-xl font-semibold text-gray-900">Usuarios</h1>
           <p className="text-sm text-gray-500 mt-1">
             Usuarios con acceso al panel de administración.
           </p>
         </div>
-        <button
-          onClick={() => setCreating(true)}
-          className="px-3 py-1.5 text-sm font-medium bg-[#b30000] text-white rounded hover:bg-[#8b0000] flex items-center gap-1.5"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowInvite(true)}
+            className="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-1.5"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          Crear usuario
-        </button>
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
+            </svg>
+            Invitar
+          </button>
+          <button
+            onClick={() => setCreating(true)}
+            className="px-3 py-1.5 text-sm font-medium bg-[#b30000] text-white rounded hover:bg-[#8b0000] flex items-center gap-1.5"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Crear usuario
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -483,6 +525,16 @@ export default function UsersPage() {
                       >
                         Sesiones
                       </Link>
+                      {u.username !== currentUsername && (
+                        <button
+                          onClick={() => void handleForceRelogin(u.username)}
+                          disabled={forceReloginUser === u.username}
+                          title="Forzar re-login (invalida todos los tokens activos)"
+                          className="text-xs px-2 py-0.5 rounded border border-orange-300 text-orange-700 hover:bg-orange-50 disabled:opacity-50 transition-colors"
+                        >
+                          {forceReloginUser === u.username ? "…" : "Re-login"}
+                        </button>
+                      )}
                       <button
                         onClick={() => setEditing(u)}
                         title="Editar"

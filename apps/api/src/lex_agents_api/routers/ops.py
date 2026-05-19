@@ -264,6 +264,9 @@ async def force_resync(
 class UserRow(BaseModel):
     username: str
     role: str
+    tenant_id: str = "default"
+    disabled: bool = False
+    token_version: int = 1
 
 
 @router.get("/users", response_model=list[UserRow])
@@ -271,13 +274,31 @@ async def list_users(
     user: Annotated[CurrentUser, Depends(_admin_only)],
     settings: Annotated[Any, Depends(get_settings)],
 ) -> list[UserRow]:
-    """Return all configured users (without password hashes)."""
-    from lex_agents_api.auth import _load_users
+    """Return users scoped to the caller's tenant (super-admin sees all)."""
+    try:
+        from lex_agents_admin.user_store import get_user_store
+        store = get_user_store()
+    except ImportError:
+        store = None
 
-    return [
-        UserRow(username=u.username, role=u.role)
-        for u in _load_users(settings)
-    ]
+    if store is not None:
+        # Super-admin (default tenant admin) sees all users
+        if user.tenant_id == "default":
+            records = await store.get_all()
+        else:
+            records = await store.get_by_tenant(user.tenant_id)
+        return [
+            UserRow(
+                username=r.username, role=r.role,
+                tenant_id=r.tenant_id, disabled=r.disabled,
+                token_version=r.token_version,
+            )
+            for r in records
+        ]
+
+    # Fallback: env var users (no tenant scoping)
+    from lex_agents_api.auth import _load_users
+    return [UserRow(username=u.username, role=u.role) for u in _load_users(settings)]
 
 
 # ---------------------------------------------------------------------------
@@ -291,12 +312,14 @@ class CreateUserRequest(BaseModel):
     username: str
     password: str
     role: str = "analyst"
+    tenant_id: str | None = None  # super-admin may specify; otherwise defaults to caller's tenant
 
 
 class UpdateUserRequest(BaseModel):
     role: str | None = None
     password: str | None = None
     disabled: bool | None = None
+    token_version_bump: bool = False  # force all existing tokens for this user to expire
 
 
 @router.post("/users", response_model=UserRow, status_code=201)
@@ -309,8 +332,14 @@ async def create_user(
         raise HTTPException(422, f"Invalid role: {body.role}")
     if len(body.username) < 2 or len(body.username) > 64:
         raise HTTPException(422, "Username must be 2-64 characters")
-    if len(body.password) < 8:
-        raise HTTPException(422, "Password must be at least 8 characters")
+    if len(body.password) < 10:
+        raise HTTPException(422, "Password must be at least 10 characters")
+
+    # Determine target tenant
+    if body.tenant_id and body.tenant_id != user.tenant_id:
+        if user.tenant_id != "default":
+            raise HTTPException(403, "Only super-admins can create users in other tenants")
+    target_tenant = body.tenant_id or user.tenant_id
 
     try:
         from lex_agents_admin.user_store import get_user_store
@@ -322,7 +351,7 @@ async def create_user(
         raise HTTPException(503, "User store not available")
 
     password_hash = _bcrypt.hashpw(body.password.encode(), _bcrypt.gensalt(rounds=12)).decode()
-    ok = await store.create(body.username, password_hash, body.role)
+    ok = await store.create(body.username, password_hash, body.role, tenant_id=target_tenant)
     if not ok:
         raise HTTPException(409, f"User '{body.username}' already exists")
 
@@ -331,11 +360,11 @@ async def create_user(
         try:
             await audit.log("user.invite.send", "user", user.username, user.role,
                             reason="Admin created user", target_id=body.username,
-                            after={"role": body.role})
+                            after={"role": body.role, "tenant_id": target_tenant})
         except Exception as _e:
             logger.warning("audit_write_failed", error=str(_e))
 
-    return UserRow(username=body.username, role=body.role)
+    return UserRow(username=body.username, role=body.role, tenant_id=target_tenant)
 
 
 @router.patch("/users/{username}", response_model=UserRow)
@@ -363,7 +392,13 @@ async def update_user(
     if body.password:
         password_hash = _bcrypt.hashpw(body.password.encode(), _bcrypt.gensalt(rounds=12)).decode()
 
-    ok = await store.update(username, role=body.role, password_hash=password_hash, disabled=body.disabled)
+    ok = await store.update(
+        username,
+        role=body.role,
+        password_hash=password_hash,
+        disabled=body.disabled,
+        token_version_bump=body.token_version_bump,
+    )
     if not ok:
         raise HTTPException(404, f"User '{username}' not found")
 
@@ -376,15 +411,20 @@ async def update_user(
                 action = "user.disable"
             elif body.disabled is False:
                 action = "user.enable"
+            elif body.token_version_bump:
+                action = "user.force_relogin"
             else:
                 action = "user.role.change"
             await audit.log(action, "user", user.username, user.role,
                             reason="Admin updated user", target_id=username,
-                            after={"role": body.role, "disabled": body.disabled})
+                            after={"role": body.role, "disabled": body.disabled,
+                                   "token_version_bumped": body.token_version_bump})
         except Exception as _e:
             logger.warning("audit_write_failed", error=str(_e))
 
-    return UserRow(username=username, role=record.role if record else (body.role or "analyst"))
+    new_role = record.role if record else (body.role or "analyst")
+    new_tenant = record.tenant_id if record else user.tenant_id
+    return UserRow(username=username, role=new_role, tenant_id=new_tenant)
 
 
 @router.delete("/users/{username}", status_code=204)

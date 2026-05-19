@@ -33,6 +33,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/admin/overview", label: "Overview" },
       { href: "/admin/ops", label: "Ops Center" },
       { href: "/admin/users", label: "Users" },
+      { href: "/admin/tenants", label: "Tenants" },
       { href: "/admin/governance", label: "Governance" },
     ],
   },

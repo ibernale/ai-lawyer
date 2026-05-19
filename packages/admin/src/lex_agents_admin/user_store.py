@@ -21,8 +21,11 @@ CREATE TABLE IF NOT EXISTS admin_users (
     role          TEXT NOT NULL DEFAULT 'analyst',
     created_at    TEXT NOT NULL,
     updated_at    TEXT NOT NULL,
-    disabled      INTEGER NOT NULL DEFAULT 0
+    disabled      INTEGER NOT NULL DEFAULT 0,
+    tenant_id     TEXT NOT NULL DEFAULT 'default',
+    token_version INTEGER NOT NULL DEFAULT 1
 );
+CREATE INDEX IF NOT EXISTS idx_admin_users_tenant ON admin_users(tenant_id);
 """
 
 
@@ -34,6 +37,8 @@ class UserRecord:
     created_at: str
     updated_at: str
     disabled: bool
+    tenant_id: str = "default"
+    token_version: int = 1
 
 
 # ---------------------------------------------------------------------------
@@ -72,11 +77,14 @@ class UserStore:
                         role          TEXT NOT NULL DEFAULT 'analyst',
                         created_at    TIMESTAMPTZ NOT NULL,
                         updated_at    TIMESTAMPTZ NOT NULL,
-                        disabled      BOOLEAN NOT NULL DEFAULT FALSE
+                        disabled      BOOLEAN NOT NULL DEFAULT FALSE,
+                        tenant_id     TEXT NOT NULL DEFAULT 'default',
+                        token_version INTEGER NOT NULL DEFAULT 1
                     )
                 """)
                 rows = await conn.fetch(
-                    "SELECT username, password_hash, role, created_at, updated_at, disabled"
+                    "SELECT username, password_hash, role, created_at, updated_at,"
+                    " disabled, tenant_id, token_version"
                     " FROM lex_agents_app.admin_users"
                 )
             for r in rows:
@@ -87,6 +95,8 @@ class UserStore:
                     created_at=_fmt_ts(r["created_at"]),
                     updated_at=_fmt_ts(r["updated_at"]),
                     disabled=bool(r["disabled"]),
+                    tenant_id=r["tenant_id"] or "default",
+                    token_version=int(r["token_version"] or 1),
                 )
             logger.info("user_store_postgres_mode", count=len(self._cache))
             return
@@ -96,7 +106,8 @@ class UserStore:
             await db.executescript(_DDL_SQLITE)
             await db.commit()
             async with db.execute(
-                "SELECT username, password_hash, role, created_at, updated_at, disabled"
+                "SELECT username, password_hash, role, created_at, updated_at,"
+                " disabled, tenant_id, token_version"
                 " FROM admin_users"
             ) as cur:
                 rows_raw: list[Any] = list(await cur.fetchall())
@@ -109,6 +120,8 @@ class UserStore:
                 created_at=r[3],
                 updated_at=r[4],
                 disabled=bool(r[5]),
+                tenant_id=r[6] if r[6] else "default",
+                token_version=int(r[7]) if r[7] is not None else 1,
             )
         logger.info("user_store_initialized", db_path=self._db_path, count=len(self._cache))
 
@@ -134,7 +147,20 @@ class UserStore:
     # Writes (DB + cache)
     # ------------------------------------------------------------------
 
-    async def create(self, username: str, password_hash: str, role: str) -> bool:
+    def get_by_tenant_sync(self, tenant_id: str) -> list[UserRecord]:
+        """Return all non-disabled users for a tenant (sync, from cache)."""
+        return [u for u in self._cache.values() if u.tenant_id == tenant_id]
+
+    async def get_by_tenant(self, tenant_id: str) -> list[UserRecord]:
+        return self.get_by_tenant_sync(tenant_id)
+
+    async def create(
+        self,
+        username: str,
+        password_hash: str,
+        role: str,
+        tenant_id: str = "default",
+    ) -> bool:
         """Insert a new user. Returns False if username already exists."""
         if username in self._cache:
             return False
@@ -147,9 +173,10 @@ class UserStore:
                 try:
                     await conn.execute(
                         """INSERT INTO lex_agents_app.admin_users
-                           (username, password_hash, role, created_at, updated_at, disabled)
-                           VALUES ($1, $2, $3, $4, $5, FALSE)""",
-                        username, password_hash, role, now, now,
+                           (username, password_hash, role, created_at, updated_at,
+                            disabled, tenant_id, token_version)
+                           VALUES ($1, $2, $3, $4, $5, FALSE, $6, 1)""",
+                        username, password_hash, role, now, now, tenant_id,
                     )
                 except Exception as exc:
                     if "unique" in str(exc).lower() or "duplicate" in str(exc).lower():
@@ -161,9 +188,10 @@ class UserStore:
                 try:
                     await db.execute(
                         """INSERT INTO admin_users
-                           (username, password_hash, role, created_at, updated_at, disabled)
-                           VALUES (?, ?, ?, ?, ?, 0)""",
-                        (username, password_hash, role, now_s, now_s),
+                           (username, password_hash, role, created_at, updated_at,
+                            disabled, tenant_id, token_version)
+                           VALUES (?, ?, ?, ?, ?, 0, ?, 1)""",
+                        (username, password_hash, role, now_s, now_s, tenant_id),
                     )
                     await db.commit()
                 except Exception as exc:
@@ -178,8 +206,10 @@ class UserStore:
             created_at=now_s,
             updated_at=now_s,
             disabled=False,
+            tenant_id=tenant_id,
+            token_version=1,
         )
-        logger.info("user_created", username=username, role=role)
+        logger.info("user_created", username=username, role=role, tenant_id=tenant_id)
         return True
 
     async def update(
@@ -189,6 +219,7 @@ class UserStore:
         role: str | None = None,
         password_hash: str | None = None,
         disabled: bool | None = None,
+        token_version_bump: bool = False,
     ) -> bool:
         """Update one or more fields. Returns False if user not found."""
         existing = self._cache.get(username)
@@ -201,14 +232,16 @@ class UserStore:
         new_role = role if role is not None else existing.role
         new_hash = password_hash if password_hash is not None else existing.password_hash
         new_disabled = disabled if disabled is not None else existing.disabled
+        new_token_version = existing.token_version + 1 if token_version_bump else existing.token_version
 
         if is_postgres():
             async with pg_conn() as conn:
                 result = await conn.execute(
                     """UPDATE lex_agents_app.admin_users
-                       SET role=$1, password_hash=$2, disabled=$3, updated_at=$4
-                       WHERE username=$5""",
-                    new_role, new_hash, new_disabled, now, username,
+                       SET role=$1, password_hash=$2, disabled=$3, updated_at=$4,
+                           token_version=$5
+                       WHERE username=$6""",
+                    new_role, new_hash, new_disabled, now, new_token_version, username,
                 )
             if str(result) == "UPDATE 0":
                 return False
@@ -217,9 +250,11 @@ class UserStore:
             async with aiosqlite.connect(self._db_path) as db:
                 async with db.execute(
                     """UPDATE admin_users
-                       SET role=?, password_hash=?, disabled=?, updated_at=?
+                       SET role=?, password_hash=?, disabled=?, updated_at=?,
+                           token_version=?
                        WHERE username=?""",
-                    (new_role, new_hash, int(new_disabled), now_s, username),
+                    (new_role, new_hash, int(new_disabled), now_s,
+                     new_token_version, username),
                 ) as cur:
                     changed = cur.rowcount
                 await db.commit()
@@ -233,8 +268,10 @@ class UserStore:
             created_at=existing.created_at,
             updated_at=now_s,
             disabled=new_disabled,
+            tenant_id=existing.tenant_id,
+            token_version=new_token_version,
         )
-        logger.info("user_updated", username=username)
+        logger.info("user_updated", username=username, token_version_bumped=token_version_bump)
         return True
 
     async def delete(self, username: str) -> bool:
