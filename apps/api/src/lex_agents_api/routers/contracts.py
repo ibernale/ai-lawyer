@@ -332,12 +332,16 @@ def _build_comparison(analyses: list[ContractAnalysis]) -> dict[str, Any]:
         for cf in a.compliance_findings:
             if cf.status in ("non_compliant", "requires_review"):
                 regulation_map[cf.regulation].append(a.contract_id)
-    common_compliance = [
-        {"regulation": reg, "affected_contracts": cids, "count": len(cids)}
+    common_compliance_raw: list[tuple[str, list[str], int]] = [
+        (reg, cids, len(cids))
         for reg, cids in regulation_map.items()
         if len(cids) > 1
     ]
-    common_compliance.sort(key=lambda x: int(x["count"]), reverse=True)
+    common_compliance_raw.sort(key=lambda x: x[2], reverse=True)
+    common_compliance = [
+        {"regulation": reg, "affected_contracts": cids, "count": count}
+        for reg, cids, count in common_compliance_raw
+    ]
 
     # Obligation overlap (obligations with ≥3 keyword matches across contracts)
     _sw = {"de", "del", "la", "el", "en", "a", "por", "con", "se", "su", "un", "una", "que", "y", "o", "no"}
