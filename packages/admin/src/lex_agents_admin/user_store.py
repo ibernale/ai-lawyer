@@ -14,19 +14,31 @@ from lex_agents_shared.db import is_postgres, pg_conn
 
 logger = structlog.get_logger(__name__)
 
-_DDL_SQLITE = """
+_DDL_SQLITE_BASE = """
 CREATE TABLE IF NOT EXISTS admin_users (
     username      TEXT PRIMARY KEY,
     password_hash TEXT NOT NULL,
     role          TEXT NOT NULL DEFAULT 'analyst',
     created_at    TEXT NOT NULL,
     updated_at    TEXT NOT NULL,
-    disabled      INTEGER NOT NULL DEFAULT 0,
-    tenant_id     TEXT NOT NULL DEFAULT 'default',
-    token_version INTEGER NOT NULL DEFAULT 1
+    disabled      INTEGER NOT NULL DEFAULT 0
 );
-CREATE INDEX IF NOT EXISTS idx_admin_users_tenant ON admin_users(tenant_id);
 """
+
+# Additive migrations — applied one at a time; errors for "duplicate column name"
+# or "table already exists" are silently ignored so startup is idempotent on both
+# fresh and pre-existing DBs (ALTER TABLE ... ADD COLUMN IF NOT EXISTS not supported
+# in SQLite).
+_MIGRATIONS_SQLITE = [
+    "ALTER TABLE admin_users ADD COLUMN tenant_id TEXT NOT NULL DEFAULT 'default'",
+    "ALTER TABLE admin_users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 1",
+    "CREATE INDEX IF NOT EXISTS idx_admin_users_tenant ON admin_users(tenant_id)",
+    """CREATE TABLE IF NOT EXISTS revoked_jtis (
+        jti        TEXT PRIMARY KEY,
+        revoked_at TEXT NOT NULL DEFAULT (datetime('now')),
+        reason     TEXT
+    )""",
+]
 
 
 @dataclass
@@ -77,11 +89,25 @@ class UserStore:
                         role          TEXT NOT NULL DEFAULT 'analyst',
                         created_at    TIMESTAMPTZ NOT NULL,
                         updated_at    TIMESTAMPTZ NOT NULL,
-                        disabled      BOOLEAN NOT NULL DEFAULT FALSE,
-                        tenant_id     TEXT NOT NULL DEFAULT 'default',
-                        token_version INTEGER NOT NULL DEFAULT 1
+                        disabled      BOOLEAN NOT NULL DEFAULT FALSE
                     )
                 """)
+                # Additive column migrations — IF NOT EXISTS is idempotent in PG 9.6+
+                await conn.execute(
+                    "ALTER TABLE lex_agents_app.admin_users"
+                    " ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default'"
+                )
+                await conn.execute(
+                    "ALTER TABLE lex_agents_app.admin_users"
+                    " ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 1"
+                )
+                await conn.execute(
+                    "CREATE TABLE IF NOT EXISTS lex_agents_app.revoked_jtis ("
+                    "  jti TEXT PRIMARY KEY,"
+                    "  revoked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),"
+                    "  reason TEXT"
+                    ")"
+                )
                 rows = await conn.fetch(
                     "SELECT username, password_hash, role, created_at, updated_at,"
                     " disabled, tenant_id, token_version"
@@ -103,7 +129,12 @@ class UserStore:
 
         import aiosqlite
         async with aiosqlite.connect(self._db_path) as db:
-            await db.executescript(_DDL_SQLITE)
+            await db.executescript(_DDL_SQLITE_BASE)
+            for stmt in _MIGRATIONS_SQLITE:
+                try:
+                    await db.execute(stmt)
+                except Exception:  # noqa: S110 — duplicate column / index already exists
+                    pass
             await db.commit()
             async with db.execute(
                 "SELECT username, password_hash, role, created_at, updated_at,"
