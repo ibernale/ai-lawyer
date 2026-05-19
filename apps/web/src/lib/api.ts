@@ -1589,4 +1589,3 @@ export async function acceptInvitation(
     },
   );
 }
-
