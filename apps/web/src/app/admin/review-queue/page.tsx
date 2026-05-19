@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   listAuditSamples,
   getAuditSample,
@@ -264,7 +264,7 @@ export default function ReviewQueuePage() {
     useState<AuditSampleDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  function loadSamples(status: AuditStatus) {
+  const loadSamples = useCallback((status: AuditStatus) => {
     setLoading(true);
     setLoadError("");
     setSelectedDetail(null);
@@ -272,11 +272,11 @@ export default function ReviewQueuePage() {
       .then(setSamples)
       .catch((e) => setLoadError(`Error al cargar muestras: ${e}`))
       .finally(() => setLoading(false));
-  }
+  }, []);
 
   useEffect(() => {
     loadSamples(activeTab);
-  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, loadSamples]);
 
   async function handleRowClick(sample: AuditSample) {
     setDetailLoading(true);

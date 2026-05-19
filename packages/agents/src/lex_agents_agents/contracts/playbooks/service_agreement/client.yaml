@@ -1,0 +1,244 @@
+---
+# Playbook: Service Agreement — Client perspective
+# References: CC Arts. 1544-1546, GDPR Art. 28, Ley 7/1998 LCGC
+# Version: 1.0.0
+# Jurisdiction: ES / EU
+
+contract_type: service_agreement
+party_role: client
+playbook_version: "1.0.0"
+
+clauses:
+  - clause_title: "Service Level Agreement (SLA)"
+    applicable_contract_types:
+      - service_agreement
+    party_role: client
+    preferred_position:
+      summary: >
+        99.9% uptime SLA for critical services; response time < 4 hours for
+        P1 issues; financial credits for SLA breach (5% of monthly fee per
+        incident, 25% maximum); right to terminate if two consecutive months
+        of SLA breach.
+      template_language: |
+        "The Provider shall ensure Service availability of at least 99.9%
+        per calendar month ('SLA Target'). For each percentage point (or part
+        thereof) by which availability falls below the SLA Target, the Client
+        shall receive a credit equal to five per cent (5%) of the monthly Fees,
+        up to a maximum of twenty-five per cent (25%) of the monthly Fees.
+        If the SLA Target is not met in two consecutive months, the Client
+        may terminate this Agreement on thirty (30) days' written notice."
+      market_prevalence: 0.55
+    acceptable_positions:
+      - summary: >
+          99.5% uptime; P1 response 8 hours; credits up to 15% monthly fees;
+          termination right after three consecutive monthly breaches.
+        condition: "Acceptable for non-mission-critical services."
+        market_prevalence: 0.30
+    fallback_position:
+      summary: >
+        Best-efforts SLA with credits capped at 10% monthly fees; no
+        termination right (rely on contractual termination for cause).
+      requires_approval_from: "CTO and Legal Counsel"
+    never_accept:
+      - condition: "SLA credits as sole remedy — no right to terminate for persistent failure"
+        reason: "Leaves client trapped with failing provider; credits may not cover harm."
+    escalation_triggers:
+      - "Provider refuses any SLA credits and offers only best-efforts"
+    escalation_to: "CTO and Head of Procurement"
+    market_benchmark:
+      source: "ITIL; ISO 20000; market standard cloud services"
+      typical_range: "99.5–99.99% uptime; credits 5–25% of monthly fees"
+      spanish_law_note: |
+        Las penalizaciones contractuales por incumplimiento del SLA son válidas
+        bajo CC Art. 1152 (cláusula penal). CC Art. 1154 permite la moderación
+        judicial si la pena es notoriamente excesiva o si hay cumplimiento parcial.
+    red_flags:
+      - pattern: "best.?efforts only|solo.*esfuerzo razonable"
+        severity: high
+        note: "Best efforts SLA with no credits — request measurable commitments."
+
+  - clause_title: "Limitation of Liability"
+    applicable_contract_types:
+      - service_agreement
+    party_role: client
+    preferred_position:
+      summary: >
+        Provider liability uncapped for data breaches, IP infringement, and
+        wilful misconduct; direct loss cap at 24 months' fees; no mutual
+        consequential loss exclusion for data breach or regulatory fine scenarios.
+      template_language: |
+        "Notwithstanding any other provision of this Agreement, the Provider's
+        liability shall not be limited or excluded for: (a) breach of data
+        protection obligations; (b) infringement of third party intellectual
+        property rights; (c) fraud or wilful misconduct (CC Art. 1102).
+        Subject to the foregoing, the Provider's aggregate liability for
+        direct losses shall not exceed the total Fees paid in the
+        twenty-four (24) months preceding the event. The mutual exclusion of
+        consequential losses shall not apply to losses arising from data breaches
+        or regulatory sanctions imposed on the Client."
+      market_prevalence: 0.35
+    acceptable_positions:
+      - summary: >
+          Uncapped for data breach and IP infringement; 12 months' fees cap
+          for direct losses; consequential excluded except data breach.
+        condition: "Widely accepted compromise position."
+        market_prevalence: 0.45
+    fallback_position:
+      summary: >
+        12 months' fees cap; CC Art. 1102 carve-out only; consequential
+        excluded universally.
+      requires_approval_from: "Legal Counsel and CISO"
+    never_accept:
+      - condition: "Provider liability capped below 3 months' fees"
+        reason: "Cap too low to provide meaningful protection for any material breach."
+    escalation_triggers:
+      - "Provider insists on zero liability for data breach affecting client's customers"
+    escalation_to: "CISO and Head of Legal"
+    market_benchmark:
+      source: "GDPR Art. 82; CC Art. 1101-1107"
+      typical_range: "Uncapped for data breach emerging as new market standard"
+      spanish_law_note: |
+        El RGPD Art. 82 establece la responsabilidad del encargado del tratamiento
+        ante los interesados y ante el responsable por incumplimientos del RGPD.
+        Esta responsabilidad es de carácter imperativo y no puede limitarse
+        contractualmente frente a los interesados.
+    red_flags:
+      - pattern: "data breach.*capped|brecha.*datos.*limitada"
+        severity: critical
+        note: "Capped data breach liability — conflicts with GDPR Art. 82 obligations."
+
+  - clause_title: "Data Protection Obligations"
+    applicable_contract_types:
+      - service_agreement
+    party_role: client
+    preferred_position:
+      summary: >
+        Provider processes data only on documented instructions; GDPR Art. 28
+        DPA terms incorporated by reference or as schedule; right to audit
+        annually; breach notification within 24 hours; no sub-processors
+        without prior written consent.
+      market_prevalence: 0.60
+    acceptable_positions:
+      - summary: >
+          GDPR Art. 28 DPA as schedule; audit right annually or on suspicion
+          of breach; 48-hour breach notification; sub-processors approved
+          in advance from agreed list.
+        condition: "Standard and compliant position."
+        market_prevalence: 0.30
+    fallback_position:
+      summary: >
+        Art. 28 DPA terms included; 72-hour breach notification (GDPR minimum);
+        sub-processors notified with 30-day objection window.
+      requires_approval_from: "DPO"
+    never_accept:
+      - condition: "Provider retains right to process client data for its own purposes"
+        reason: "Violates GDPR Art. 28 — processor cannot process for own purposes."
+      - condition: "No breach notification obligation or notification > 72 hours"
+        reason: "GDPR Art. 33 imposes 72-hour notification to supervisory authority."
+    escalation_triggers:
+      - "Provider refuses to sign DPA or claims GDPR not applicable"
+    escalation_to: "DPO and Head of Legal"
+    market_benchmark:
+      source: "GDPR Arts. 28, 32-34; EDPB Guidelines; AEPD guidance"
+      typical_range: "Art. 28 DPA universally required; 72-hour breach notification"
+      spanish_law_note: |
+        La LOPDGDD (Ley 3/2018) complementa el RGPD en España. La AEPD ha
+        emitido guías sobre los contratos de encargo de tratamiento. Los
+        sub-encargados de tratamiento deben estar sujetos a las mismas
+        obligaciones que el encargado (RGPD Art. 28.4).
+    red_flags:
+      - pattern: "propia cuenta.*datos|own account.*data processing"
+        severity: critical
+        note: "Processing for own account — provider is controller, not processor."
+
+  - clause_title: "Termination and Exit Assistance"
+    applicable_contract_types:
+      - service_agreement
+    party_role: client
+    preferred_position:
+      summary: >
+        Termination for convenience on 30 days' notice with no penalty from
+        month 6; termination for cause on 15 days' notice after failure to
+        cure; exit assistance for 90 days post-termination including data
+        export in machine-readable format.
+      template_language: |
+        "The Client may terminate this Agreement for convenience on thirty (30)
+        days' prior written notice after the sixth month of the Initial Term.
+        On or before the Termination Date, the Provider shall: (a) deliver to
+        the Client a complete export of all Client Data in a machine-readable
+        industry-standard format; (b) provide transition assistance for up to
+        ninety (90) days at the same fee rates; (c) permanently delete all
+        Client Data within thirty (30) days of the end of the Termination
+        Assistance Period."
+      market_prevalence: 0.55
+    acceptable_positions:
+      - summary: >
+          Termination for convenience on 60 days' notice from month 3;
+          exit assistance 60 days; data export within 30 days.
+        condition: "Acceptable standard position."
+        market_prevalence: 0.30
+    fallback_position:
+      summary: >
+        Termination for convenience on 90 days' notice; exit assistance
+        30 days; data export within 45 days.
+      requires_approval_from: "CTO"
+    never_accept:
+      - condition: "No data portability right on termination"
+        reason: >
+          Creates vendor lock-in; GDPR Art. 20 data portability right applies
+          where data includes personal data; creates operational resilience risk.
+    escalation_triggers:
+      - "Provider proposes exit assistance fees at premium rates"
+      - "Provider retains data post-termination for more than 30 days"
+    escalation_to: "CTO and Legal Counsel"
+    market_benchmark:
+      source: "GDPR Art. 20; DORA Reg. 2022/2554 (ICT outsourcing); EBA Guidelines"
+      typical_range: "30–90 day exit assistance; data export within 30 days"
+      spanish_law_note: |
+        El Reglamento DORA (Reg. 2022/2554) exige para entidades financieras
+        cláusulas específicas de salida en contratos de outsourcing TIC, incluyendo
+        obligaciones de asistencia a la transición y devolución de datos.
+    red_flags:
+      - pattern: "no.*data export|sin.*exportación.*datos"
+        severity: critical
+        note: "No data portability right — DORA and GDPR compliance risk."
+
+  - clause_title: "Governing Law and Dispute Resolution"
+    applicable_contract_types:
+      - service_agreement
+    party_role: client
+    preferred_position:
+      summary: >
+        Spanish law; exclusive jurisdiction of courts of client's registered
+        office; escalation procedure: operational escalation → senior management
+        → mediation → litigation.
+      market_prevalence: 0.45
+    acceptable_positions:
+      - summary: >
+          Spanish law; non-exclusive jurisdiction of Madrid courts;
+          optional mediation before litigation.
+        condition: "Standard and neutral."
+        market_prevalence: 0.40
+    fallback_position:
+      summary: >
+        Spanish law; ICC arbitration for disputes > EUR 1 M; Madrid courts
+        for smaller disputes and interim relief.
+      requires_approval_from: "Legal Counsel"
+    never_accept:
+      - condition: "Governing law of a jurisdiction with no EU data protection equivalence"
+        reason: "Creates GDPR transfer compliance risk for data processed under the contract."
+    escalation_triggers:
+      - "Provider insists on foreign exclusive jurisdiction"
+    escalation_to: "Legal Counsel and DPO"
+    market_benchmark:
+      source: "Reg. Roma I; Reg. Bruselas I bis; DORA"
+      typical_range: "Spanish law with Madrid courts or arbitration"
+      spanish_law_note: |
+        Para contratos de outsourcing bancario, la Circular BdE 2/2016 y las
+        Directrices EBA sobre outsourcing exigen que el contrato esté gobernado
+        por ley de un Estado miembro de la UE y que la entidad supervisora tenga
+        acceso directo a la documentación contractual.
+    red_flags:
+      - pattern: "ley extranjera.*outsourcing bancario|foreign law.*banking outsourcing"
+        severity: high
+        note: "Non-EU law for banking outsourcing — BdE/EBA compliance risk."

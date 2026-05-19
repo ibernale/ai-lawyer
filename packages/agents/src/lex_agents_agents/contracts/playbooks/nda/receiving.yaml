@@ -1,0 +1,249 @@
+---
+# Playbook: NDA — Receiving Party perspective
+# References: CC Arts. 1254-1258, GDPR Art. 5, Ley de Secretos Empresariales (Ley 1/2019)
+# Version: 1.0.0
+# Jurisdiction: ES / EU
+
+contract_type: nda
+party_role: receiving
+playbook_version: "1.0.0"
+
+clauses:
+  - clause_title: "Definition of Confidential Information"
+    applicable_contract_types:
+      - nda
+    party_role: receiving
+    preferred_position:
+      summary: >
+        Narrow definition: only written documents marked "Confidential";
+        oral disclosures excluded unless confirmed in writing within 3 business
+        days; explicit exclusions for information already known or independently
+        developed.
+      template_language: |
+        "'Confidential Information' means only written documents clearly marked
+        'CONFIDENTIAL' at the time of disclosure. Oral disclosures shall not be
+        deemed Confidential Information unless confirmed in a written summary
+        marked 'CONFIDENTIAL' within three (3) Business Days of the oral
+        disclosure. Information that the Receiving Party can demonstrate was
+        already in its possession or independently developed is excluded."
+      market_prevalence: 0.25
+    acceptable_positions:
+      - summary: >
+          Written and oral disclosures included; oral confirmation window 10
+          business days; standard four-part exceptions apply.
+        condition: "Acceptable if scope of disclosure is proportionate to purpose."
+        market_prevalence: 0.55
+    fallback_position:
+      summary: >
+        Broad definition as proposed by disclosing party; receiving party
+        may use information for the specific purpose stated only; right to
+        share with employees who have need to know.
+      requires_approval_from: "Legal Counsel"
+    never_accept:
+      - condition: "Definition includes information that is publicly available"
+        reason: "Cannot impose confidentiality on public domain information."
+      - condition: "Definition includes information known to receiving party before NDA"
+        reason: >
+          Retroactive confidentiality obligation is unenforceable and creates
+          operational risk for existing business activities.
+    escalation_triggers:
+      - "Disclosing party insists on no prior knowledge exception"
+    escalation_to: "Legal Counsel"
+    market_benchmark:
+      source: "Ley 1/2019; CC Art. 1255; market standard"
+      typical_range: "Broad definition standard; receiving party should insist on four exceptions"
+      spanish_law_note: |
+        Ley 1/2019 Art. 3 establece excepciones al secreto empresarial para
+        información en dominio público y conocimiento independiente. Estas
+        excepciones son de orden público y no pueden excluirse contractualmente.
+    red_flags:
+      - pattern: "no exceptions|sin excepciones"
+        severity: critical
+        note: "Zero exceptions — unenforceable and contrary to Ley 1/2019 Art. 3."
+
+  - clause_title: "Permitted Use"
+    applicable_contract_types:
+      - nda
+    party_role: receiving
+    preferred_position:
+      summary: >
+        Use limited to the specific transaction purpose only; receiving party
+        may share with employees and professional advisors who have a strict
+        need to know; receiving party not prohibited from pursuing similar
+        business opportunities using independently acquired information.
+      template_language: |
+        "The Receiving Party may use Confidential Information solely for the
+        purpose of evaluating the Transaction (the 'Permitted Purpose'). The
+        Receiving Party may disclose Confidential Information to its employees,
+        directors, and professional advisors who have a need to know for the
+        Permitted Purpose and are bound by equivalent confidentiality obligations.
+        Nothing in this Agreement shall prevent the Receiving Party from
+        pursuing business opportunities developed independently of the
+        Confidential Information."
+      market_prevalence: 0.60
+    acceptable_positions:
+      - summary: >
+          Use limited to Permitted Purpose; sharing with employees who sign
+          individual undertakings; no standstill or non-solicit provisions.
+        condition: "Acceptable standard position."
+        market_prevalence: 0.30
+    fallback_position:
+      summary: >
+        Use limited to Permitted Purpose; sharing only with named individuals;
+        12-month non-solicit of disclosing party's key personnel.
+      requires_approval_from: "HR and Legal Counsel"
+    never_accept:
+      - condition: >
+          Receiving party prohibited from using any general know-how acquired
+          during the evaluation in other business activities
+        reason: >
+          General know-how (non-specific trade secrets) cannot be 'unlearned';
+          prohibition would be unenforceable and commercially unreasonable.
+    escalation_triggers:
+      - "Disclosing party requests standstill period > 12 months"
+      - "Non-compete provision bundled into NDA"
+    escalation_to: "Legal Counsel"
+    market_benchmark:
+      source: "Market standard; Ley 1/2019; CC Art. 1255"
+      typical_range: "Permitted Purpose use with need-to-know sharing is universal"
+      spanish_law_note: |
+        Las restricciones de uso que vayan más allá de la protección del secreto
+        empresarial pueden ser cláusulas restrictivas de la competencia bajo el
+        Art. 101 TFUE y la Ley 15/2007 de Defensa de la Competencia.
+    red_flags:
+      - pattern: "non-compete|no competencia.*NDA"
+        severity: high
+        note: "Non-compete in NDA — separate antitrust analysis required."
+
+  - clause_title: "Duration and Termination"
+    applicable_contract_types:
+      - nda
+    party_role: receiving
+    preferred_position:
+      summary: >
+        NDA term of 12 months; confidentiality obligations survive 2 years
+        post-termination; right to terminate on 30 days' notice; obligations
+        cease for information that enters public domain through no fault of
+        receiving party.
+      market_prevalence: 0.35
+    acceptable_positions:
+      - summary: >
+          NDA term 24 months; confidentiality obligations survive 3 years;
+          termination on 60 days' notice or mutual agreement.
+        condition: "Acceptable for long-term strategic evaluation processes."
+        market_prevalence: 0.45
+    fallback_position:
+      summary: >
+        NDA term 36 months with confidentiality surviving for equal period;
+        no unilateral termination right (only mutual consent or transaction
+        completion).
+      requires_approval_from: "Legal Counsel"
+    never_accept:
+      - condition: "Perpetual confidentiality obligation without trade secret carve-out"
+        reason: >
+          Disproportionate; Spanish courts may not enforce unlimited post-
+          contractual obligations where information has become stale or public.
+    escalation_triggers:
+      - "Disclosing party proposes 10+ year confidentiality period"
+    escalation_to: "Legal Counsel"
+    market_benchmark:
+      source: "Market standard; Ley 1/2019"
+      typical_range: "2–5 year confidentiality survival; NDA term 12–36 months"
+      spanish_law_note: |
+        Los tribunales españoles pueden reducir plazos de confidencialdad
+        excesivos al amparo del CC Art. 1255 si son contrarios al orden público
+        o desproporcionados en relación con el interés protegido.
+    red_flags:
+      - pattern: "perpetua|indefinida"
+        severity: medium
+        note: "Perpetual obligation — may be enforceable only for trade secrets."
+
+  - clause_title: "Liability and Remedies"
+    applicable_contract_types:
+      - nda
+    party_role: receiving
+    preferred_position:
+      summary: >
+        Receiving party liability for breach limited to proven direct damages;
+        no liability for consequential or punitive damages; liability cap at
+        EUR 500,000 or total consideration paid (whichever is higher); equitable
+        relief available to disclosing party but bond requirement preserved.
+      template_language: |
+        "The Receiving Party's aggregate liability for breach of this Agreement
+        shall not exceed five hundred thousand euros (EUR 500,000) or the total
+        amount of consideration paid under the Transaction (if higher). Neither
+        party shall be liable for consequential, indirect, or punitive damages.
+        Nothing in this Agreement shall limit the Disclosing Party's right to
+        seek equitable relief, provided that the Disclosing Party shall be
+        required to post security in an amount determined by the court."
+      market_prevalence: 0.30
+    acceptable_positions:
+      - summary: >
+          No cap on direct damages; consequential excluded; equitable relief
+          available without bond requirement.
+        condition: "Acceptable if disclosure scope is limited and well-defined."
+        market_prevalence: 0.45
+    fallback_position:
+      summary: >
+        Uncapped direct damages; equitable relief without bond; receiving
+        party indemnification limited to actual loss.
+      requires_approval_from: "CFO and Legal Counsel"
+    never_accept:
+      - condition: "Punitive damages for inadvertent breach"
+        reason: >
+          Punitive damages are not available in Spain under CC; contractual
+          imposition is disproportionate for inadvertent disclosure.
+    escalation_triggers:
+      - "Disclosing party requests unlimited liability for any breach"
+    escalation_to: "Legal Counsel"
+    market_benchmark:
+      source: "CC Art. 1101-1107; Ley 1/2019 Arts. 9-11"
+      typical_range: "Damages capped or uncapped depending on sector; consequential excluded"
+      spanish_law_note: |
+        El CC Art. 1101 establece la responsabilidad por daños y perjuicios
+        derivados del incumplimiento. Los daños punitivos no son reconocidos
+        en el derecho español (aunque sí en el anglosajón). CC Art. 1152-1154
+        regula las cláusulas penales y la pena convencional.
+    red_flags:
+      - pattern: "punitive.*damages|daños punitivos"
+        severity: high
+        note: "Punitive damages not available in Spanish law; seek deletion."
+
+  - clause_title: "Governing Law and Jurisdiction"
+    applicable_contract_types:
+      - nda
+    party_role: receiving
+    preferred_position:
+      summary: >
+        Spanish law; non-exclusive jurisdiction of courts of the receiving
+        party's registered office; both parties preserve right to seek
+        interim relief in any competent court.
+      market_prevalence: 0.40
+    acceptable_positions:
+      - summary: >
+          Spanish law; non-exclusive jurisdiction of Madrid commercial courts;
+          interim relief available in any jurisdiction.
+        condition: "Standard and commercially neutral."
+        market_prevalence: 0.45
+    fallback_position:
+      summary: >
+        Spanish law; exclusive jurisdiction of disclosing party's courts
+        (accept only if disclosing party is Spanish entity in Spain).
+      requires_approval_from: "Legal Counsel"
+    never_accept:
+      - condition: "Exclusive jurisdiction in courts outside EU/EEA"
+        reason: "Creates enforcement and cost burden for Spanish receiving party."
+    escalation_triggers:
+      - "Disclosing party insists on exclusive non-EU jurisdiction"
+    escalation_to: "Legal Counsel"
+    market_benchmark:
+      source: "Reg. Bruselas I bis; Reg. Roma I"
+      typical_range: "Non-exclusive Spanish jurisdiction standard for domestic NDAs"
+      spanish_law_note: |
+        Los tribunales españoles son competentes para conocer de los litigios
+        relativos a secretos empresariales cuando el titular o el infractor
+        tienen su domicilio en España (Art. 53 Reg. Bruselas I bis).
+    red_flags:
+      - pattern: "exclusive.*arbitration.*no interim|arbitraje exclusivo.*sin cautelares"
+        severity: high
+        note: "Exclusive arbitration without interim relief right — losing party has no emergency remedy."

@@ -1,0 +1,271 @@
+---
+# Playbook: Loan Agreement — Lender perspective
+# References: LMA Standard Terms, Código Civil Arts. 1740-1757, CRR Reg. 575/2013
+# Version: 1.0.0
+# Jurisdiction: ES / EU (Spanish law primary)
+
+contract_type: loan_agreement
+party_role: lender
+playbook_version: "1.0.0"
+
+clauses:
+  - clause_title: "Limitation of Liability"
+    applicable_contract_types:
+      - loan_agreement
+    party_role: lender
+    preferred_position:
+      summary: >
+        Lender liability excluded for indirect and consequential losses; direct
+        losses capped at 12 months' interest income from the facility.
+      template_language: |
+        "In no event shall the Lender be liable for any indirect, incidental,
+        special, exemplary, or consequential damages arising out of or in
+        connection with this Agreement, however caused and under any theory of
+        liability. The Lender's aggregate liability for direct losses shall not
+        exceed an amount equal to twelve (12) months' interest at the Margin
+        calculated on the Facility Amount."
+      market_prevalence: 0.62
+    acceptable_positions:
+      - summary: >
+          Lender liability capped at total interest paid in the preceding
+          24 months; indirect loss exclusion preserved.
+        condition: >
+          Acceptable only where total facility > EUR 50 M and borrower is
+          investment-grade rated; subject to Credit Risk sign-off.
+        market_prevalence: 0.25
+    fallback_position:
+      summary: >
+        Mutual liability cap at 12 months' interest; no exclusion of gross
+        negligence or wilful misconduct (required by CC Art. 1102).
+      requires_approval_from: "Head of Legal / Credit Risk Committee"
+    never_accept:
+      - condition: "Uncapped lender liability for any category of loss"
+        reason: >
+          Exposes the bank to unlimited balance-sheet risk; incompatible with
+          CRR Art. 92 capital adequacy requirements.
+      - condition: >
+          Liability cap below 3 months' interest or below EUR 100,000 for
+          facilities > EUR 5 M
+        reason: "Effectively illusory cap; creates reputational and legal risk."
+    escalation_triggers:
+      - "Clause purports to impose strict liability on lender"
+      - "Clause references cross-default or MAC provisions without carve-outs"
+    escalation_to: "Head of Legal / Risk Committee"
+    market_benchmark:
+      source: "LMA standard investment-grade facility agreement (2023 ed.)"
+      typical_range: "12–24 months' interest for direct losses; indirect always excluded"
+      spanish_law_note: |
+        CC Art. 1102 prohíbe exonerar la responsabilidad por dolo. Cualquier
+        limitación debe preservar la responsabilidad por dolo y culpa grave.
+        CC Art. 1103 permite la moderación judicial de la pena convencional.
+    red_flags:
+      - pattern: "unlimited|ilimitada|sin límite"
+        severity: critical
+        note: "Uncapped liability — escalate immediately to Head of Legal."
+      - pattern: "strict liability|responsabilidad objetiva"
+        severity: high
+        note: "Strict liability without fault is unusual in Spanish law; review."
+
+  - clause_title: "Payment Terms and Interest"
+    applicable_contract_types:
+      - loan_agreement
+    party_role: lender
+    preferred_position:
+      summary: >
+        Interest accrues daily on the basis of Actual/360; payable quarterly.
+        Default interest = Margin + 2% p.a. from due date, compounded monthly.
+      template_language: |
+        "Interest shall accrue on the outstanding principal at the Interest Rate
+        (calculated on an Actual/360 basis) and shall be payable on each Interest
+        Payment Date. Default interest shall accrue at the Interest Rate plus
+        two per cent (2%) per annum from the due date, compounding monthly,
+        without prejudice to any other remedies available to the Lender."
+      market_prevalence: 0.70
+    acceptable_positions:
+      - summary: "Actual/365 basis with quarterly payment; default rate Margin + 1.5%."
+        condition: "Acceptable for SME borrowers; requires Finance sign-off."
+        market_prevalence: 0.22
+    fallback_position:
+      summary: >
+        Actual/365 basis; default rate at Margin + 1%; compounding restricted
+        to annual capitalisation to avoid usury concerns (Ley de Usura 1908).
+      requires_approval_from: "Finance Director and Legal Counsel"
+    never_accept:
+      - condition: "Fixed interest rate with no market disruption or EURIBOR floor clause"
+        reason: "Creates basis risk; incompatible with asset-liability management."
+      - condition: "Interest rate below ECB deposit facility rate minus 50 bps"
+        reason: "Below cost of funds; requires Treasury sign-off for exceptions."
+    escalation_triggers:
+      - "Compound interest clause with frequency greater than monthly"
+      - "Interest rate linked to indices not traded on regulated markets"
+    escalation_to: "Head of Legal / Treasury"
+    market_benchmark:
+      source: "LMA standard; ECB reference rates"
+      typical_range: "EURIBOR 3M + 150–350 bps depending on credit rating"
+      spanish_law_note: |
+        La Ley de Usura de 1908 puede declarar nulos préstamos con intereses
+        notablemente desproporcionados. Los intereses de demora excesivos
+        también pueden ser moderados por los tribunales (CC Art. 1108).
+    red_flags:
+      - pattern: "interés compuesto diario|daily compounding"
+        severity: high
+        note: "Daily compounding may attract usury challenge in Spanish courts."
+
+  - clause_title: "Events of Default and Acceleration"
+    applicable_contract_types:
+      - loan_agreement
+    party_role: lender
+    preferred_position:
+      summary: >
+        Broad events of default list including: payment default (5 business days
+        grace), cross-default (EUR 1 M threshold), material adverse change (MAC),
+        insolvency, breach of financial covenants, change of control.
+        Lender may accelerate immediately upon MAC or insolvency; 30-day cure
+        period for financial covenant breach.
+      template_language: |
+        "Each of the following events or circumstances is an Event of Default:
+        (a) Non-payment: the Borrower fails to pay any sum due within five (5)
+        Business Days of its due date;
+        (b) Cross-default: any Financial Indebtedness of the Group exceeding
+        EUR 1,000,000 is not paid when due or becomes capable of being declared
+        due and payable before its stated maturity;
+        (c) Insolvency: the Borrower is unable to pay its debts as they fall due,
+        an insolvency proceeding is commenced, or a concurso de acreedores is
+        filed;
+        (d) Material Adverse Change: any event or circumstance occurs which the
+        Lender reasonably considers is likely to have a Material Adverse Effect."
+      market_prevalence: 0.68
+    acceptable_positions:
+      - summary: >
+          Payment default grace 10 business days; cross-default threshold EUR 5 M;
+          MAC only applies to financial condition, not operational matters.
+        condition: >
+          Acceptable for investment-grade borrowers with strong credit history;
+          subject to Credit Risk Director approval.
+        market_prevalence: 0.20
+    fallback_position:
+      summary: >
+        Payment default grace 15 days; no MAC clause; cross-default only for
+        declared insolvency proceedings; 60-day cure for covenant breach.
+      requires_approval_from: "Credit Risk Committee"
+    never_accept:
+      - condition: "No cross-default clause for group entities"
+        reason: >
+          Creates structural subordination risk; violates internal credit policy
+          for facilities > EUR 5 M.
+      - condition: "Borrower sole discretion to determine Material Adverse Change"
+        reason: "Renders MAC inoperative; unacceptable risk transfer."
+    escalation_triggers:
+      - "Borrower requests deletion of MAC clause"
+      - "Cross-default threshold > EUR 10 M without Credit Risk Committee approval"
+    escalation_to: "Credit Risk Committee"
+    market_benchmark:
+      source: "LMA standard investment-grade facility agreement (2023 ed.)"
+      typical_range: "5–10 business day payment grace; cross-default EUR 1–5 M"
+      spanish_law_note: |
+        El vencimiento anticipado en préstamos hipotecarios está regulado por
+        la Ley 5/2019 (art. 24). Para préstamos empresariales el CC Art. 1129
+        permite la pérdida del plazo en caso de insolvencia declarada.
+    red_flags:
+      - pattern: "concurso de acreedores.*no.*evento|insolvency.*not.*default"
+        severity: critical
+        note: "Excluding insolvency as event of default is unacceptable."
+
+  - clause_title: "Governing Law and Jurisdiction"
+    applicable_contract_types:
+      - loan_agreement
+    party_role: lender
+    preferred_position:
+      summary: >
+        Spanish law governs; exclusive jurisdiction of the courts of Madrid
+        (Juzgados de lo Mercantil); lender retains right to bring proceedings
+        in any other competent jurisdiction.
+      template_language: |
+        "This Agreement and any non-contractual obligations arising out of or in
+        connection with it shall be governed by and construed in accordance with
+        Spanish law. The Borrower irrevocably submits to the exclusive jurisdiction
+        of the courts of Madrid (Juzgados de lo Mercantil) for the purpose of
+        settling any dispute arising out of or in connection with this Agreement,
+        provided that the Lender may bring proceedings in any other court of
+        competent jurisdiction."
+      market_prevalence: 0.58
+    acceptable_positions:
+      - summary: "English law; English courts with non-exclusive jurisdiction."
+        condition: >
+          Acceptable for international syndicated loans under LMA standard;
+          requires Group Legal sign-off and may require local law opinion.
+        market_prevalence: 0.30
+    fallback_position:
+      summary: >
+        Spanish law with arbitration (ICC Madrid or CAM) for disputes > EUR 5 M;
+        courts of Madrid for interim measures.
+      requires_approval_from: "Head of Legal"
+    never_accept:
+      - condition: >
+          Governing law of jurisdiction with no bilateral enforcement treaty
+          with Spain (e.g. some non-EU offshore jurisdictions)
+        reason: >
+          Creates enforcement risk; Spanish courts may not recognise judgments
+          under Reglamento Bruselas I bis (Reg. 1215/2012).
+    escalation_triggers:
+      - "Borrower proposes jurisdiction outside EU/EEA"
+      - "Arbitration clause without emergency arbitrator provisions"
+    escalation_to: "Head of Legal"
+    market_benchmark:
+      source: "LMA; Reglamento Roma I (Reg. 593/2008)"
+      typical_range: "Spanish or English law for Spanish borrowers"
+      spanish_law_note: |
+        Reg. Roma I permite elección de ley pero las disposiciones imperativas
+        del derecho español (consumidores, AML, GDPR) prevalecen.
+    red_flags:
+      - pattern: "offshore|paraíso fiscal|tax haven"
+        severity: high
+        note: "Offshore jurisdiction — AML and enforcement risk; flag to Compliance."
+
+  - clause_title: "Confidentiality"
+    applicable_contract_types:
+      - loan_agreement
+    party_role: lender
+    preferred_position:
+      summary: >
+        Mutual confidentiality for 3 years post-termination; lender may
+        disclose to regulators, auditors, rating agencies, and syndicate
+        participants; standard carve-outs for legally required disclosures.
+      template_language: |
+        "Each party undertakes to keep confidential all Confidential Information
+        received from the other party for a period of three (3) years following
+        termination of this Agreement. The Lender may disclose Confidential
+        Information to: (a) its regulators, auditors, and rating agencies;
+        (b) actual or potential syndicate participants, subject to equivalent
+        confidentiality undertakings; (c) as required by applicable law or
+        court order."
+      market_prevalence: 0.65
+    acceptable_positions:
+      - summary: "5-year post-termination period; same carve-outs."
+        condition: >
+          Acceptable if borrower insists; no material additional risk for
+          the lender.
+        market_prevalence: 0.25
+    fallback_position:
+      summary: >
+        Mutual confidentiality; standard regulatory and legal disclosure carve-outs;
+        no fixed expiry (information protected for as long as it remains confidential).
+      requires_approval_from: "Legal Counsel"
+    never_accept:
+      - condition: "Lender prohibited from disclosing to regulators or auditors"
+        reason: >
+          Conflicts with CRR supervisory disclosure obligations (Art. 431–455)
+          and BdE/ECB audit rights.
+    escalation_triggers:
+      - "Confidentiality clause restricts disclosure to BdE or ECB"
+    escalation_to: "Head of Compliance"
+    market_benchmark:
+      source: "LMA standard; GDPR Art. 5(1)(f)"
+      typical_range: "3–5 years; regulatory disclosure always carved out"
+      spanish_law_note: |
+        El secreto bancario (Ley 10/2014, art. 6) no impide el cumplimiento de
+        obligaciones regulatorias de divulgación ante el BdE o la CNMV.
+    red_flags:
+      - pattern: "perpetua|indefinida.*confidencialidad"
+        severity: medium
+        note: "Perpetual confidentiality may be disproportionate; review scope."

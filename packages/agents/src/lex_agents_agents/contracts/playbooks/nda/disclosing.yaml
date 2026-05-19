@@ -1,0 +1,250 @@
+---
+# Playbook: NDA — Disclosing Party perspective
+# References: CC Arts. 1254-1258, GDPR Art. 5, Ley de Secretos Empresariales (Ley 1/2019)
+# Version: 1.0.0
+# Jurisdiction: ES / EU
+
+contract_type: nda
+party_role: disclosing
+playbook_version: "1.0.0"
+
+clauses:
+  - clause_title: "Definition of Confidential Information"
+    applicable_contract_types:
+      - nda
+    party_role: disclosing
+    preferred_position:
+      summary: >
+        Broad definition capturing all information disclosed in any form;
+        oral disclosures confirmed in writing within 10 business days;
+        trade secrets protected regardless of marking (Ley 1/2019 Art. 1).
+      template_language: |
+        "'Confidential Information' means all information, in whatever form
+        (including written, oral, electronic, or visual), that the Disclosing
+        Party designates as confidential or that the Receiving Party knows or
+        reasonably should know to be confidential, including without limitation
+        financial data, customer lists, technical know-how, pricing information,
+        and business strategies. Information disclosed orally shall be deemed
+        Confidential Information if confirmed in writing within ten (10)
+        Business Days of disclosure."
+      market_prevalence: 0.65
+    acceptable_positions:
+      - summary: >
+          Definition limited to written and marked documents; oral disclosures
+          within 5-day written confirmation window.
+        condition: "Acceptable only if scope of disclosure is narrow and well-defined."
+        market_prevalence: 0.25
+    fallback_position:
+      summary: >
+        Information marked confidential at time of disclosure; no oral confirmation
+        mechanism; trade secrets automatically protected under Ley 1/2019.
+      requires_approval_from: "Legal Counsel"
+    never_accept:
+      - condition: "Definition excludes financial projections or business plans"
+        reason: >
+          These are the primary assets being protected in M&A and financing
+          NDAs; exclusion defeats the purpose of the agreement.
+    escalation_triggers:
+      - "Receiving party proposes to carve out entire categories of business data"
+    escalation_to: "Head of Legal"
+    market_benchmark:
+      source: "ICC Model NDA; Ley 1/2019 de Secretos Empresariales"
+      typical_range: "Broad definition standard for financial sector NDAs"
+      spanish_law_note: |
+        La Ley 1/2019 (transposición de Directiva UE 2016/943) protege los
+        secretos empresariales con independencia de si han sido marcados como
+        confidenciales, siempre que sean secretos, tengan valor económico y
+        el titular haya adoptado medidas razonables para protegerlos (Art. 1).
+    red_flags:
+      - pattern: "excluding.*financial|excluye.*financier"
+        severity: high
+        note: "Financial data exclusion undermines NDA purpose."
+
+  - clause_title: "Duration of Confidentiality Obligation"
+    applicable_contract_types:
+      - nda
+    party_role: disclosing
+    preferred_position:
+      summary: >
+        5-year confidentiality obligation post-termination; trade secret
+        protection continues indefinitely under Ley 1/2019.
+      template_language: |
+        "The Receiving Party's obligations of confidentiality under this
+        Agreement shall survive termination for a period of five (5) years.
+        Notwithstanding the foregoing, obligations in respect of information
+        constituting a Trade Secret (as defined under Ley 1/2019) shall
+        continue for as long as such information retains its status as a
+        Trade Secret."
+      market_prevalence: 0.55
+    acceptable_positions:
+      - summary: "3-year post-termination confidentiality; trade secret protection indefinite."
+        condition: "Acceptable for pure exploration NDAs before any substantive disclosure."
+        market_prevalence: 0.30
+    fallback_position:
+      summary: "2-year post-termination; trade secret carve-out preserved."
+      requires_approval_from: "Legal Counsel"
+    never_accept:
+      - condition: "Confidentiality obligation expires on termination of NDA with no survival"
+        reason: "Leaves all disclosed information unprotected immediately on termination."
+    escalation_triggers:
+      - "Receiving party proposes confidentiality period of less than 1 year"
+    escalation_to: "Legal Counsel"
+    market_benchmark:
+      source: "Market practice; Ley 1/2019"
+      typical_range: "2–5 years post-termination typical for financial services"
+      spanish_law_note: |
+        La Ley 1/2019 no fija plazo máximo de protección para secretos
+        empresariales; la protección cesa cuando el secreto deja de serlo
+        por causas ajenas al titular. Para información ordinariamente confidencial
+        los tribunales españoles han aceptado plazos de hasta 5 años.
+    red_flags:
+      - pattern: "1 year|un año.*confidencialidad"
+        severity: high
+        note: "Short confidentiality period may be insufficient for trade secrets."
+
+  - clause_title: "Permitted Disclosures and Exceptions"
+    applicable_contract_types:
+      - nda
+    party_role: disclosing
+    preferred_position:
+      summary: >
+        Standard exceptions: information in public domain (not through breach),
+        independently developed, received from third party without restriction,
+        required by law. Receiving party must give prior notice of legally
+        required disclosures to allow disclosing party to seek protective order.
+      template_language: |
+        "The obligations of this Agreement shall not apply to information that:
+        (a) is or becomes publicly available other than through a breach of this
+        Agreement; (b) was rightfully known to the Receiving Party before
+        disclosure; (c) is rightfully obtained from a third party without
+        restriction; or (d) is required to be disclosed by law or court order,
+        provided that the Receiving Party gives the Disclosing Party prompt
+        prior written notice (where legally permitted) to enable the Disclosing
+        Party to seek a protective order."
+      market_prevalence: 0.75
+    acceptable_positions:
+      - summary: >
+          Standard exceptions as above; 5 business day prior notice for
+          required disclosures (not 'prompt').
+        condition: "Standard fallback position."
+        market_prevalence: 0.20
+    fallback_position:
+      summary: >
+        Standard exceptions; no prior notice requirement for legally required
+        disclosures (post-hoc notice acceptable).
+      requires_approval_from: "Legal Counsel"
+    never_accept:
+      - condition: >
+          Exception for information 'generally known in the industry' without
+          requiring it to be in the public domain through lawful means
+        reason: "Overly broad — could exempt key technical know-how."
+    escalation_triggers:
+      - "Receiving party proposes to add 'necessity to disclose to affiliates' as blanket exception"
+    escalation_to: "Legal Counsel"
+    market_benchmark:
+      source: "ICC Model NDA; market standard"
+      typical_range: "4-part exception standard universally accepted"
+      spanish_law_note: |
+        Las excepciones de dominio público e independiente son reconocidas por
+        la Ley 1/2019 (Art. 3). La divulgación requerida por ley debe ser la
+        mínima necesaria (principio de minimización).
+    red_flags:
+      - pattern: "generally known|notoriamente conocido"
+        severity: medium
+        note: "Broader than public domain — tighten to 'in the public domain'."
+
+  - clause_title: "Remedies and Injunctive Relief"
+    applicable_contract_types:
+      - nda
+    party_role: disclosing
+    preferred_position:
+      summary: >
+        Explicit acknowledgement that breach would cause irreparable harm and
+        that injunctive relief is available without proof of damage; right to
+        claim full damages including lost profits.
+      template_language: |
+        "The Receiving Party acknowledges that any breach of this Agreement
+        would cause irreparable harm to the Disclosing Party for which monetary
+        damages would be an inadequate remedy. The Disclosing Party shall be
+        entitled to seek injunctive or other equitable relief in addition to
+        all other remedies available at law or in equity. The Receiving Party
+        waives any requirement for the Disclosing Party to post bond as a
+        condition to obtaining equitable relief."
+      market_prevalence: 0.60
+    acceptable_positions:
+      - summary: >
+          Injunctive relief available; no waiver of bond requirement; right
+          to damages including consequential losses.
+        condition: "Acceptable; bond waiver is difficult to obtain in Spain."
+        market_prevalence: 0.30
+    fallback_position:
+      summary: >
+        Damages and injunctive relief both available; no explicit irreparable
+        harm acknowledgement (Spanish courts will assess independently).
+      requires_approval_from: "Legal Counsel"
+    never_accept:
+      - condition: "Liquidated damages as sole and exclusive remedy for breach"
+        reason: >
+          Caps disclosing party's recovery; actual harm from disclosure of
+          trade secrets may vastly exceed any pre-agreed liquidated amount.
+    escalation_triggers:
+      - "Receiving party requests exclusive liquidated damages clause"
+    escalation_to: "Head of Legal"
+    market_benchmark:
+      source: "Ley 1/2019 Arts. 8-11; Ley de Enjuiciamiento Civil"
+      typical_range: "Injunctive relief plus damages is market standard"
+      spanish_law_note: |
+        La Ley 1/2019 (Art. 9) permite medidas cautelares urgentes y definitivas
+        para proteger secretos empresariales. La LEC permite medidas cautelares
+        sin audiencia previa (inaudita parte) cuando hay riesgo de frustración.
+    red_flags:
+      - pattern: "daños.*único remedio|sole remedy.*damages"
+        severity: critical
+        note: "Liquidated damages as sole remedy — inadequate for trade secret breach."
+
+  - clause_title: "Return and Destruction of Confidential Information"
+    applicable_contract_types:
+      - nda
+    party_role: disclosing
+    preferred_position:
+      summary: >
+        Return or certified destruction within 5 business days of termination
+        or request; receiving party retains archival copy only if required by
+        law; written certification of destruction required.
+      template_language: |
+        "Upon termination of this Agreement or upon request by the Disclosing
+        Party, the Receiving Party shall promptly, and in any event within five
+        (5) Business Days, return or certifiably destroy all Confidential
+        Information in its possession (including copies, extracts, and notes).
+        The Receiving Party shall provide written certification of such
+        destruction. The Receiving Party may retain one archival copy solely
+        to the extent required by applicable law or regulation."
+      market_prevalence: 0.65
+    acceptable_positions:
+      - summary: >
+          Return or destruction within 30 days; written certification required;
+          legal archival exception.
+        condition: "Acceptable for large-scale disclosures where 5 days is impractical."
+        market_prevalence: 0.25
+    fallback_position:
+      summary: >
+        Destruction within 30 days; certification upon request only (not automatic).
+      requires_approval_from: "Legal Counsel"
+    never_accept:
+      - condition: "No destruction obligation; information retained indefinitely"
+        reason: "Defeated purpose of NDA; creates ongoing risk of misuse."
+    escalation_triggers:
+      - "Receiving party claims system backup retention makes certified destruction impossible"
+    escalation_to: "Legal Counsel and IT Security"
+    market_benchmark:
+      source: "GDPR Art. 5(1)(e); Ley 1/2019; market standard"
+      typical_range: "5–30 days; certified destruction standard in banking sector"
+      spanish_law_note: |
+        El RGPD (Art. 5.1.e) impone el principio de limitación del plazo de
+        conservación para datos personales incluidos en la información confidencial.
+        La obligación de destrucción certificada es especialmente relevante cuando
+        la información confidencial contiene datos personales.
+    red_flags:
+      - pattern: "no.*obligación.*destrucción|no destruction"
+        severity: high
+        note: "Absence of destruction obligation — creates indefinite retention risk."

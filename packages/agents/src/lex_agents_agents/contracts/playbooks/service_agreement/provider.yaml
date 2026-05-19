@@ -1,0 +1,237 @@
+---
+# Playbook: Service Agreement — Provider (vendor) perspective
+# References: CC Arts. 1544-1546 (arrendamiento de servicios), GDPR, Ley 7/1998 LCGC
+# Version: 1.0.0
+# Jurisdiction: ES / EU
+
+contract_type: service_agreement
+party_role: provider
+playbook_version: "1.0.0"
+
+clauses:
+  - clause_title: "Limitation of Liability"
+    applicable_contract_types:
+      - service_agreement
+    party_role: provider
+    preferred_position:
+      summary: >
+        Provider liability capped at 12 months' fees paid; indirect and
+        consequential losses excluded; gross negligence/fraud carve-out
+        mandatory (CC Art. 1102).
+      template_language: |
+        "The Provider's total aggregate liability arising out of or in connection
+        with this Agreement, whether in contract, tort (including negligence),
+        or otherwise, shall not exceed an amount equal to the total Fees paid
+        by the Client in the twelve (12) months preceding the event giving
+        rise to the claim. In no event shall either party be liable for indirect,
+        incidental, consequential, special, or punitive damages. Nothing in this
+        Agreement shall limit a party's liability for fraud or wilful misconduct."
+      market_prevalence: 0.65
+    acceptable_positions:
+      - summary: >
+          Cap at 24 months' fees; consequential excluded; same carve-outs.
+        condition: "Acceptable if fees are low relative to services dependency."
+        market_prevalence: 0.22
+    fallback_position:
+      summary: >
+        Cap at 6 months' fees for lower-risk service lines; mutual indirect
+        loss exclusion; CC Art. 1102 carve-out.
+      requires_approval_from: "Legal Counsel and Finance"
+    never_accept:
+      - condition: "Uncapped provider liability for any service failure"
+        reason: "Creates existential financial risk disproportionate to contract value."
+      - condition: "Provider liability extends to client's revenue losses or market impact"
+        reason: "Consequential losses of this magnitude cannot be priced into fees."
+    escalation_triggers:
+      - "Client requests SLA penalties without cap or as unlimited damages"
+    escalation_to: "Head of Legal and Finance"
+    market_benchmark:
+      source: "ITSA standard; CC Art. 1101-1107"
+      typical_range: "12 months' fees cap is market norm for B2B IT services"
+      spanish_law_note: |
+        CC Art. 1102 prohíbe la exoneración del dolo y culpa grave; CC Art. 1103
+        permite la moderación judicial de la pena convencional. Las cláusulas
+        de limitación de responsabilidad son válidas en contratos B2B (no consumidores)
+        siempre que no excluyan dolo o culpa grave.
+    red_flags:
+      - pattern: "unlimited.*liability|responsabilidad.*ilimitada"
+        severity: critical
+        note: "Uncapped liability — reject or escalate immediately."
+
+  - clause_title: "Payment Terms"
+    applicable_contract_types:
+      - service_agreement
+    party_role: provider
+    preferred_position:
+      summary: >
+        Invoicing on delivery of milestone or monthly; payment 30 days net;
+        late payment interest at ECB reference rate + 8% (Ley 3/2004 against
+        late payment); right to suspend services after 60 days overdue.
+      template_language: |
+        "The Client shall pay each invoice within thirty (30) days of receipt.
+        Overdue amounts shall accrue interest at the reference rate of the
+        European Central Bank plus eight per cent (8%) per annum from the due
+        date (Ley 3/2004, Art. 7). The Provider may suspend performance of
+        the Services if any undisputed invoice remains unpaid for sixty (60)
+        days after its due date, on five (5) Business Days' prior written notice."
+      market_prevalence: 0.60
+    acceptable_positions:
+      - summary: >
+          45-day payment terms; same late payment interest; suspension right
+          after 90 days.
+        condition: "Acceptable for large enterprise clients with procurement cycles."
+        market_prevalence: 0.25
+    fallback_position:
+      summary: >
+        60-day payment; Ley 3/2004 statutory interest; no suspension right
+        (rely on contractual termination for persistent non-payment).
+      requires_approval_from: "Finance"
+    never_accept:
+      - condition: "Payment terms exceeding 60 days without late payment interest"
+        reason: "Violates Ley 3/2004 de Morosidad (60-day maximum for B2B)."
+      - condition: "Client right to offset unrelated claims against fees due"
+        reason: "Creates uncertain cash flow; reject or limit to same-contract claims."
+    escalation_triggers:
+      - "Client requests 90+ day payment terms"
+      - "Payment contingent on third-party approval outside client's control"
+    escalation_to: "Finance Director"
+    market_benchmark:
+      source: "Ley 3/2004 de Morosidad; EU Directive 2011/7/EU"
+      typical_range: "30 days standard; 45–60 days for public sector clients"
+      spanish_law_note: |
+        La Ley 3/2004 (modificada por Ley 15/2010) establece el plazo máximo
+        de 60 días para pagos entre empresas. El tipo de interés de demora
+        es el BCE + 8 puntos porcentuales (actualizado semestralmente).
+    red_flags:
+      - pattern: "90 días|90 days.*payment"
+        severity: high
+        note: "90-day payment terms exceed Ley 3/2004 maximum."
+
+  - clause_title: "Intellectual Property Ownership"
+    applicable_contract_types:
+      - service_agreement
+    party_role: provider
+    preferred_position:
+      summary: >
+        Provider retains ownership of all pre-existing IP and general tools/
+        methodologies; client receives a non-exclusive licence to use deliverables
+        for internal purposes; custom developments owned by provider with
+        broad licence granted to client.
+      template_language: |
+        "All intellectual property rights in the Services, tools, methodologies,
+        and any deliverables ('Works') shall vest in and remain with the Provider.
+        The Provider grants the Client a non-exclusive, royalty-free, perpetual
+        licence to use the Works solely for the Client's internal business purposes.
+        Pre-existing intellectual property of either party is unaffected by this
+        Agreement."
+      market_prevalence: 0.45
+    acceptable_positions:
+      - summary: >
+          Client owns bespoke deliverables; provider retains pre-existing IP
+          and receives licence-back for portfolio purposes.
+        condition: "Acceptable for fully-custom development projects."
+        market_prevalence: 0.35
+    fallback_position:
+      summary: >
+        Client owns bespoke deliverables; provider retains right to reuse
+        generic components and anonymised know-how.
+      requires_approval_from: "Legal Counsel and CTO"
+    never_accept:
+      - condition: "Client demands assignment of all IP including provider's pre-existing tools"
+        reason: "Would strip provider of core assets used across all client engagements."
+    escalation_triggers:
+      - "Client claims ownership of methodologies and process documentation"
+    escalation_to: "CTO and Head of Legal"
+    market_benchmark:
+      source: "WIPO; Ley de Propiedad Intelectual (RDLeg 1/1996)"
+      typical_range: "Provider retains tools; client gets licence — majority of B2B IT contracts"
+      spanish_law_note: |
+        El Real Decreto Legislativo 1/1996 (Ley de Propiedad Intelectual) protege
+        los derechos del autor de obras originales. Las obras creadas por encargo
+        pueden pertenecer al comitente si se acuerda expresamente (Art. 55 LPI).
+    red_flags:
+      - pattern: "assignment.*all IP|cesión.*toda.*propiedad"
+        severity: high
+        note: "Full IP assignment — protect pre-existing tools with explicit carve-out."
+
+  - clause_title: "Termination"
+    applicable_contract_types:
+      - service_agreement
+    party_role: provider
+    preferred_position:
+      summary: >
+        Term of 12 months; auto-renewal unless 90 days' notice; termination
+        for cause (material breach with 30-day cure); termination for
+        convenience by client only after 12 months with 3 months' notice and
+        break fee equal to 3 months' fees.
+      market_prevalence: 0.40
+    acceptable_positions:
+      - summary: >
+          12-month term; termination for convenience by client on 60 days'
+          notice from month 6; break fee 2 months' fees.
+        condition: "Acceptable for long-term relationships where lock-in risk is lower."
+        market_prevalence: 0.35
+    fallback_position:
+      summary: >
+        12-month term; client termination for convenience on 30 days' notice
+        at any time; no break fee; exit assistance obligations on provider.
+      requires_approval_from: "Finance and Legal Counsel"
+    never_accept:
+      - condition: "Client right to terminate for convenience immediately with no notice period"
+        reason: "Creates unacceptable revenue and resource planning risk."
+    escalation_triggers:
+      - "Client requests no lock-in and immediate termination right"
+    escalation_to: "Finance and Legal Counsel"
+    market_benchmark:
+      source: "CC Art. 1544; market standard B2B services"
+      typical_range: "30–90 day notice for convenience; break fee 1–3 months"
+      spanish_law_note: |
+        El CC Art. 1544 reconoce la libertad de las partes en el arrendamiento
+        de servicios. La resolución por incumplimiento esencial está regulada
+        por CC Art. 1124. Para servicios prestados a Administraciones Públicas
+        aplica la LCSP (Ley 9/2017).
+    red_flags:
+      - pattern: "immediately.*terminat|resolución inmediata"
+        severity: high
+        note: "Immediate termination right — add notice period and break fee."
+
+  - clause_title: "Confidentiality"
+    applicable_contract_types:
+      - service_agreement
+    party_role: provider
+    preferred_position:
+      summary: >
+        Mutual confidentiality for 3 years post-termination; provider may
+        reference client name in marketing with client's prior consent; standard
+        regulatory and legal disclosure exceptions.
+      market_prevalence: 0.65
+    acceptable_positions:
+      - summary: >
+          3-year post-term; no marketing reference without written consent;
+          standard exceptions.
+        condition: "Standard position — accept."
+        market_prevalence: 0.25
+    fallback_position:
+      summary: >
+        5-year post-term; no marketing reference; all disclosures only as
+        strictly required by law.
+      requires_approval_from: "Legal Counsel"
+    never_accept:
+      - condition: >
+          Client prohibits provider from disclosing the existence of the
+          engagement to auditors or regulators
+        reason: "Conflicts with legal and regulatory disclosure obligations."
+    escalation_triggers:
+      - "Client requests no-reference clause applying even to regulatory filings"
+    escalation_to: "Head of Compliance"
+    market_benchmark:
+      source: "Ley 1/2019; GDPR Art. 28"
+      typical_range: "3–5 years post-term; regulatory exception always carved out"
+      spanish_law_note: |
+        En contratos con entidades bancarias el proveedor puede estar sujeto
+        a obligaciones de secreto bancario indirecto (Ley 10/2014, Art. 6)
+        si maneja información del negocio bancario del cliente.
+    red_flags:
+      - pattern: "sin excepciones regulatorias|no regulatory exception"
+        severity: critical
+        note: "No regulatory exception — provider cannot comply with law."

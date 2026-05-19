@@ -1181,7 +1181,7 @@ export const getMySessions = () =>
 export const revokeOtherSessions = () =>
   apiFetch<void>("/api/v1/me/sessions/others", { method: "DELETE" });
 
-// ─── Contract Analysis Types (13A + 13B) ─────────────────────────────────
+// ─── Contract Analysis Types (13A + 13B + 13C) ──────────────────────────
 
 export type ContractParty = {
   name: string;
@@ -1241,6 +1241,63 @@ export type ComplianceFinding = {
   recommendation: string | null;
 };
 
+// 13C: Negotiation types
+
+export type NegotiationIssue = {
+  clause_title: string;
+  clause_ref: string;
+  current_position: string;
+  playbook_position:
+    | "preferred"
+    | "acceptable"
+    | "fallback"
+    | "never_accept"
+    | "uncharted";
+  market_percentile: number;
+  recommended_action: string;
+  alternative_language: string | null;
+  escalation_required: boolean;
+};
+
+export type NegotiationScenario = {
+  label: string;
+  risk_summary: string;
+  residual_risks: string[];
+  target_clauses: string[];
+  expected_outcome: string | null;
+  walk_away_conditions: string[];
+};
+
+export type NegotiationSummary = {
+  posture_score: number;
+  posture_label: "reject" | "renegotiate" | "conditionally_accept" | "accept";
+  priority_issues: NegotiationIssue[];
+  scenarios: Record<string, NegotiationScenario>;
+  playbook_version: string;
+  benchmark_sources: string[];
+};
+
+export type ClauseAlternative = {
+  label: "favourable_to_us" | "balanced" | "compromise";
+  text: string;
+  rationale: string;
+  market_prevalence: number | null;
+};
+
+export type MandatoryLawIssue = {
+  provision: string;
+  issue: string;
+  compliant_formulation: string;
+};
+
+export type ClauseAlternatives = {
+  clause_title: string;
+  clause_ref: string;
+  original_text: string;
+  alternatives: ClauseAlternative[];
+  mandatory_law_issues: MandatoryLawIssue[];
+};
+
 export type ContractAnalysis = {
   contract_id: string;
   trace_id: string;
@@ -1249,7 +1306,8 @@ export type ContractAnalysis = {
   risk_assessment: RiskAssessment;
   obligations: { nodes: Obligation[]; edges: ObligationEdge[] };
   compliance_findings: ComplianceFinding[];
-  negotiation: unknown[];
+  negotiation: NegotiationSummary | null;
+  clause_alternatives: ClauseAlternatives[];
   summary: string;
   recommendations: string[];
   latency_ms: number | null;

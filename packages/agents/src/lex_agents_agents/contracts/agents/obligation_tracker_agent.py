@@ -145,7 +145,7 @@ Responde ÚNICAMENTE con JSON válido siguiendo el esquema proporcionado, sin te
             logger.warning("obligation_tracker_empty_response", trace_id=trace_id)
             return ObligationGraph(nodes=[], edges=[])
 
-        return _parse_obligation_graph(text_block.text, trace_id)
+        return _parse_obligation_graph(text_block.text, trace_id)  # type: ignore[union-attr]
 
 
 # ---------------------------------------------------------------------------
