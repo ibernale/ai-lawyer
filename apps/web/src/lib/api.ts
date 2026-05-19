@@ -1071,19 +1071,24 @@ export async function getPlatformStatus(): Promise<ToolStatus[]> {
 export type UserRow = {
   username: string;
   role: string;
+  tenant_id?: string;
+  disabled?: boolean;
+  token_version?: number;
 };
 
-export const listUsers = () => apiFetch<UserRow[]>("/api/v1/admin/users");
+export const listUsersLegacy = () => apiFetch<UserRow[]>("/api/v1/admin/users");
 
 export type CreateUserRequest = {
   username: string;
   password: string;
   role: string;
+  tenant_id?: string;
 };
 export type UpdateUserRequest = {
   role?: string;
   password?: string;
   disabled?: boolean;
+  token_version_bump?: boolean;
 };
 
 export const createUser = (body: CreateUserRequest) =>
@@ -1468,5 +1473,149 @@ export async function listContracts(
 ): Promise<ContractAnalyzeResponse[]> {
   return apiFetch<ContractAnalyzeResponse[]>(
     `/api/v1/contracts?limit=${limit}`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tenant management (super-admin only)
+// ---------------------------------------------------------------------------
+
+export interface Tenant {
+  id: string;
+  name: string;
+  plan: string;
+  disabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function listTenants(): Promise<Tenant[]> {
+  return apiFetch<Tenant[]>("/api/v1/admin/tenants");
+}
+
+export async function createTenant(
+  id: string,
+  name: string,
+  plan: string = "standard",
+): Promise<Tenant> {
+  return apiFetch<Tenant>("/api/v1/admin/tenants", {
+    method: "POST",
+    body: JSON.stringify({ id, name, plan }),
+  });
+}
+
+export async function updateTenant(
+  tenantId: string,
+  data: Partial<{ name: string; plan: string; disabled: boolean }>,
+): Promise<Tenant> {
+  return apiFetch<Tenant>(`/api/v1/admin/tenants/${tenantId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function disableTenant(tenantId: string): Promise<void> {
+  return apiFetch<void>(`/api/v1/admin/tenants/${tenantId}`, {
+    method: "DELETE",
+  });
+}
+
+// ---------------------------------------------------------------------------
+// User management helpers (new signatures, wraps legacy)
+// ---------------------------------------------------------------------------
+
+export async function listUsers(tenantId?: string): Promise<UserRow[]> {
+  const qs = tenantId ? `?tenant_id=${encodeURIComponent(tenantId)}` : "";
+  return apiFetch<UserRow[]>(`/api/v1/admin/users${qs}`);
+}
+
+export async function forceRelogin(username: string): Promise<UserRow> {
+  return updateUser(username, { token_version_bump: true });
+}
+
+// ---------------------------------------------------------------------------
+// Invitation management (admin+)
+// ---------------------------------------------------------------------------
+
+export interface Invitation {
+  id: string;
+  tenant_id: string;
+  email: string;
+  role: string;
+  invited_by: string;
+  expires_at: string;
+  created_at: string;
+  invite_url?: string;
+  token?: string;
+}
+
+export async function sendInvitation(
+  email: string,
+  role: string,
+  ttlHours: number = 72,
+): Promise<Invitation> {
+  return apiFetch<Invitation>("/api/v1/admin/invitations", {
+    method: "POST",
+    body: JSON.stringify({ email, role, ttl_hours: ttlHours }),
+  });
+}
+
+export async function listInvitations(): Promise<Invitation[]> {
+  return apiFetch<Invitation[]>("/api/v1/admin/invitations");
+}
+
+export async function revokeInvitation(invitationId: string): Promise<void> {
+  return apiFetch<void>(`/api/v1/admin/invitations/${invitationId}`, {
+    method: "DELETE",
+  });
+}
+
+export interface AcceptInvitationResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
+export async function acceptInvitation(
+  token: string,
+  username: string,
+  password: string,
+): Promise<AcceptInvitationResponse> {
+  return apiFetch<AcceptInvitationResponse>(
+    `/api/v1/auth/invitations/${token}/accept`,
+    {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Session management (admin: all sessions for tenant; user: own sessions)
+// ---------------------------------------------------------------------------
+
+export interface SessionRow {
+  id: string;
+  username: string;
+  role: string;
+  ip_address: string;
+  user_agent: string;
+  created_at: string;
+  last_used_at: string;
+  expires_at: string;
+  suspicious: boolean;
+}
+
+export async function listMySessions(): Promise<SessionRow[]> {
+  return apiFetch<SessionRow[]>("/api/v1/me/sessions");
+}
+
+export async function revokeSession(
+  username: string,
+  sessionId: string,
+): Promise<void> {
+  return apiFetch<void>(
+    `/api/v1/admin/users/${username}/sessions/${sessionId}`,
+    { method: "DELETE" },
   );
 }

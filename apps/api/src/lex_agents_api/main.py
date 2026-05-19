@@ -41,12 +41,14 @@ from lex_agents_api.routers.contracts_stream import router as contracts_stream_r
 from lex_agents_api.routers.documents import router as documents_router
 from lex_agents_api.routers.federation import router as federation_router
 from lex_agents_api.routers.governance import router as governance_router
+from lex_agents_api.routers.invitations import router as invitations_router
 from lex_agents_api.routers.monitoring import router as monitoring_router
 from lex_agents_api.routers.notifications import router as notifications_router
 from lex_agents_api.routers.ops import router as ops_router
 from lex_agents_api.routers.risk_matrix import router as risk_matrix_router
 from lex_agents_api.routers.sessions import router as sessions_router
 from lex_agents_api.routers.system import router as system_router
+from lex_agents_api.routers.tenants import router as tenants_router
 from lex_agents_api.settings import get_settings
 from lex_agents_api.tracing import configure_tracing
 
@@ -155,6 +157,36 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.info("user_store_initialized", db_path=settings.governance_db_path)
     except ImportError:
         logger.warning("lex_agents_admin_user_store_not_available")
+
+    # Tenant store (multitenancy — ADR 0060)
+    try:
+        from lex_agents_admin.tenant_store import TenantStore
+        tenant_store = TenantStore(settings.governance_db_path)
+        await tenant_store.init()
+        logger.info("tenant_store_initialized", db_path=settings.governance_db_path)
+    except ImportError:
+        logger.warning("lex_agents_admin_tenant_store_not_available")
+
+    # Invitation store (ADR 0061)
+    try:
+        from lex_agents_admin.invitation_store import InvitationStore
+        invitation_store = InvitationStore(
+            settings.governance_db_path,
+            settings.jwt_secret.get_secret_value(),
+        )
+        await invitation_store.init()
+        logger.info("invitation_store_initialized", db_path=settings.governance_db_path)
+    except ImportError:
+        logger.warning("lex_agents_admin_invitation_store_not_available")
+
+    # User audit log (ADR 0060)
+    try:
+        from lex_agents_admin.user_audit_store import UserAuditStore
+        user_audit_store = UserAuditStore(settings.governance_db_path)
+        await user_audit_store.init()
+        logger.info("user_audit_store_initialized", db_path=settings.governance_db_path)
+    except ImportError:
+        logger.warning("lex_agents_admin_user_audit_store_not_available")
 
     # Kill switches & feature flags (ADR-0032)
     ssm = None
@@ -284,6 +316,8 @@ def create_app() -> FastAPI:
     app.include_router(notifications_router)   # /api/v1/admin/notifications/*
     app.include_router(federation_router)      # /api/v1/admin/federation/*
     app.include_router(sessions_router)        # /api/v1/admin/users/*/sessions, /me/sessions
+    app.include_router(tenants_router)          # /api/v1/admin/tenants — super-admin only
+    app.include_router(invitations_router)      # /api/v1/admin/invitations + /api/v1/auth/invitations
     app.include_router(contracts_router)        # /api/v1/contracts — contract analysis
     app.include_router(contracts_stream_router) # /api/v1/contracts/analyze/stream — SSE
 

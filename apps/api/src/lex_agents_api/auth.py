@@ -51,6 +51,7 @@ class CurrentUser(BaseModel):
     role: str
     tenant_id: str = "default"
     session_id: str | None = None
+    token_version: int = 1
 
 
 class TokenResponse(BaseModel):
@@ -77,7 +78,12 @@ def _load_users(settings: Settings) -> list[UserConfig]:
         db_users = store.get_all_sync()
         if db_users:
             return [
-                UserConfig(username=u.username, password_hash=u.password_hash, role=u.role)
+                UserConfig(
+                    username=u.username,
+                    password_hash=u.password_hash,
+                    role=u.role,
+                    tenant_id=u.tenant_id,
+                )
                 for u in db_users if not u.disabled
             ]
     # Fall back to env var
@@ -96,7 +102,9 @@ def _create_token(
     *,
     tenant_id: str = "default",
     session_id: str | None = None,
+    token_version: int = 1,
 ) -> str:
+    import uuid as _uuid
     now = datetime.now(UTC)
     payload: dict[str, Any] = {
         "sub": username,
@@ -104,6 +112,8 @@ def _create_token(
         "tid": tenant_id,
         "iat": now,
         "exp": now + timedelta(minutes=settings.jwt_expire_minutes),
+        "jti": str(_uuid.uuid4()),
+        "ver": token_version,
     }
     if session_id:
         payload["sid"] = session_id
@@ -131,6 +141,52 @@ def _get_session_mgr() -> Any:
         return None
 
 
+async def _is_jti_revoked(store: Any, jti: str) -> bool:
+    """Check JTI revocation table. Returns False (not revoked) on any error."""
+    db_path = getattr(store, "_db_path", None)
+    if db_path is None:
+        return False
+    try:
+        from lex_agents_shared.db import is_postgres, pg_conn
+        if is_postgres():
+            async with pg_conn() as conn:
+                row = await conn.fetchrow(
+                    "SELECT jti FROM lex_agents_app.revoked_jtis WHERE jti=$1", jti
+                )
+            return row is not None
+        import aiosqlite
+        async with aiosqlite.connect(db_path) as db:
+            async with db.execute(
+                "SELECT jti FROM revoked_jtis WHERE jti=?", (jti,)
+            ) as cur:
+                row_raw = await cur.fetchone()
+        return row_raw is not None
+    except Exception:
+        return False
+
+
+async def revoke_jti(db_path: str, jti: str, reason: str = "") -> None:
+    """Add a JTI to the revocation list."""
+    from lex_agents_shared.db import is_postgres, pg_conn
+    now = datetime.now(UTC)
+    if is_postgres():
+        async with pg_conn() as conn:
+            await conn.execute(
+                "INSERT INTO lex_agents_app.revoked_jtis (jti, revoked_at, reason)"
+                " VALUES ($1,$2,$3) ON CONFLICT DO NOTHING",
+                jti, now, reason,
+            )
+        return
+    import aiosqlite
+    now_s = now.strftime("%Y-%m-%dT%H:%M:%S")
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute(
+            "INSERT OR IGNORE INTO revoked_jtis (jti, revoked_at, reason) VALUES (?,?,?)",
+            (jti, now_s, reason),
+        )
+        await db.commit()
+
+
 # ---------------------------------------------------------------------------
 # FastAPI dependencies
 # ---------------------------------------------------------------------------
@@ -156,6 +212,8 @@ async def require_auth(
         role: str = payload.get("role", "analyst")
         tenant_id: str = payload.get("tid", "default")
         session_id: str | None = payload.get("sid")
+        jti: str | None = payload.get("jti")
+        token_version: int = int(payload.get("ver", 1))
         if not username:
             raise ValueError("missing sub claim")
     except JWTError as exc:
@@ -176,7 +234,36 @@ async def require_auth(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-    return CurrentUser(username=username, role=role, tenant_id=tenant_id, session_id=session_id)
+    # Check JTI revocation (high-priority per-token revocation, fail-open on DB error)
+    if jti:
+        try:
+            store = _get_user_store()
+            if store is not None and await _is_jti_revoked(store, jti):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Token has been revoked",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+        except HTTPException:
+            raise
+        except Exception as exc:
+            logger.warning("jti_check_failed", error=str(exc))  # fail-open
+
+    # Check token_version (bulk revocation via force-relogin)
+    store = _get_user_store()
+    if store is not None:
+        user_rec = store._cache.get(username)
+        if user_rec is not None and token_version < user_rec.token_version:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token invalidated — please log in again",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+    return CurrentUser(
+        username=username, role=role, tenant_id=tenant_id,
+        session_id=session_id, token_version=token_version,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -217,7 +304,17 @@ def issue_token(username: str, password: str, settings: Settings) -> TokenRespon
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = _create_token(user.username, user.role, settings, tenant_id=user.tenant_id)
+    store = _get_user_store()
+    token_version = 1
+    if store is not None:
+        rec = store._cache.get(user.username)
+        if rec is not None:
+            token_version = rec.token_version
+    token = _create_token(
+        user.username, user.role, settings,
+        tenant_id=user.tenant_id,
+        token_version=token_version,
+    )
     logger.info("auth_login_success", username=username, role=user.role, tenant_id=user.tenant_id)
     return TokenResponse(
         access_token=token,
@@ -258,10 +355,17 @@ async def issue_token_with_session(
                 detail="Session store unavailable, please retry",
             ) from exc
 
+    store = _get_user_store()
+    token_version = 1
+    if store is not None:
+        rec = store._cache.get(user.username)
+        if rec is not None:
+            token_version = rec.token_version
     token = _create_token(
         user.username, user.role, settings,
         tenant_id=user.tenant_id,
         session_id=session_id,
+        token_version=token_version,
     )
     logger.info("auth_login_success", username=username, role=user.role, tenant_id=user.tenant_id)
     return TokenResponse(
