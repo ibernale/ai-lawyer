@@ -1,0 +1,82 @@
+{
+  "id": "contract-004",
+  "filename": "dpa_sintetico_01.txt",
+  "expert_reviewed": false,
+  "contract_text": "ACUERDO DE ENCARGADO DEL TRATAMIENTO DE DATOS\n\nEntre BANCO EJEMPLO S.A., en calidad de Responsable del Tratamiento (en adelante, el «Responsable») y CLOUD SERVICES EUROPA S.L., CIF B-55667788 (en adelante, el «Encargado»), en cumplimiento del artículo 28 del Reglamento (UE) 2016/679.\n\nCLÁUSULA 1. OBJETO Y NATURALEZA DEL TRATAMIENTO\nEl Encargado tratará datos personales de clientes del Responsable (nombre, NIF, IBAN, historial transaccional) únicamente para la prestación de servicios de almacenamiento en la nube y procesamiento de datos para el sistema de gestión de riesgos del Responsable.\n\nCLÁUSULA 2. INSTRUCCIONES DEL RESPONSABLE\nEl Encargado tratará los datos únicamente siguiendo las instrucciones documentadas del Responsable. Si el Encargado considera que una instrucción infringe el RGPD, lo comunicará inmediatamente al Responsable. Queda prohibido al Encargado utilizar los datos para fines propios.\n\nCLÁUSULA 3. SUBENCARGADOS\nEl Encargado no podrá contratar subencargados sin autorización previa y por escrito del Responsable. En caso de autorización, el Encargado impondrá al subencargado las mismas obligaciones que las estipuladas en este acuerdo y responderá frente al Responsable de su cumplimiento.\n\nCLÁUSULA 4. MEDIDAS DE SEGURIDAD\nEl Encargado implementará las medidas técnicas y organizativas adecuadas conforme al artículo 32 RGPD, incluyendo: cifrado AES-256 en reposo y en tránsito, control de acceso basado en roles (RBAC), auditoría de accesos, y plan de continuidad de negocio con RTO de 4 horas y RPO de 1 hora.\n\nCLÁUSULA 5. TRANSFERENCIAS INTERNACIONALES\nQueda prohibida la transferencia de datos fuera del Espacio Económico Europeo sin autorización previa del Responsable. Cualquier transferencia deberá ampararse en una decisión de adecuación, cláusulas contractuales tipo o mecanismo equivalente conforme al Capítulo V RGPD.\n\nCLÁUSULA 6. DERECHOS DE LOS INTERESADOS\nEl Encargado asistirá al Responsable en el cumplimiento de las obligaciones relativas a los derechos de los interesados (acceso, rectificación, supresión, portabilidad, oposición). El Encargado notificará al Responsable cualquier solicitud de ejercicio de derechos en un plazo de 48 horas.\n\nCLÁUSULA 7. VIOLACIONES DE SEGURIDAD\nEl Encargado notificará al Responsable cualquier violación de seguridad de los datos en un plazo máximo de 24 horas desde su detección, incluyendo toda la información disponible conforme al artículo 33.3 RGPD.\n\nCLÁUSULA 8. SUPRESIÓN O DEVOLUCIÓN\nA la finalización del contrato, el Encargado suprimirá o devolverá todos los datos personales al Responsable, a elección de éste, en un plazo de treinta (30) días, salvo que la normativa aplicable exija la conservación.",
+  "annotations": {
+    "document_type": "DataProcessingAgreement",
+    "parties": [
+      { "name": "BANCO EJEMPLO S.A.", "role": "controller" },
+      { "name": "CLOUD SERVICES EUROPA S.L.", "role": "processor" }
+    ],
+    "jurisdiction": ["ES", "EU"],
+    "governing_law": "Derecho español",
+    "applicable_framework": ["GDPR", "LOPDGDD"],
+    "obligations": [
+      {
+        "id": "OBL-1",
+        "party": "CLOUD SERVICES EUROPA S.L.",
+        "deontic_type": "obligation",
+        "description": "tratar datos únicamente siguiendo instrucciones documentadas del Responsable",
+        "clause_ref": "[CLAUSE:2]"
+      },
+      {
+        "id": "PRH-1",
+        "party": "CLOUD SERVICES EUROPA S.L.",
+        "deontic_type": "prohibition",
+        "description": "no utilizar los datos para fines propios del Encargado",
+        "clause_ref": "[CLAUSE:2]"
+      },
+      {
+        "id": "PRH-2",
+        "party": "CLOUD SERVICES EUROPA S.L.",
+        "deontic_type": "prohibition",
+        "description": "no contratar subencargados sin autorización previa escrita del Responsable",
+        "clause_ref": "[CLAUSE:3]"
+      },
+      {
+        "id": "OBL-2",
+        "party": "CLOUD SERVICES EUROPA S.L.",
+        "deontic_type": "obligation",
+        "description": "implementar cifrado AES-256 y medidas de seguridad conforme RGPD Art. 32",
+        "clause_ref": "[CLAUSE:4]"
+      },
+      {
+        "id": "OBL-3",
+        "party": "CLOUD SERVICES EUROPA S.L.",
+        "deontic_type": "obligation",
+        "description": "notificar violaciones de seguridad en 24 horas desde la detección",
+        "clause_ref": "[CLAUSE:7]"
+      },
+      {
+        "id": "OBL-4",
+        "party": "CLOUD SERVICES EUROPA S.L.",
+        "deontic_type": "obligation",
+        "description": "suprimir o devolver datos al finalizar el contrato en 30 días",
+        "clause_ref": "[CLAUSE:8]"
+      }
+    ],
+    "risk_factors": [
+      {
+        "category": "legal",
+        "severity": "high",
+        "clause_refs": ["[CLAUSE:5]"]
+      },
+      {
+        "category": "operational",
+        "severity": "medium",
+        "clause_refs": ["[CLAUSE:4]"]
+      },
+      {
+        "category": "legal",
+        "severity": "medium",
+        "clause_refs": ["[CLAUSE:7]"]
+      }
+    ],
+    "compliance_findings": [
+      { "regulation": "GDPR Art. 28", "status": "compliant" },
+      { "regulation": "GDPR Art. 32", "status": "compliant" },
+      { "regulation": "GDPR Art. 44", "status": "requires_review" }
+    ]
+  }
+}

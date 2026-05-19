@@ -1,0 +1,74 @@
+{
+  "id": "contract-003",
+  "filename": "servicios_sintetico_01.txt",
+  "expert_reviewed": false,
+  "contract_text": "CONTRATO DE PRESTACIÓN DE SERVICIOS\n\nEntre BANCO EJEMPLO S.A. (en adelante, el «Cliente») y PROVEEDOR IT S.A., CIF A-11223344 (en adelante, el «Proveedor»).\n\nCLÁUSULA 1. OBJETO\nEl Proveedor se compromete a prestar al Cliente servicios de mantenimiento y soporte de la plataforma de banca digital, incluyendo soporte técnico 24/7, actualizaciones de seguridad mensuales, y monitorización continua del sistema.\n\nCLÁUSULA 2. PRECIO Y FORMA DE PAGO\nEl Cliente abonará al Proveedor una tarifa mensual de VEINTE MIL EUROS (20.000 €) más IVA, pagadera dentro de los treinta (30) días siguientes a la recepción de la factura. El retraso en el pago devengará intereses de demora conforme a la Ley 3/2004 de morosidad.\n\nCLÁUSULA 3. NIVELES DE SERVICIO (SLA)\nEl Proveedor garantiza una disponibilidad del sistema del 99,5% mensual. Cualquier interrupción no programada superior a cuatro (4) horas en horario de negocio (8:00-20:00) generará una penalización equivalente al 5% de la cuota mensual por cada hora adicional de interrupción, hasta un máximo del 30% de la cuota mensual.\n\nCLÁUSULA 4. LIMITACIÓN DE RESPONSABILIDAD\nLa responsabilidad total acumulada del Proveedor por daños derivados del presente contrato queda limitada al importe de las cuotas abonadas en los últimos doce (12) meses. Queda excluida en todo caso la responsabilidad por daños indirectos, lucro cesante y daños consecuenciales.\n\nCLÁUSULA 5. SUBCONTRATACIÓN\nEl Proveedor podrá subcontratar parte de los servicios con previa notificación al Cliente, siendo responsable de los actos del subcontratista como si fueran propios. En ningún caso podrá subcontratar más del 40% del valor del contrato sin autorización escrita del Cliente.\n\nCLÁUSULA 6. DURACIÓN Y RESOLUCIÓN\nEl contrato tendrá una duración inicial de dos (2) años, prorrogable tácitamente por períodos anuales. Cualquiera de las partes podrá resolver el contrato con un preaviso de noventa (90) días. El Cliente podrá resolver sin preaviso en caso de incumplimiento grave del SLA.",
+  "annotations": {
+    "document_type": "ServiceAgreement",
+    "parties": [
+      { "name": "BANCO EJEMPLO S.A.", "role": "client" },
+      { "name": "PROVEEDOR IT S.A.", "role": "provider" }
+    ],
+    "jurisdiction": ["ES"],
+    "governing_law": "Derecho español",
+    "applicable_framework": ["CódigoCivil", "Ley3/2004", "DORA"],
+    "obligations": [
+      {
+        "id": "OBL-1",
+        "party": "BANCO EJEMPLO S.A.",
+        "deontic_type": "obligation",
+        "description": "abonar tarifa mensual de 20.000 euros en 30 días desde factura",
+        "clause_ref": "[CLAUSE:2]"
+      },
+      {
+        "id": "OBL-2",
+        "party": "PROVEEDOR IT S.A.",
+        "deontic_type": "obligation",
+        "description": "garantizar disponibilidad del sistema del 99,5% mensual",
+        "clause_ref": "[CLAUSE:3]"
+      },
+      {
+        "id": "OBL-3",
+        "party": "PROVEEDOR IT S.A.",
+        "deontic_type": "obligation",
+        "description": "prestar soporte técnico 24/7 y actualizaciones de seguridad mensuales",
+        "clause_ref": "[CLAUSE:1]"
+      },
+      {
+        "id": "PER-1",
+        "party": "PROVEEDOR IT S.A.",
+        "deontic_type": "permission",
+        "description": "subcontratar hasta el 40% del valor del contrato con notificación previa",
+        "clause_ref": "[CLAUSE:5]"
+      },
+      {
+        "id": "PRH-1",
+        "party": "PROVEEDOR IT S.A.",
+        "deontic_type": "prohibition",
+        "description": "no subcontratar más del 40% sin autorización escrita del Cliente",
+        "clause_ref": "[CLAUSE:5]"
+      }
+    ],
+    "risk_factors": [
+      {
+        "category": "legal",
+        "severity": "high",
+        "clause_refs": ["[CLAUSE:4]"]
+      },
+      {
+        "category": "operational",
+        "severity": "medium",
+        "clause_refs": ["[CLAUSE:3]"]
+      },
+      {
+        "category": "strategic",
+        "severity": "low",
+        "clause_refs": ["[CLAUSE:5]"]
+      }
+    ],
+    "compliance_findings": [
+      { "regulation": "DORA Art. 28", "status": "requires_review" },
+      { "regulation": "Ley 3/2004", "status": "compliant" }
+    ]
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "id": "contract-001",
+  "filename": "prestamo_sintetico_01.txt",
+  "expert_reviewed": false,
+  "contract_text": "CONTRATO DE PRÉSTAMO MERCANTIL\n\nEntre BANCO EJEMPLO S.A., con domicilio en Calle Gran Vía 1, Madrid (en adelante, el «Prestamista») y EMPRESA XYZ S.L., con domicilio en Calle Serrano 45, Madrid, CIF B-12345678 (en adelante, el «Prestatario»).\n\nCLÁUSULA 1. IMPORTE Y DISPOSICIÓN\nEl Prestamista concede al Prestatario un préstamo por importe de QUINIENTOS MIL EUROS (500.000 €) que se desembolsará en una única disposición el día de la firma. El importe queda a disposición del Prestatario en la cuenta corriente número ES12 0049 0000 0000 0000 0001.\n\nCLÁUSULA 2. PLAZO Y AMORTIZACIÓN\nEl préstamo tendrá un plazo de cinco (5) años desde la fecha de disposición. El Prestatario deberá abonar cuotas mensuales de NUEVE MIL EUROS (9.000 €) los días 5 de cada mes, en concepto de amortización de principal e intereses.\n\nCLÁUSULA 3. TIPO DE INTERÉS\nSe aplicará un tipo de interés fijo del 4,75% anual (TAE 4,86%). En caso de mora, se aplicará el tipo de interés legal del dinero incrementado en dos puntos porcentuales, sin límite temporal.\n\nCLÁUSULA 4. GARANTÍAS\nEl Prestatario constituye garantía personal solidaria de D. Juan García Martínez, DNI 12345678-A, y pignoración de las acciones de la sociedad XYZ S.L. valoradas en 750.000 €. El Prestamista podrá ejecutar las garantías en caso de impago de dos cuotas consecutivas.\n\nCLÁUSULA 5. VENCIMIENTO ANTICIPADO\nEl Prestamista podrá declarar el vencimiento anticipado del préstamo en los siguientes supuestos: (a) impago de dos o más cuotas consecutivas; (b) cambio material adverso en la situación financiera del Prestatario; (c) incumplimiento de cualquier obligación del presente contrato; (d) inicio de procedimiento concursal. La declaración de vencimiento anticipado conllevará la exigibilidad inmediata del capital pendiente más intereses devengados.\n\nCLÁUSULA 6. LEGISLACIÓN APLICABLE\nEl presente contrato se rige por el Derecho español. Las partes se someten a los Juzgados y Tribunales de Madrid, con renuncia expresa a cualquier otro fuero que pudiera corresponderles.",
+  "annotations": {
+    "document_type": "LoanAgreement",
+    "parties": [
+      { "name": "BANCO EJEMPLO S.A.", "role": "lender" },
+      { "name": "EMPRESA XYZ S.L.", "role": "borrower" }
+    ],
+    "jurisdiction": ["ES"],
+    "governing_law": "Derecho español",
+    "applicable_framework": ["CRR", "CódigoCivil"],
+    "obligations": [
+      {
+        "id": "OBL-1",
+        "party": "EMPRESA XYZ S.L.",
+        "deontic_type": "obligation",
+        "description": "pagar cuotas mensuales de 9.000 euros los días 5 de cada mes",
+        "clause_ref": "[CLAUSE:2]"
+      },
+      {
+        "id": "OBL-2",
+        "party": "BANCO EJEMPLO S.A.",
+        "deontic_type": "obligation",
+        "description": "desembolsar 500.000 euros en la fecha de firma",
+        "clause_ref": "[CLAUSE:1]"
+      },
+      {
+        "id": "OBL-3",
+        "party": "EMPRESA XYZ S.L.",
+        "deontic_type": "obligation",
+        "description": "constituir garantía personal y pignoración de acciones",
+        "clause_ref": "[CLAUSE:4]"
+      },
+      {
+        "id": "PRH-1",
+        "party": "EMPRESA XYZ S.L.",
+        "deontic_type": "prohibition",
+        "description": "no incurrir en cambio material adverso sin notificación",
+        "clause_ref": "[CLAUSE:5]"
+      }
+    ],
+    "risk_factors": [
+      {
+        "category": "financial",
+        "severity": "high",
+        "clause_refs": ["[CLAUSE:5]"]
+      },
+      {
+        "category": "legal",
+        "severity": "medium",
+        "clause_refs": ["[CLAUSE:3]"]
+      },
+      {
+        "category": "financial",
+        "severity": "medium",
+        "clause_refs": ["[CLAUSE:4]"]
+      }
+    ],
+    "compliance_findings": [
+      { "regulation": "CRR Art. 92", "status": "requires_review" },
+      { "regulation": "CódigoCivil Art. 1740", "status": "compliant" }
+    ]
+  }
+}
