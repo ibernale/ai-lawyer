@@ -227,7 +227,9 @@ function NegotiationIssueCard({ issue }: { issue: NegotiationIssue }) {
             onClick={() => setExpanded((v) => !v)}
             className="text-[11px] text-brand-600 dark:text-brand-400 hover:underline"
           >
-            {expanded ? "▲ Ocultar texto alternativo" : "▼ Ver texto alternativo"}
+            {expanded
+              ? "▲ Ocultar texto alternativo"
+              : "▼ Ver texto alternativo"}
           </button>
           {expanded && (
             <pre className="text-[11px] font-mono bg-muted rounded p-2 whitespace-pre-wrap leading-relaxed text-foreground/80">
@@ -252,9 +254,7 @@ function ScenarioContent({
   const scenario = negotiation.scenarios[scenarioKey];
   if (!scenario) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Escenario no disponible.
-      </p>
+      <p className="text-sm text-muted-foreground">Escenario no disponible.</p>
     );
   }
 
@@ -303,7 +303,9 @@ function ScenarioContent({
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Resultado esperado
           </p>
-          <p className="text-xs text-foreground/80">{scenario.expected_outcome}</p>
+          <p className="text-xs text-foreground/80">
+            {scenario.expected_outcome}
+          </p>
         </div>
       )}
 
@@ -363,7 +365,9 @@ export function NegotiationPanel({ negotiation }: NegotiationPanelProps) {
                 <p className="text-lg font-bold text-foreground">
                   {negotiation.priority_issues.length}
                 </p>
-                <p className="text-[10px] text-muted-foreground">Cláusulas analizadas</p>
+                <p className="text-[10px] text-muted-foreground">
+                  Cláusulas analizadas
+                </p>
               </div>
               {neverAcceptCount > 0 && (
                 <div className="rounded-lg border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 px-3 py-2 text-center">

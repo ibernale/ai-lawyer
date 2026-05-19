@@ -9,7 +9,6 @@ party_role: provider
 playbook_version: "1.0.0"
 
 clauses:
-
   - clause_title: "Limitation of Liability"
     applicable_contract_types:
       - service_agreement

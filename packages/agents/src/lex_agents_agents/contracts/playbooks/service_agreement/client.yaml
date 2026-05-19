@@ -9,7 +9,6 @@ party_role: client
 playbook_version: "1.0.0"
 
 clauses:
-
   - clause_title: "Service Level Agreement (SLA)"
     applicable_contract_types:
       - service_agreement

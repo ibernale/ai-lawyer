@@ -9,7 +9,6 @@ party_role: disclosing
 playbook_version: "1.0.0"
 
 clauses:
-
   - clause_title: "Definition of Confidential Information"
     applicable_contract_types:
       - nda

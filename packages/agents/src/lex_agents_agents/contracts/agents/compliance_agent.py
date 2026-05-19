@@ -189,7 +189,7 @@ Responde ÚNICAMENTE con JSON válido siguiendo el esquema, sin texto adicional.
             logger.warning("compliance_agent_empty_response", trace_id=trace_id)
             return _fallback_findings(metadata.applicable_framework)
 
-        return _parse_findings(text_block.text, trace_id)
+        return _parse_findings(text_block.text, trace_id)  # type: ignore[union-attr]
 
 
 # ---------------------------------------------------------------------------

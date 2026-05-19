@@ -70,9 +70,7 @@ function AlternativeCard({ alternative }: { alternative: ClauseAlternative }) {
   const cfg = ALTERNATIVE_LABEL_CONFIG[alternative.label];
 
   return (
-    <div
-      className={`rounded-lg border ${cfg.border} ${cfg.bg} p-3 space-y-2`}
-    >
+    <div className={`rounded-lg border ${cfg.border} ${cfg.bg} p-3 space-y-2`}>
       {/* Header */}
       <div className="flex items-center gap-2 flex-wrap">
         <span
@@ -118,11 +116,7 @@ function AlternativeCard({ alternative }: { alternative: ClauseAlternative }) {
 
 // ─── ClauseAlternativeSection ──────────────────────────────────────────────
 
-function ClauseAlternativeSection({
-  item,
-}: {
-  item: ClauseAlternatives;
-}) {
+function ClauseAlternativeSection({ item }: { item: ClauseAlternatives }) {
   const [showOriginal, setShowOriginal] = useState(false);
 
   return (
@@ -219,7 +213,8 @@ export function ClauseAlternativesPanel({
         </h3>
         {lawIssueCount > 0 && (
           <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700">
-            ⚠ {lawIssueCount} problema{lawIssueCount !== 1 ? "s" : ""} normativos
+            ⚠ {lawIssueCount} problema{lawIssueCount !== 1 ? "s" : ""}{" "}
+            normativos
           </span>
         )}
       </div>
