@@ -1590,32 +1590,3 @@ export async function acceptInvitation(
   );
 }
 
-// ---------------------------------------------------------------------------
-// Session management (admin: all sessions for tenant; user: own sessions)
-// ---------------------------------------------------------------------------
-
-export interface SessionRow {
-  id: string;
-  username: string;
-  role: string;
-  ip_address: string;
-  user_agent: string;
-  created_at: string;
-  last_used_at: string;
-  expires_at: string;
-  suspicious: boolean;
-}
-
-export async function listMySessions(): Promise<SessionRow[]> {
-  return apiFetch<SessionRow[]>("/api/v1/me/sessions");
-}
-
-export async function revokeSession(
-  username: string,
-  sessionId: string,
-): Promise<void> {
-  return apiFetch<void>(
-    `/api/v1/admin/users/${username}/sessions/${sessionId}`,
-    { method: "DELETE" },
-  );
-}
