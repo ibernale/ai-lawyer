@@ -268,7 +268,7 @@ async def list_contracts(
 
 class ComparisonResult(BaseModel):
     contracts: list[ContractAnalyzeResponse]
-    comparison: dict[str, Any]  # type: ignore[type-arg]
+    comparison: dict[str, Any]
 
 
 @router.get("/compare", response_model=ComparisonResult)
@@ -314,7 +314,7 @@ async def compare_contracts(
     )
 
 
-def _build_comparison(analyses: list[ContractAnalysis]) -> dict[str, Any]:  # type: ignore[type-arg]
+def _build_comparison(analyses: list[ContractAnalysis]) -> dict[str, Any]:
     # Risk distribution
     risk_dist: dict[str, int] = {"green": 0, "yellow": 0, "red": 0, "critical": 0}
     highest_risk_id = analyses[0].contract_id
@@ -337,9 +337,9 @@ def _build_comparison(analyses: list[ContractAnalysis]) -> dict[str, Any]:  # ty
         for reg, cids in regulation_map.items()
         if len(cids) > 1
     ]
-    common_compliance.sort(key=lambda x: x["count"], reverse=True)
+    common_compliance.sort(key=lambda x: int(x["count"]), reverse=True)
 
-    # Obligation overlap (obligations with ≥2 keyword matches across contracts)
+    # Obligation overlap (obligations with ≥3 keyword matches across contracts)
     _sw = {"de", "del", "la", "el", "en", "a", "por", "con", "se", "su", "un", "una", "que", "y", "o", "no"}
 
     def _kw(text: str) -> frozenset[str]:
@@ -352,22 +352,22 @@ def _build_comparison(analyses: list[ContractAnalysis]) -> dict[str, Any]:  # ty
             all_obl.append((a.contract_id, node.party, _kw(node.description)))
 
     # Find cross-contract obligation overlaps
-    seen: set[tuple[str, str]] = set()
-    overlaps: list[dict[str, Any]] = []  # type: ignore[type-arg]
+    seen: set[tuple[str, ...]] = set()
+    overlaps: list[dict[str, Any]] = []
     for i, (cid_i, party_i, kw_i) in enumerate(all_obl):
         for j, (cid_j, party_j, kw_j) in enumerate(all_obl):
             if j <= i or cid_i == cid_j:
                 continue
             if len(kw_i & kw_j) >= 3:
-                key = tuple(sorted([cid_i, cid_j]))
+                sorted_ids = tuple(sorted([cid_i, cid_j]))
                 desc_key = " ".join(sorted(kw_i & kw_j)[:4])
-                pair_key = (key, desc_key)
+                pair_key = (*sorted_ids, desc_key)
                 if pair_key not in seen:
                     seen.add(pair_key)
                     overlaps.append({
                         "description": desc_key,
                         "parties": list({party_i, party_j}),
-                        "contract_ids": list(key),
+                        "contract_ids": list(sorted_ids),
                     })
 
     # Recommendation
