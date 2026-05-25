@@ -11,12 +11,12 @@
     "nag": "cdk synth --all 2>&1"
   },
   "dependencies": {
-    "aws-cdk-lib": "^2.140.0",
+    "aws-cdk-lib": "^2.257.0",
     "constructs": "^10.0.0",
     "cdk-nag": "^2.28.0"
   },
   "devDependencies": {
-    "aws-cdk": "^2.140.0",
+    "aws-cdk": "^2.1124.1",
     "ts-node": "^10.9.0",
     "@types/node": "^25.7.0",
     "typescript": "~5.4.0",
