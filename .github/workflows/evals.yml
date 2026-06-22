@@ -42,7 +42,7 @@ jobs:
       QDRANT_URL: http://localhost:6333
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Wait for Qdrant
         run: |
@@ -127,7 +127,7 @@ jobs:
       QDRANT_URL: http://localhost:6333
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Wait for Qdrant
         run: |
